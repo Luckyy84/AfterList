@@ -1,25 +1,26 @@
-import MediaCard from './components/MediaCard'
-import { demoItems } from './data/demoItems'
+import { Link, Route, Routes } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import AnimePage from './pages/AnimePage'
+import MoviesPage from './pages/MoviesPage'
+import SeriesPage from './pages/SeriesPage'
 import './App.css'
 
 function App() {
   return (
     <main className="app">
-      <section className="hero">
-        <p className="eyebrow">AfterList</p>
-        <h1>Your watchlist, cleaned up.</h1>
-        <p className="hero-copy">Track anime, movies, and TV series in one simple place.</p>
-      </section>
+      <nav className="nav">
+        <Link to="/">AfterList</Link>
+        <Link to="/anime">Anime</Link>
+        <Link to="/movies">Movies</Link>
+        <Link to="/series">TV Series</Link>
+      </nav>
 
-      <section>
-        <h2 className="section-title">Your list</h2>
-
-        <div className="media-grid">
-          {demoItems.map((item) => (
-            <MediaCard key={item.id} item={item} />
-          ))}
-        </div>
-      </section>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/anime" element={<AnimePage />} />
+        <Route path="/movies" element={<MoviesPage />} />
+        <Route path="/series" element={<SeriesPage />} />
+      </Routes>
     </main>
   )
 }
