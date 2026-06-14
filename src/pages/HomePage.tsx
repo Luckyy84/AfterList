@@ -11,7 +11,6 @@ function HomePage() {
       </section>
 
       <section>
-        <h2 className="section-title">Your list</h2>
 
         <div className="media-grid">
           {demoItems.map((item) => (
