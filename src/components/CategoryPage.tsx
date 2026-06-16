@@ -1,7 +1,9 @@
 import type { CSSProperties } from 'react'
+import { useState } from 'react'
 import MediaCard from '../components/MediaCard'
+import MediaDetailsModal from '../components/MediaDetailsModal'
 import { demoItems } from '../data/demoItems'
-import type { MediaType } from '../types/media'
+import type { MediaItem, MediaType } from '../types/media'
 
 type CategoryPageProps = {
   title: string
@@ -10,6 +12,7 @@ type CategoryPageProps = {
 }
 
 function CategoryPage({ title, subtitle, type }: CategoryPageProps) {
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const filteredItems = demoItems.filter((item) => item.type === type)
   const hero = filteredItems[0]
 
@@ -36,10 +39,14 @@ function CategoryPage({ title, subtitle, type }: CategoryPageProps) {
 
         <div className="media-grid">
           {filteredItems.map((item) => (
-            <MediaCard key={item.id} item={item} />
+            <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
           ))}
         </div>
       </section>
+
+      {selectedItem && (
+        <MediaDetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      )}
     </>
   )
 }

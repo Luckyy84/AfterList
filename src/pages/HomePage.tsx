@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import MediaCard from '../components/MediaCard'
+import MediaDetailsModal from '../components/MediaDetailsModal'
 import { demoItems } from '../data/demoItems'
-import type { MediaStatus } from '../types/media'
+import type { MediaItem, MediaStatus } from '../types/media'
 
 type StatusFilter = 'All' | MediaStatus
 
@@ -16,6 +17,7 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
 
 function HomePage() {
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('All')
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const hero = demoItems[0]
   const visibleItems =
     selectedStatus === 'All'
@@ -65,10 +67,14 @@ function HomePage() {
 
         <div className="media-grid">
           {visibleItems.map((item) => (
-            <MediaCard key={item.id} item={item} />
+            <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
           ))}
         </div>
       </section>
+
+      {selectedItem && (
+        <MediaDetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      )}
     </>
   )
 }
