@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import MediaCard from '../components/MediaCard'
 import MediaDetailsModal from '../components/MediaDetailsModal'
-import { demoItems } from '../data/demoItems'
 import type { MediaItem, MediaStatus } from '../types/media'
 
 type StatusFilter = 'All' | MediaStatus
@@ -16,39 +15,45 @@ const statusFilters: { label: string; value: StatusFilter }[] = [
   { label: 'Dropped', value: 'Dropped' },
 ]
 
-function HomePage() {
+type HomePageProps = {
+  items: MediaItem[]
+  onRemove: (id: string) => void
+}
+
+function HomePage({ items, onRemove }: HomePageProps) {
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>('All')
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
-  const [items, setItems] = useState<MediaItem[]>(demoItems)
 
-  const hero = items[0] ?? demoItems[0]
+  const hero = items[0]
   const visibleItems =
     selectedStatus === 'All'
       ? items
       : items.filter((item) => item.status === selectedStatus)
 
   const handleRemove = (id: string) => {
-    setItems((prev) => prev.filter((it) => it.id !== id))
+    onRemove(id)
     setSelectedItem((current) => (current && current.id === id ? null : current))
   }
 
   return (
     <>
-      <section className="hero-card" style={{ '--hero-image': `url(${hero.backdrop})` } as CSSProperties}>
-        <div className="hero-content">
-          <p className="eyebrow">Apple TV calm · Netflix grid</p>
-          <h1>AfterList</h1>
-          <p className="hero-title">{hero.title}</p>
-          <p className="hero-description">A premium watchlist for anime, movies, and TV series — clean, personal, and not bloated.</p>
+      {hero && (
+        <section className="hero-card" style={{ '--hero-image': `url(${hero.backdrop})` } as CSSProperties}>
+          <div className="hero-content">
+            <p className="eyebrow">Apple TV calm · Netflix grid</p>
+            <h1>AfterList</h1>
+            <p className="hero-title">{hero.title}</p>
+            <p className="hero-description">A premium watchlist for anime, movies, and TV series — clean, personal, and not bloated.</p>
 
-          <div className="hero-meta">
-            <span className={`pill ${hero.status}`}>{hero.status}</span>
-            <span>{hero.type}</span>
-            <span>{hero.progress}</span>
-            <span>★ {hero.rating}</span>
+            <div className="hero-meta">
+              <span className={`pill ${hero.status}`}>{hero.status}</span>
+              <span>{hero.type}</span>
+              <span>{hero.progress}</span>
+              <span>★ {hero.rating}</span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section>
         <div className="section-head">

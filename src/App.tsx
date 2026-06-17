@@ -6,15 +6,15 @@ import MoviesPage from './pages/MoviesPage'
 import SeriesPage from './pages/SeriesPage'
 import './App.css'
 import Footer from './components/Footer'
-
+import { useWatchlist } from './hooks/useWatchlist'
 function App() {
+  const { items, handleRemoveItem } = useWatchlist()
   return (
     <main className="app">
       <nav className="nav">
         <NavLink className="brand" to="/" end>
           AfterList
         </NavLink>
-
         <div className="nav-links">
           {/* Link 1: All */}
           <NavLink to="/" end style={{ position: 'relative' }}>
@@ -27,7 +27,7 @@ function App() {
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      backgroundColor: '#ffffff', // Active state uses white fill
+                      backgroundColor: '#ffffff',
                       borderRadius: '999px',
                       zIndex: 1,
                     }}
@@ -37,7 +37,6 @@ function App() {
               </>
             )}
           </NavLink>
-
           {/* Link 2: Anime */}
           <NavLink to="/anime" style={{ position: 'relative' }}>
             {({ isActive }) => (
@@ -59,7 +58,6 @@ function App() {
               </>
             )}
           </NavLink>
-
           {/* Link 3: Movies */}
           <NavLink to="/movies" style={{ position: 'relative' }}>
             {({ isActive }) => (
@@ -81,7 +79,6 @@ function App() {
               </>
             )}
           </NavLink>
-
           {/* Link 4: TV Series */}
           <NavLink to="/series" style={{ position: 'relative' }}>
             {({ isActive }) => (
@@ -105,17 +102,14 @@ function App() {
           </NavLink>
         </div>
       </nav>
-
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/anime" element={<AnimePage />} />
-        <Route path="/movies" element={<MoviesPage />} />
-        <Route path="/series" element={<SeriesPage />} />
+        <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} />} />
+        <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} />} />
+        <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} />} />
+        <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} />} />
       </Routes>
-
       <Footer />
     </main>
   )
 }
-
 export default App
