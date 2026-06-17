@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import type { MediaItem } from '../types/media'
 
 type MediaCardProps = {
@@ -6,17 +7,38 @@ type MediaCardProps = {
   onRemove?: (id: string) => void
 }
 
+const getBadge = (title: string) => {
+  const words = title.split(/\s+/).filter(Boolean)
+
+  if (words.length === 1) return words[0].slice(0, 8).toUpperCase()
+  if (words.length <= 3) return words.map((word) => word[0]).join('').toUpperCase()
+
+  return words[0].slice(0, 6).toUpperCase()
+}
+
 function MediaCard({ item, onSelect }: MediaCardProps) {
   return (
-    <div className="media-card-wrapper" style={{ position: 'relative' }}>
-      {/* Main clickable card */}
-      <button 
-        className="media-card" 
-        type="button" 
-        aria-label={`Open details for ${item.title}`} 
+    <motion.article
+      className="media-card-wrapper"
+      whileHover={{ y: -4, scale: 1.02 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+    >
+      <button
+        className="media-card"
+        type="button"
+        aria-label={`Open details for ${item.title}`}
         onClick={() => onSelect(item)}
       >
-        <img className="media-poster" src={item.poster} alt={item.title} />
+        <span className="media-poster-shell">
+          <img className="media-poster" src={item.poster} alt={item.title} loading="lazy" />
+          <span className="poster-shine" aria-hidden="true" />
+          <span className="media-card-topline">
+            <span>{item.type}</span>
+            <span>★ {item.rating}</span>
+          </span>
+          <span className="poster-badge">{getBadge(item.title)}</span>
+          <span className="poster-year">{item.progress}</span>
+        </span>
 
         <span className="media-info">
           <strong>{item.title}</strong>
@@ -26,9 +48,7 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
           </span>
         </span>
       </button>
-
-      {/* deletion is handled in the details modal */}
-    </div>
+    </motion.article>
   )
 }
 
