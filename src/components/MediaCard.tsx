@@ -29,8 +29,16 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
         aria-label={`Open details for ${item.title}`}
         onClick={() => onSelect(item)}
       >
-        <span className="media-poster-shell">
-          <img className="media-poster" src={item.poster} alt={item.title} loading="lazy" />
+        <span className="media-poster-shell" data-title={getBadge(item.title)}>
+          <img
+            className="media-poster"
+            src={item.poster}
+            alt={item.title}
+            loading="lazy"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
+          />
           <span className="poster-shine" aria-hidden="true" />
           <span className="media-card-topline">
             <span>{item.type}</span>
