@@ -673,11 +673,6 @@ p {
   }
 }
 
-/* ==========================================================================
-   Motion Override Adjustments 
-   Ensures layoutId slides clean without fighting hardcoded static backgrounds
-   ========================================================================== */
-
 .chips .chip.active {
   background: transparent !important;
   border-color: transparent !important;
@@ -698,4 +693,116 @@ p {
 .nav-links a {
   background: transparent;
   border-color: transparent;
+}
+
+.site-footer {
+  background-color: #0b0b0b;
+  color: #8c8c8c;
+  padding: 40px clamp(18px, 4vw, 48px);
+  font-family: sans-serif;
+  font-size: 14px;
+  width: 100vw;
+  
+  position: relative;
+  bottom: 50%;
+  left: 50%;
+  right: 50%;
+  margin-top: 50px;
+  margin-bottom: -50vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+.footer-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 0px;
+}
+
+.footer-col {
+  flex: 1;
+  min-width: 150px;
+}
+
+.footer-col h3 {
+  color: #ffffff;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-col ul li {
+  margin-bottom: 10px;
+}
+
+.footer-col ul li a {
+  color: #8c8c8c;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-col ul li a:hover {
+  color: #ffffff;
+}
+
+.logo {
+  color: #ffffff;
+  font-size: 28px;
+  margin: 0 0 10px 0;
+}
+
+.social-icons a {
+  margin-right: 15px;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.legal-col p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.meta-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-width: 250px;
+}
+
+.copyright {
+  font-size: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  color: #444;
+}
+
+.badge {
+  border: 1px solid #222;
+  border-radius: 20px;
+  padding: 8px 16px;
+  background-color: #111;
+  font-size: 12px;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    flex-direction: column;
+  }
+  .meta-col {
+    align-items: flex-start;
+    gap: 15px;
+  }
 }
