@@ -5,6 +5,7 @@
   --afterlist-bg-top: #18191f;
   --afterlist-bg-mid: #0b0c10;
   --afterlist-bg-bottom: #030406;
+  --afterlist-row-bg: #08090d;
   --afterlist-soft-white: rgba(255, 255, 255, 0.14);
   --afterlist-soft-gray: rgba(168, 172, 184, 0.12);
   --afterlist-deep-gray: rgba(70, 74, 84, 0.22);
@@ -119,13 +120,13 @@ body::after {
 .row-scroll-shell::after {
   pointer-events: none;
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -2px;
+  bottom: -2px;
   z-index: 45;
-  width: clamp(54px, 8vw, 118px);
+  width: clamp(108px, 13vw, 210px);
   content: '';
   opacity: 0;
-  transition: opacity 0.22s ease;
+  transition: opacity 0.28s ease;
 }
 
 .row-scroll-shell.has-scroll-controls::before,
@@ -133,25 +134,34 @@ body::after {
   opacity: 1;
 }
 
+/* Long, multi-stop fades. The stops are stretched and intentionally non-linear so the fade eases out instead of ending as a hard block. */
 .row-scroll-shell::before {
-  left: -2px;
+  left: -1px;
   background: linear-gradient(
     90deg,
-    rgba(5, 6, 8, 0.86) 0%,
-    rgba(7, 8, 11, 0.48) 42%,
-    rgba(7, 8, 11, 0.13) 72%,
-    rgba(7, 8, 11, 0) 100%
+    rgba(8, 9, 13, 0.96) 0%,
+    rgba(8, 9, 13, 0.88) 10%,
+    rgba(8, 9, 13, 0.70) 24%,
+    rgba(8, 9, 13, 0.42) 43%,
+    rgba(8, 9, 13, 0.20) 62%,
+    rgba(8, 9, 13, 0.075) 78%,
+    rgba(8, 9, 13, 0.018) 91%,
+    rgba(8, 9, 13, 0) 100%
   );
 }
 
 .row-scroll-shell::after {
-  right: -2px;
+  right: -1px;
   background: linear-gradient(
     270deg,
-    rgba(5, 6, 8, 0.86) 0%,
-    rgba(7, 8, 11, 0.48) 42%,
-    rgba(7, 8, 11, 0.13) 72%,
-    rgba(7, 8, 11, 0) 100%
+    rgba(8, 9, 13, 0.96) 0%,
+    rgba(8, 9, 13, 0.88) 10%,
+    rgba(8, 9, 13, 0.70) 24%,
+    rgba(8, 9, 13, 0.42) 43%,
+    rgba(8, 9, 13, 0.20) 62%,
+    rgba(8, 9, 13, 0.075) 78%,
+    rgba(8, 9, 13, 0.018) 91%,
+    rgba(8, 9, 13, 0) 100%
   );
 }
 
@@ -223,7 +233,7 @@ body::after {
 @media (max-width: 700px) {
   .row-scroll-shell::before,
   .row-scroll-shell::after {
-    width: 38px;
+    width: 68px;
   }
 
   .row-scroll-track {
