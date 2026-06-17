@@ -31,33 +31,65 @@
   content: none !important;
 }
 
-/* Dark gray poster-card base, matching the mockup. */
+/* Dark gray poster-card base, matching the mockup.
+   The image is inset so the gray gradient frame is visible even when a poster loads. */
 .media-poster-shell {
+  position: relative;
+  display: block;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 24px !important;
   background:
-    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.12), transparent 34%),
-    linear-gradient(145deg, #36363c 0%, #29292e 46%, #1f1f24 100%) !important;
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.14), transparent 34%),
+    linear-gradient(145deg, #3b3b42 0%, #2c2c32 46%, #202025 100%) !important;
   box-shadow:
     0 22px 58px rgba(0, 0, 0, 0.52),
-    inset 0 1px 0 rgba(255, 255, 255, 0.11) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+  isolation: isolate;
 }
 
 .media-poster-shell:hover {
-  border-color: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.24) !important;
   background:
-    radial-gradient(circle at 30% 16%, rgba(255, 255, 255, 0.16), transparent 34%),
-    linear-gradient(145deg, #3f3f46 0%, #2d2d33 48%, #222227 100%) !important;
+    radial-gradient(circle at 30% 16%, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(145deg, #46464e 0%, #323239 48%, #24242a 100%) !important;
 }
 
 .media-poster {
-  opacity: 1;
+  position: relative !important;
+  z-index: 1;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 16px !important;
+  object-fit: cover;
+  opacity: 1 !important;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.media-card:hover .media-poster {
+  transform: scale(1.025) !important;
 }
 
 .poster-shine {
   z-index: 2;
-  opacity: 0.5;
+  border-radius: 24px;
+  opacity: 0.48;
   background:
-    linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.08) 32%, transparent 54%),
-    radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.16), transparent 45%) !important;
+    linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.09) 32%, transparent 54%),
+    radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.18), transparent 45%) !important;
+}
+
+@media (max-width: 700px) {
+  .media-poster-shell {
+    padding: 7px;
+    border-radius: 20px !important;
+  }
+
+  .media-poster {
+    border-radius: 13px !important;
+  }
 }
