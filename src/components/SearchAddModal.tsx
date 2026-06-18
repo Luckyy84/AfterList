@@ -37,6 +37,7 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
   const [query, setQuery] = useState('')
   const [selectedResult, setSelectedResult] = useState<SearchCatalogItem | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
@@ -62,6 +63,12 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
   useEffect(() => {
     if (!isExpanded) return
 
+    setHighlightedIndex(results.length > 0 ? 0 : -1)
+  }, [isExpanded, results])
+
+  useEffect(() => {
+    if (!isExpanded) return
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         if (selectedResult) {
@@ -82,15 +89,36 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
     setQuery('')
     setSelectedResult(null)
     setSelectedStatus('Planned')
+    setHighlightedIndex(-1)
   }
 
   const openSearch = () => {
     setIsExpanded(true)
+    setHighlightedIndex(results.length > 0 ? 0 : -1)
   }
 
   const handleSelectResult = (result: SearchCatalogItem) => {
     setSelectedResult(result)
     setSelectedStatus('Planned')
+  }
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setHighlightedIndex((currentIndex) => (currentIndex + 1) % results.length)
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setHighlightedIndex((currentIndex) => (currentIndex <= 0 ? results.length - 1 : currentIndex - 1))
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      handleSelectResult(results[Math.max(highlightedIndex, 0)])
+    }
   }
 
   const handleCreate = () => {
@@ -133,6 +161,8 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
               value={query}
               aria-label="Search movies, TV series, and anime"
               placeholder="Search to add..."
+              onFocus={() => setHighlightedIndex(results.length > 0 ? 0 : -1)}
+              onKeyDown={handleInputKeyDown}
               onChange={(event) => {
                 setQuery(event.target.value)
                 setSelectedResult(null)
@@ -171,8 +201,9 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
             {results.map((result, index) => (
               <motion.button
                 key={`${result.source}-${result.externalId}`}
-                className={`nav-search-result${index === 0 ? ' is-top-result' : ''}`}
+                className={`nav-search-result${index === 0 ? ' is-top-result' : ''}${index === highlightedIndex ? ' is-selected' : ''}`}
                 type="button"
+                onMouseEnter={() => setHighlightedIndex(index)}
                 onClick={() => handleSelectResult(result)}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
