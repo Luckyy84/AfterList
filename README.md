@@ -27,7 +27,7 @@ The project is being built from scratch to understand every part of the codebase
 - Demo anime/movie/TV data ✅
 - Type filters ✅
 - Status filters ✅
-- Edit Status
+- Edit Status ✅
 - Search
 - Remove item
 - Save data with localStorage ✅
