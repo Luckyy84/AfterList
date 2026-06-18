@@ -84,7 +84,7 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   return (
     <>
       <AnimatePresence mode="wait">
-        {hero && (
+        {hero ? (
           <motion.section
             key={`${hero.id}-${safeHeroIndex}`}
             className="hero-card glass-panel"
@@ -128,29 +128,54 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
               </div>
             )}
           </motion.section>
+        ) : (
+          <motion.section
+            key="empty-homepage"
+            className="hero-card empty-home-hero glass-panel"
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 1.01 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
+          >
+            <div className="hero-content empty-home-content">
+              <p className="eyebrow">AfterList library</p>
+              <h1>Start your list</h1>
+              <p className="hero-description">
+                Search TMDB from the top navigation and add your first anime, movie, or TV series to make this space yours.
+              </p>
+
+              <div className="empty-home-actions" aria-label="Getting started steps">
+                <span>Search TMDB</span>
+                <span>Add to Planned</span>
+                <span>Track everything</span>
+              </div>
+            </div>
+          </motion.section>
         )}
       </AnimatePresence>
 
-      <section className="library-section">
-        <div className="section-head library-head">
-          <div>
-            <p className="eyebrow">Library</p>
-            <h2>Your watchlist</h2>
+      {items.length > 0 && (
+        <section className="library-section">
+          <div className="section-head library-head">
+            <div>
+              <p className="eyebrow">Library</p>
+              <h2>Your watchlist</h2>
+            </div>
           </div>
-        </div>
 
-        <div className="watchlist-stack">
-          {watchRows.map((row) => (
-            <WatchlistRow
-              key={row.status}
-              title={row.title}
-              items={items.filter((item) => item.status === row.status)}
-              onSelect={setSelectedItem}
-              hideControls={isDetailsModalOpen}
-            />
-          ))}
-        </div>
-      </section>
+          <div className="watchlist-stack">
+            {watchRows.map((row) => (
+              <WatchlistRow
+                key={row.status}
+                title={row.title}
+                items={items.filter((item) => item.status === row.status)}
+                onSelect={setSelectedItem}
+                hideControls={isDetailsModalOpen}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {selectedItem && (
         <MediaDetailsModal
