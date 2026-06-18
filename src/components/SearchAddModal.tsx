@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import { searchCatalog } from '../data/searchCatalog'
 import type { SearchCatalogItem } from '../data/searchCatalog'
@@ -62,6 +63,7 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
   const sharedTransition = shouldReduceMotion ? reducedTransition : springTransition
   const itemTransition = shouldReduceMotion ? reducedTransition : fastSpringTransition
   const panelTransition = shouldReduceMotion ? reducedTransition : { duration: 0.2, ease: modalEase }
+  const detailModalRoot = typeof document === 'undefined' ? null : document.body
 
   const results = useMemo(() => {
     if (!normalizedQuery) return []
@@ -148,6 +150,89 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
     onCreate(createMediaItem(selectedResult, selectedStatus))
     closeSearch()
   }
+
+  const detailPreview = (
+    <AnimatePresence initial={false}>
+      {selectedResult && (
+        <motion.div
+          className="modal-backdrop search-result-backdrop"
+          onClick={() => setSelectedResult(null)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
+        >
+          <motion.section
+            className="search-result-detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Add ${selectedResult.title}`}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
+            transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
+              ✕
+            </button>
+
+            <motion.img
+              className="search-detail-backdrop"
+              src={selectedResult.backdrop}
+              alt=""
+              initial={shouldReduceMotion ? false : { scale: 1.04, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={shouldReduceMotion ? reducedTransition : { duration: 0.34, ease: modalEase }}
+            />
+            <div className="search-detail-body">
+              <motion.img
+                className="search-detail-poster"
+                src={selectedResult.poster}
+                alt={selectedResult.title}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={shouldReduceMotion ? reducedTransition : { duration: 0.26, ease: modalEase }}
+              />
+              <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase, delay: 0.04 }}
+              >
+                <p className="eyebrow">Preview result</p>
+                <h3>{selectedResult.title}</h3>
+                <div className="hero-meta search-detail-meta">
+                  <span>{selectedResult.type}</span>
+                  <span>{selectedResult.year}</span>
+                  <span>★ {selectedResult.rating}</span>
+                </div>
+                <p>{selectedResult.description}</p>
+
+                <label className="status-editor create-status-editor">
+                  <span>Status</span>
+                  <select
+                    value={selectedStatus}
+                    aria-label={`Choose status for ${selectedResult.title}`}
+                    onChange={(event) => setSelectedStatus(event.target.value as MediaStatus)}
+                  >
+                    {statusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <button className="create-item-btn" type="button" onClick={handleCreate}>
+                  Create
+                </button>
+              </motion.div>
+            </div>
+          </motion.section>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 
   return (
     <LayoutGroup id="search-add-flow">
@@ -259,88 +344,8 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
             </motion.div>
           )}
         </AnimatePresence>
-
-        <AnimatePresence initial={false}>
-          {selectedResult && (
-            <motion.div
-              className="modal-backdrop search-result-backdrop"
-              onClick={() => setSelectedResult(null)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
-            >
-              <motion.section
-                className="search-result-detail-modal"
-                role="dialog"
-                aria-modal="true"
-                aria-label={`Add ${selectedResult.title}`}
-                initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
-                transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase }}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
-                  ✕
-                </button>
-
-                <motion.img
-                  className="search-detail-backdrop"
-                  src={selectedResult.backdrop}
-                  alt=""
-                  initial={shouldReduceMotion ? false : { scale: 1.04, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={shouldReduceMotion ? reducedTransition : { duration: 0.34, ease: modalEase }}
-                />
-                <div className="search-detail-body">
-                  <motion.img
-                    className="search-detail-poster"
-                    src={selectedResult.poster}
-                    alt={selectedResult.title}
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={shouldReduceMotion ? reducedTransition : { duration: 0.26, ease: modalEase }}
-                  />
-                  <motion.div
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase, delay: 0.04 }}
-                  >
-                    <p className="eyebrow">Preview result</p>
-                    <h3>{selectedResult.title}</h3>
-                    <div className="hero-meta search-detail-meta">
-                      <span>{selectedResult.type}</span>
-                      <span>{selectedResult.year}</span>
-                      <span>★ {selectedResult.rating}</span>
-                    </div>
-                    <p>{selectedResult.description}</p>
-
-                    <label className="status-editor create-status-editor">
-                      <span>Status</span>
-                      <select
-                        value={selectedStatus}
-                        aria-label={`Choose status for ${selectedResult.title}`}
-                        onChange={(event) => setSelectedStatus(event.target.value as MediaStatus)}
-                      >
-                        {statusOptions.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <button className="create-item-btn" type="button" onClick={handleCreate}>
-                      Create
-                    </button>
-                  </motion.div>
-                </div>
-              </motion.section>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
+      {detailModalRoot ? createPortal(detailPreview, detailModalRoot) : detailPreview}
     </LayoutGroup>
   )
 }
