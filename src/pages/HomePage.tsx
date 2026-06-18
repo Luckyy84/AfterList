@@ -8,6 +8,7 @@ import type { MediaItem, MediaStatus } from '../types/media'
 type HomePageProps = {
   items: MediaItem[]
   onRemove: (id: string) => void
+  onStatusChange: (id: string, status: MediaStatus) => void
 }
 
 const watchRows: { title: string; status: MediaStatus }[] = [
@@ -17,7 +18,7 @@ const watchRows: { title: string; status: MediaStatus }[] = [
   { title: 'Dropped', status: 'Dropped' },
 ]
 
-function HomePage({ items, onRemove }: HomePageProps) {
+function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const hero = items[0]
   const isDetailsModalOpen = Boolean(selectedItem)
@@ -25,6 +26,11 @@ function HomePage({ items, onRemove }: HomePageProps) {
   const handleRemove = (id: string) => {
     onRemove(id)
     setSelectedItem((current) => (current && current.id === id ? null : current))
+  }
+
+  const handleStatusChange = (id: string, status: MediaStatus) => {
+    onStatusChange(id, status)
+    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
   }
 
   return (
@@ -78,7 +84,12 @@ function HomePage({ items, onRemove }: HomePageProps) {
       </section>
 
       {selectedItem && (
-        <MediaDetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} onRemove={handleRemove} />
+        <MediaDetailsModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onRemove={handleRemove}
+          onStatusChange={handleStatusChange}
+        />
       )}
     </>
   )
