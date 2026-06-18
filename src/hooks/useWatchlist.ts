@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react'
-import { demoItems as initialItems } from '../data/demoItems'
-import type { MediaItem, MediaStatus } from '../types/media'
+import type { MediaItem, MediaSource, MediaStatus } from '../types/media'
 import { areSameMediaEntry, dedupeMediaItems } from '../utils/media'
 
-type LegacyMediaItem = Omit<MediaItem, 'status'> & {
+type LegacyMediaSource = MediaSource | 'demo' | 'mock-api'
+
+type LegacyMediaItem = Omit<MediaItem, 'status' | 'source'> & {
   status: MediaStatus | 'Completed'
+  source?: LegacyMediaSource
 }
 
-function migrateStatus(item: LegacyMediaItem): MediaItem {
+const apiSources = new Set<MediaSource>(['tmdb', 'anilist'])
+
+function isApiMediaItem(item: LegacyMediaItem): item is LegacyMediaItem & { source: MediaSource; externalId: string } {
+  return Boolean(item.externalId && item.source && apiSources.has(item.source as MediaSource))
+}
+
+function migrateStatus(item: LegacyMediaItem & { source: MediaSource; externalId: string }): MediaItem {
   return {
     ...item,
     status: item.status === 'Completed' ? 'Watched' : item.status,
@@ -17,12 +25,16 @@ function migrateStatus(item: LegacyMediaItem): MediaItem {
 function loadSavedItems(): MediaItem[] {
   const savedItems = localStorage.getItem('afterlist_items')
 
-  if (!savedItems) return dedupeMediaItems(initialItems)
+  if (!savedItems) return []
 
   try {
-    return dedupeMediaItems((JSON.parse(savedItems) as LegacyMediaItem[]).map(migrateStatus))
+    const parsedItems = JSON.parse(savedItems)
+
+    if (!Array.isArray(parsedItems)) return []
+
+    return dedupeMediaItems(parsedItems.filter(isApiMediaItem).map(migrateStatus))
   } catch {
-    return dedupeMediaItems(initialItems)
+    return []
   }
 }
 
