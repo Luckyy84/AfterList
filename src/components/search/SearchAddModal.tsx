@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { searchCatalog } from '../../data/searchCatalog'
-import type { SearchCatalogItem } from '../../data/searchCatalog'
+import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
 import { isTmdbSearchConfigured, searchTmdb } from '../../services/tmdb'
@@ -54,11 +53,11 @@ type SearchAddModalProps = {
   onOpenExisting: (id: string) => void
 }
 
-function createId(result: SearchCatalogItem) {
+function createId(result: SearchResultItem) {
   return `${result.source}-${result.externalId}`
 }
 
-function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaItem {
+function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
   return {
     id: createId(result),
     externalId: result.externalId,
@@ -75,24 +74,11 @@ function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaI
   }
 }
 
-function getMockResults(normalizedQuery: string) {
-  if (!normalizedQuery) return []
-
-  return searchCatalog
-    .filter((item) => {
-      const searchableText = `${item.title} ${item.type} ${item.year}`.toLowerCase()
-      return searchableText.includes(normalizedQuery)
-    })
-    .slice(0, 8)
-}
-
-function mergeUniqueResults(results: SearchCatalogItem[]) {
+function mergeUniqueResults(results: SearchResultItem[]) {
   const seen = new Set<string>()
 
   return results.filter((result) => {
-    const key = result.source && result.externalId
-      ? `${result.source}-${result.externalId}`
-      : `${result.title}-${result.type}-${result.year}`
+    const key = `${result.source}-${result.externalId}`
 
     if (seen.has(key)) return false
     seen.add(key)
@@ -107,10 +93,10 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const hasTmdbConfig = isTmdbSearchConfigured()
   const [isExpanded, setIsExpanded] = useState(false)
   const [query, setQuery] = useState('')
-  const [apiResults, setApiResults] = useState<SearchCatalogItem[]>([])
+  const [apiResults, setApiResults] = useState<SearchResultItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [selectedResult, setSelectedResult] = useState<SearchCatalogItem | null>(null)
+  const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -122,18 +108,10 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const panelTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobilePanelTransition : { duration: 0.2, ease: modalEase }
   const detailModalRoot = typeof document === 'undefined' ? null : document.body
 
-  const mockResults = useMemo(() => getMockResults(normalizedQuery), [normalizedQuery])
-
   const results = useMemo(() => {
-    if (!normalizedQuery) return []
-
-    if (hasTmdbConfig && !searchError) {
-      const animeFallbackResults = mockResults.filter((item) => item.type === 'Anime')
-      return mergeUniqueResults([...apiResults, ...animeFallbackResults]).slice(0, 8)
-    }
-
-    return mockResults
-  }, [apiResults, hasTmdbConfig, mockResults, normalizedQuery, searchError])
+    if (!normalizedQuery || !hasTmdbConfig || searchError) return []
+    return mergeUniqueResults(apiResults).slice(0, 8)
+  }, [apiResults, hasTmdbConfig, normalizedQuery, searchError])
 
   useEffect(() => {
     if (!isExpanded || !normalizedQuery) {
@@ -164,7 +142,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
         console.error(error)
         setApiResults([])
-        setSearchError('TMDB search failed. Showing local fallback results.')
+        setSearchError('TMDB search failed. Check your key, network, or TMDB status and try again.')
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false)
@@ -230,7 +208,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     onOpenExisting(item.id)
   }
 
-  const handleSelectResult = (result: SearchCatalogItem) => {
+  const handleSelectResult = (result: SearchResultItem) => {
     const existingItem = findMatchingMediaItem(items, result)
 
     if (existingItem) {
@@ -423,7 +401,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Movies and TV come from TMDB. Anime is still using the local catalog.</span>
+                  <span>Movies, TV series, and likely anime results come from TMDB.</span>
                 </motion.div>
               )}
 
@@ -435,7 +413,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>TMDB key missing</strong>
-                  <span>Add VITE_TMDB_API_KEY to .env.local. Showing local mock results for now.</span>
+                  <span>Add VITE_TMDB_API_KEY or VITE_TMDB_ACCESS_TOKEN to .env.local to search.</span>
                 </motion.div>
               )}
 
@@ -447,7 +425,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Searching TMDB</strong>
-                  <span>Finding movies and TV series...</span>
+                  <span>Finding movies, TV series, and anime-like TV results...</span>
                 </motion.div>
               )}
 
@@ -463,7 +441,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 </motion.div>
               )}
 
-              {normalizedQuery && !isSearching && results.length === 0 && (
+              {normalizedQuery && hasTmdbConfig && !isSearching && !searchError && results.length === 0 && (
                 <motion.div
                   className="nav-search-empty"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
@@ -471,7 +449,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>No results found</strong>
-                  <span>Try a different movie or TV title.</span>
+                  <span>Try a different TMDB title.</span>
                 </motion.div>
               )}
 
@@ -499,8 +477,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                     <span>
                       <strong>{result.title}</strong>
                       <small>
-                        {result.type} • {result.year} • ★ {result.rating}
-                        {result.source === 'tmdb' ? ' • TMDB' : ''}
+                        {result.type} • {result.year} • ★ {result.rating} • TMDB
                         {existingItem ? ` • Saved as ${existingItem.status}` : ''}
                       </small>
                     </span>
