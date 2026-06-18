@@ -15,37 +15,63 @@ type MediaDetailsModalProps = {
 function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDetailsModalProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
-  const shouldSimplifyMotion = shouldReduceMotion || isMobile
+  const shouldSimplifyMotion = shouldReduceMotion
   const yearLabel = item.year ?? item.progress
 
+  const modalTransition = shouldReduceMotion
+    ? { duration: 0.01 }
+    : isMobile
+      ? { type: 'spring', stiffness: 430, damping: 34, mass: 0.72 }
+      : { type: 'spring', stiffness: 360, damping: 32, mass: 0.8 }
+
   return (
-    <div className="modal-backdrop details-result-backdrop" onClick={onClose}>
+    <motion.div
+      className="modal-backdrop details-result-backdrop"
+      onClick={onClose}
+      initial={shouldReduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.18, ease: modalEase }}
+    >
       <motion.section
         className="details-modal details-result-modal"
         role="dialog"
         aria-modal="true"
         aria-label={item.title}
-        initial={shouldReduceMotion ? false : shouldSimplifyMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.97 }}
-        animate={shouldSimplifyMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0.01 }
-            : shouldSimplifyMotion
-              ? { duration: 0.16, ease: modalEase }
-              : { type: 'spring', stiffness: 360, damping: 32, mass: 0.8 }
-        }
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={modalTransition}
         onClick={(e) => e.stopPropagation()}
       >
-        <img className="details-modal-backdrop-art" src={item.backdrop || item.poster} alt="" aria-hidden="true" />
+        <motion.img
+          className="details-modal-backdrop-art"
+          src={item.backdrop || item.poster}
+          alt=""
+          aria-hidden="true"
+          initial={shouldSimplifyMotion ? false : { opacity: 0, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
+        />
 
         <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
           ✕
         </button>
 
         <div className="details-result-body">
-          <img className="modal-poster details-result-poster" src={item.poster} alt={item.title} />
+          <motion.img
+            className="modal-poster details-result-poster"
+            src={item.poster}
+            alt={item.title}
+            initial={shouldSimplifyMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.22 : 0.26, ease: modalEase }}
+          />
 
-          <div className="modal-content details-result-content">
+          <motion.div
+            className="modal-content details-result-content"
+            initial={shouldSimplifyMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
+          >
             <p className="eyebrow details-preview-label">Saved item</p>
             <h2>{item.title}</h2>
 
@@ -84,10 +110,10 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
                 Remove from AfterList
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </motion.section>
-    </div>
+    </motion.div>
   )
 }
 
