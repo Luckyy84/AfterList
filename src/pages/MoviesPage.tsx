@@ -1,4 +1,4 @@
-import CategoryPage from '../components/CategoryPage'
+import CategoryPage from '../components/media/CategoryPage'
 import type { MediaItem, MediaStatus } from '../types/media'
 type MoviesPageProps = {
   items: MediaItem[]
