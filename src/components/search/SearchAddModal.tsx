@@ -4,7 +4,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/r
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
-import { isTmdbSearchConfigured, searchTmdb } from '../../services/tmdb'
+import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
@@ -90,7 +90,6 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
-  const hasTmdbConfig = isTmdbSearchConfigured()
   const [isExpanded, setIsExpanded] = useState(false)
   const [query, setQuery] = useState('')
   const [apiResults, setApiResults] = useState<SearchResultItem[]>([])
@@ -109,19 +108,12 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const detailModalRoot = typeof document === 'undefined' ? null : document.body
 
   const results = useMemo(() => {
-    if (!normalizedQuery || !hasTmdbConfig || searchError) return []
+    if (!normalizedQuery || searchError) return []
     return mergeUniqueResults(apiResults).slice(0, 8)
-  }, [apiResults, hasTmdbConfig, normalizedQuery, searchError])
+  }, [apiResults, normalizedQuery, searchError])
 
   useEffect(() => {
     if (!isExpanded || !normalizedQuery) {
-      setApiResults([])
-      setIsSearching(false)
-      setSearchError(null)
-      return
-    }
-
-    if (!hasTmdbConfig) {
       setApiResults([])
       setIsSearching(false)
       setSearchError(null)
@@ -142,7 +134,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
         console.error(error)
         setApiResults([])
-        setSearchError('TMDB search failed. Check your key, network, or TMDB status and try again.')
+        setSearchError(error instanceof Error ? error.message : 'TMDB search failed. Try again in a moment.')
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false)
@@ -154,7 +146,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
       window.clearTimeout(searchTimer)
       controller.abort()
     }
-  }, [hasTmdbConfig, isExpanded, normalizedQuery, query])
+  }, [isExpanded, normalizedQuery, query])
 
   useEffect(() => {
     if (!isExpanded) return
@@ -401,19 +393,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Movies, TV series, and likely anime results come from TMDB.</span>
-                </motion.div>
-              )}
-
-              {normalizedQuery && !hasTmdbConfig && (
-                <motion.div
-                  className="nav-search-empty"
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={panelTransition}
-                >
-                  <strong>TMDB key missing</strong>
-                  <span>Add VITE_TMDB_API_KEY or VITE_TMDB_ACCESS_TOKEN to .env.local to search.</span>
+                  <span>Movies, TV series, and likely anime results come from TMDB through AfterList's API proxy.</span>
                 </motion.div>
               )}
 
@@ -441,7 +421,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 </motion.div>
               )}
 
-              {normalizedQuery && hasTmdbConfig && !isSearching && !searchError && results.length === 0 && (
+              {normalizedQuery && !isSearching && !searchError && results.length === 0 && (
                 <motion.div
                   className="nav-search-empty"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
