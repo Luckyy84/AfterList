@@ -137,7 +137,6 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             <p className="eyebrow">Library</p>
             <h2>Your watchlist</h2>
           </div>
-          <p className="section-copy">Grouped like the Lovable concept, powered by your current AfterList data and delete flow.</p>
         </div>
 
         <div className="watchlist-stack">
