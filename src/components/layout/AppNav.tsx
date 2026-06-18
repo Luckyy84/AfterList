@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
 import SearchAddModal from '../search/SearchAddModal'
 import type { MediaItem } from '../../types/media'
+import { useAuth } from '../../context/AuthContext'
 
 type AppNavProps = {
   items: MediaItem[]
@@ -14,7 +15,6 @@ const navItems = [
   { label: 'Anime', to: '/anime' },
   { label: 'Movies', to: '/movies' },
   { label: 'TV Series', to: '/series' },
-  { label: 'Sign in', to: '/login' },
 ]
 
 function ActiveNavBackground() {
@@ -33,7 +33,14 @@ function ActiveNavBackground() {
   )
 }
 
+function getDisplayName(email?: string) {
+  if (!email) return 'Account'
+  return email.split('@')[0]
+}
+
 export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps) {
+  const { isLoading, signOut, user } = useAuth()
+
   return (
     <nav className="nav">
       <NavLink className="brand" to="/" end>
@@ -51,6 +58,24 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
             )}
           </NavLink>
         ))}
+
+        {user ? (
+          <div className="nav-auth-menu" aria-label="Signed-in account">
+            <span className="nav-user-pill">{getDisplayName(user.email)}</span>
+            <button className="nav-auth-action" type="button" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <NavLink to="/login" style={{ position: 'relative' }}>
+            {({ isActive }) => (
+              <>
+                <span style={{ position: 'relative', zIndex: 2 }}>{isLoading ? 'Account' : 'Sign in'}</span>
+                {isActive && <ActiveNavBackground />}
+              </>
+            )}
+          </NavLink>
+        )}
       </div>
 
       <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
