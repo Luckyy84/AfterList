@@ -20,6 +20,7 @@ const watchRows: { title: string; status: MediaStatus }[] = [
 function HomePage({ items, onRemove }: HomePageProps) {
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const hero = items[0]
+  const isDetailsModalOpen = Boolean(selectedItem)
 
   const handleRemove = (id: string) => {
     onRemove(id)
@@ -70,6 +71,7 @@ function HomePage({ items, onRemove }: HomePageProps) {
               title={row.title}
               items={items.filter((item) => item.status === row.status)}
               onSelect={setSelectedItem}
+              hideControls={isDetailsModalOpen}
             />
           ))}
         </div>
