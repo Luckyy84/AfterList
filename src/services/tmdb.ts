@@ -1,3 +1,4 @@
+import type { MediaDetails, MediaItem } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 
 type SearchTmdbOptions = {
@@ -6,6 +7,11 @@ type SearchTmdbOptions = {
 
 type SearchProxyResponse = {
   results?: SearchResultItem[]
+  error?: string
+}
+
+type DetailsProxyResponse = {
+  details?: MediaDetails
   error?: string
 }
 
@@ -32,4 +38,29 @@ export async function searchTmdb(query: string, options: SearchTmdbOptions = {})
   }
 
   return data.results ?? []
+}
+
+export function canFetchTmdbDetails(item: MediaItem) {
+  return item.source === 'tmdb' && Boolean(item.externalId)
+}
+
+export async function fetchTmdbDetails(item: MediaItem, options: SearchTmdbOptions = {}) {
+  if (!item.externalId) {
+    throw new Error('Missing TMDB external ID.')
+  }
+
+  const response = await fetch(`/api/details?externalId=${encodeURIComponent(item.externalId)}`, {
+    signal: options.signal,
+    headers: {
+      accept: 'application/json',
+    },
+  })
+
+  const data = (await response.json()) as DetailsProxyResponse
+
+  if (!response.ok) {
+    throw new Error(data.error || `TMDB details failed with status ${response.status}`)
+  }
+
+  return data.details ?? null
 }
