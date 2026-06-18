@@ -4,7 +4,7 @@
 }
 
 .nav:has(.nav-search-shell.expanded) .nav-links {
-  transform: translateX(-96px);
+  transform: translateX(-150px);
   gap: 6px;
 }
 
@@ -18,7 +18,7 @@
 
 @media (max-width: 1020px) {
   .nav:has(.nav-search-shell.expanded) .nav-links {
-    transform: translateX(-68px);
+    transform: translateX(-108px);
   }
 
   .nav:has(.nav-search-shell.expanded) .nav-links a {
@@ -28,7 +28,7 @@
 
 @media (max-width: 860px) {
   .nav:has(.nav-search-shell.expanded) .nav-links {
-    transform: translateX(-34px);
+    transform: translateX(-58px);
   }
 }
 
