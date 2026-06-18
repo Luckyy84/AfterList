@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
 import AnimePage from './pages/AnimePage'
 import MoviesPage from './pages/MoviesPage'
@@ -10,7 +11,6 @@ import Footer from './components/layout/Footer'
 import MediaDetailsModal from './components/media/MediaDetailsModal'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
-import { Analytics } from "@vercel/analytics/next"
 
 function App() {
   const { items, handleAddItem, handleRemoveItem, handleUpdateStatus } = useWatchlist()
@@ -45,8 +45,6 @@ function App() {
       )}
 
       <Footer />
-      
-      {/* Vercel Analytics integration */}
       <Analytics />
     </main>
   )
