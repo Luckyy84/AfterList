@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { motion } from 'motion/react'
 import HomePage from './pages/HomePage'
@@ -10,10 +11,15 @@ import './hover-polish.css'
 import './background-polish.css'
 import './edge-fade-polish.css'
 import './status-editor.css'
+import './search-add.css'
 import Footer from './components/Footer'
+import SearchAddModal from './components/SearchAddModal'
 import { useWatchlist } from './hooks/useWatchlist'
+
 function App() {
-  const { items, handleRemoveItem, handleUpdateStatus } = useWatchlist()
+  const { items, handleAddItem, handleRemoveItem, handleUpdateStatus } = useWatchlist()
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
   return (
     <main className="app">
       <nav className="nav">
@@ -106,13 +112,21 @@ function App() {
             )}
           </NavLink>
         </div>
+
+        <button className="nav-search-button" type="button" onClick={() => setIsSearchOpen(true)}>
+          Search
+        </button>
       </nav>
+
       <Routes>
         <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
         <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
         <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
         <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
       </Routes>
+
+      {isSearchOpen && <SearchAddModal onClose={() => setIsSearchOpen(false)} onCreate={handleAddItem} />}
+
       <Footer />
     </main>
   )
