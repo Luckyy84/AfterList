@@ -12,7 +12,7 @@ import './edge-fade-polish.css'
 import Footer from './components/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 function App() {
-  const { items, handleRemoveItem } = useWatchlist()
+  const { items, handleRemoveItem, handleUpdateStatus } = useWatchlist()
   return (
     <main className="app">
       <nav className="nav">
@@ -107,10 +107,10 @@ function App() {
         </div>
       </nav>
       <Routes>
-        <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} />} />
-        <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} />} />
-        <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} />} />
-        <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} />} />
+        <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+        <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+        <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+        <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
       </Routes>
       <Footer />
     </main>
