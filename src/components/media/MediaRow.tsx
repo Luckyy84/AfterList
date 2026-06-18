@@ -3,6 +3,7 @@ import type { MouseEvent } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
 import type { MediaItem } from '../../types/media'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 
 type WatchlistRowProps = {
   title: string
@@ -22,19 +23,21 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
-  const [offset, setOffset] = useState(0)
-  const [maxOffset, setMaxOffset] = useState(0)
+  const isMobile = useIsMobile()
+  const shouldSimplifyMotion = prefersReducedMotion
+  const shouldUseNativeScroll = isMobile
+  const [maxScrollLeft, setMaxScrollLeft] = useState(0)
+
+  const measureScrollRange = useCallback(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return 0
+
+    return Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+  }, [])
 
   const updateMetrics = useCallback(() => {
-    const viewport = viewportRef.current
-    const track = trackRef.current
-    if (!viewport || !track) return
-
-    const nextMaxOffset = Math.max(0, track.scrollWidth - viewport.clientWidth)
-
-    setMaxOffset(nextMaxOffset)
-    setOffset((currentOffset) => clamp(currentOffset, 0, nextMaxOffset))
-  }, [])
+    setMaxScrollLeft(measureScrollRange())
+  }, [measureScrollRange])
 
   useLayoutEffect(() => {
     updateMetrics()
@@ -52,33 +55,40 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
 
   if (items.length === 0) return null
 
-  const showScrollControls = !hideControls && maxOffset > 8
+  const showScrollControls = !shouldUseNativeScroll && !hideControls && maxScrollLeft > 8
 
   const getPageAmount = () => {
     const viewport = viewportRef.current
-    const card = trackRef.current?.querySelector<HTMLElement>('.media-card-wrapper')
+    const card = viewport?.querySelector<HTMLElement>('.media-card-wrapper')
     const cardStep = (card?.offsetWidth ?? 170) + ROW_GAP
     const viewportStep = viewport?.clientWidth ?? cardStep * 4
 
-    // Move nearly a full visible page, while leaving a small visual overlap so the user
-    // keeps context about where the row moved.
     return clamp(viewportStep - cardStep * 0.55, cardStep, viewportStep)
   }
 
   const slideRow = (direction: 'left' | 'right') => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const maxOffset = measureScrollRange()
     if (maxOffset <= 0) return
 
     const pageAmount = getPageAmount()
+    const currentOffset = viewport.scrollLeft
+    let nextOffset = 0
 
-    setOffset((currentOffset) => {
-      if (direction === 'right') {
-        const nextOffset = currentOffset + pageAmount
-        return nextOffset >= maxOffset - 1 ? 0 : clamp(nextOffset, 0, maxOffset)
-      }
+    if (direction === 'right') {
+      const isAlreadyAtEnd = currentOffset >= maxOffset - 1
+      const candidateOffset = currentOffset + pageAmount
+      nextOffset = isAlreadyAtEnd ? 0 : clamp(candidateOffset, 0, maxOffset)
+    } else {
+      const isAlreadyAtStart = currentOffset <= 1
+      const candidateOffset = currentOffset - pageAmount
+      nextOffset = isAlreadyAtStart ? maxOffset : clamp(candidateOffset, 0, maxOffset)
+    }
 
-      const nextOffset = currentOffset - pageAmount
-      return nextOffset <= 1 ? maxOffset : clamp(nextOffset, 0, maxOffset)
-    })
+    viewport.scrollTo({ left: nextOffset, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
+    setMaxScrollLeft(maxOffset)
   }
 
   const handleArrowClick = (direction: 'left' | 'right') => (event: MouseEvent<HTMLButtonElement>) => {
@@ -90,10 +100,10 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
   return (
     <motion.section
       className="watchlist-row"
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.5, ease: SLIDE_EASE }}
+      initial={shouldSimplifyMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={shouldSimplifyMotion ? undefined : { opacity: 1, y: 0 }}
+      viewport={shouldSimplifyMotion ? undefined : { once: true, margin: '-80px' }}
+      transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.36 : 0.5, ease: SLIDE_EASE }}
     >
       <div className="row-head">
         <h2>{title}</h2>
@@ -112,17 +122,8 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
           </button>
         )}
 
-        <div className="row-scroll" ref={viewportRef}>
-          <motion.div
-            className="row-scroll-track"
-            ref={trackRef}
-            animate={{ x: -offset }}
-            transition={
-              prefersReducedMotion
-                ? { duration: 0 }
-                : { type: 'spring', stiffness: 280, damping: 36, mass: 0.9 }
-            }
-          >
+        <div className={`row-scroll${shouldUseNativeScroll ? ' row-scroll-native' : ''}`} ref={viewportRef}>
+          <motion.div className="row-scroll-track" ref={trackRef}>
             {items.map((item, index) => (
               <MediaCard key={`${item.id}-${index}`} item={item} onSelect={onSelect} />
             ))}

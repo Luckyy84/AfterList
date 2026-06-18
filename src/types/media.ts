@@ -2,7 +2,7 @@ export type MediaType = 'Anime' | 'Movie' | 'TV Series'
 
 export type MediaStatus = 'Planned' | 'Watching' | 'Watched' | 'Dropped'
 
-export type MediaSource = 'demo' | 'mock-api' | 'tmdb' | 'anilist'
+export type MediaSource = 'tmdb' | 'anilist'
 
 export type MediaItem = {
   id: string

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { searchCatalog } from '../../data/searchCatalog'
-import type { SearchCatalogItem } from '../../data/searchCatalog'
+import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
+import { isTmdbSearchConfigured, searchTmdb } from '../../services/tmdb'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -16,11 +17,32 @@ const springTransition = {
   mass: 0.82,
 } as const
 
+const mobileSpringTransition = {
+  type: 'spring',
+  stiffness: 520,
+  damping: 40,
+  mass: 0.72,
+} as const
+
 const fastSpringTransition = {
   type: 'spring',
   stiffness: 620,
   damping: 44,
   mass: 0.72,
+} as const
+
+const mobileItemTransition = {
+  type: 'spring',
+  stiffness: 560,
+  damping: 42,
+  mass: 0.68,
+} as const
+
+const mobilePanelTransition = {
+  type: 'spring',
+  stiffness: 420,
+  damping: 38,
+  mass: 0.76,
 } as const
 
 const reducedTransition = { duration: 0.01 } as const
@@ -31,11 +53,11 @@ type SearchAddModalProps = {
   onOpenExisting: (id: string) => void
 }
 
-function createId(result: SearchCatalogItem) {
+function createId(result: SearchResultItem) {
   return `${result.source}-${result.externalId}`
 }
 
-function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaItem {
+function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
   return {
     id: createId(result),
     externalId: result.externalId,
@@ -52,38 +74,94 @@ function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaI
   }
 }
 
+function mergeUniqueResults(results: SearchResultItem[]) {
+  const seen = new Set<string>()
+
+  return results.filter((result) => {
+    const key = `${result.source}-${result.externalId}`
+
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps) {
   const shouldReduceMotion = useReducedMotion()
+  const isMobile = useIsMobile()
+  const shouldSimplifyMotion = shouldReduceMotion
+  const hasTmdbConfig = isTmdbSearchConfigured()
   const [isExpanded, setIsExpanded] = useState(false)
   const [query, setQuery] = useState('')
-  const [selectedResult, setSelectedResult] = useState<SearchCatalogItem | null>(null)
+  const [apiResults, setApiResults] = useState<SearchResultItem[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
-  const sharedTransition = shouldReduceMotion ? reducedTransition : springTransition
-  const itemTransition = shouldReduceMotion ? reducedTransition : fastSpringTransition
-  const panelTransition = shouldReduceMotion ? reducedTransition : { duration: 0.2, ease: modalEase }
+  const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: modalEase }
+  const sharedTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileSpringTransition : springTransition
+  const itemTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileItemTransition : fastSpringTransition
+  const panelTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobilePanelTransition : { duration: 0.2, ease: modalEase }
   const detailModalRoot = typeof document === 'undefined' ? null : document.body
 
   const results = useMemo(() => {
-    if (!normalizedQuery) return []
+    if (!normalizedQuery || !hasTmdbConfig || searchError) return []
+    return mergeUniqueResults(apiResults).slice(0, 8)
+  }, [apiResults, hasTmdbConfig, normalizedQuery, searchError])
 
-    return searchCatalog
-      .filter((item) => {
-        const searchableText = `${item.title} ${item.type} ${item.year}`.toLowerCase()
-        return searchableText.includes(normalizedQuery)
-      })
-      .slice(0, 8)
-  }, [normalizedQuery])
+  useEffect(() => {
+    if (!isExpanded || !normalizedQuery) {
+      setApiResults([])
+      setIsSearching(false)
+      setSearchError(null)
+      return
+    }
+
+    if (!hasTmdbConfig) {
+      setApiResults([])
+      setIsSearching(false)
+      setSearchError(null)
+      return
+    }
+
+    const controller = new AbortController()
+    setApiResults([])
+    setIsSearching(true)
+    setSearchError(null)
+
+    const searchTimer = window.setTimeout(async () => {
+      try {
+        const tmdbResults = await searchTmdb(query, { signal: controller.signal })
+        setApiResults(tmdbResults)
+      } catch (error) {
+        if (controller.signal.aborted) return
+
+        console.error(error)
+        setApiResults([])
+        setSearchError('TMDB search failed. Check your key, network, or TMDB status and try again.')
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false)
+        }
+      }
+    }, 300)
+
+    return () => {
+      window.clearTimeout(searchTimer)
+      controller.abort()
+    }
+  }, [hasTmdbConfig, isExpanded, normalizedQuery, query])
 
   useEffect(() => {
     if (!isExpanded) return
 
-    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), shouldReduceMotion ? 0 : 80)
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), shouldReduceMotion ? 0 : isMobile ? 40 : 80)
     return () => window.clearTimeout(focusTimer)
-  }, [isExpanded, shouldReduceMotion])
+  }, [isExpanded, shouldReduceMotion, isMobile])
 
   useEffect(() => {
     if (!isExpanded) return
@@ -112,6 +190,9 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const closeSearch = () => {
     setIsExpanded(false)
     setQuery('')
+    setApiResults([])
+    setIsSearching(false)
+    setSearchError(null)
     setSelectedResult(null)
     setSelectedStatus('Planned')
     setHighlightedIndex(-1)
@@ -127,7 +208,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     onOpenExisting(item.id)
   }
 
-  const handleSelectResult = (result: SearchCatalogItem) => {
+  const handleSelectResult = (result: SearchResultItem) => {
     const existingItem = findMatchingMediaItem(items, result)
 
     if (existingItem) {
@@ -188,10 +269,10 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
             role="dialog"
             aria-modal="true"
             aria-label={`Add ${selectedResult.title}`}
-            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
-            transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase }}
+            exit={{ opacity: 0, y: 12, scale: 0.985 }}
+            transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.24, ease: modalEase }}
             onClick={(event) => event.stopPropagation()}
           >
             <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
@@ -204,7 +285,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
               alt=""
               initial={shouldReduceMotion ? false : { scale: 1.04, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={shouldReduceMotion ? reducedTransition : { duration: 0.34, ease: modalEase }}
+              transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
             />
             <div className="search-detail-body">
               <motion.img
@@ -213,12 +294,12 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 alt={selectedResult.title}
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={shouldReduceMotion ? reducedTransition : { duration: 0.26, ease: modalEase }}
+                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.26, ease: modalEase }}
               />
               <motion.div
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={shouldReduceMotion ? reducedTransition : { duration: 0.24, ease: modalEase, delay: 0.04 }}
+                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
               >
                 <p className="eyebrow">Preview result</p>
                 <h3>{selectedResult.title}</h3>
@@ -255,8 +336,8 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     </AnimatePresence>
   )
 
-  return (
-    <LayoutGroup id="search-add-flow">
+  const searchContent = (
+    <>
       <div className={`nav-search-shell${isExpanded ? ' expanded' : ''}`}>
         <AnimatePresence mode="wait" initial={false}>
           {!isExpanded ? (
@@ -264,11 +345,11 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
               key="search-button"
               className="nav-search-button"
               type="button"
-              layoutId="nav-search-control"
+              layoutId={shouldSimplifyMotion ? undefined : 'nav-search-control'}
               onClick={openSearch}
               initial={shouldReduceMotion ? false : { opacity: 0.76, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+              exit={{ opacity: 0, scale: 0.98 }}
               transition={sharedTransition}
             >
               Search
@@ -277,10 +358,10 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
             <motion.div
               key="search-bar"
               className="nav-search-bar"
-              layoutId="nav-search-control"
+              layoutId={shouldSimplifyMotion ? undefined : 'nav-search-control'}
               initial={shouldReduceMotion ? false : { opacity: 0.82, scale: 0.985 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.985 }}
+              exit={{ opacity: 0, scale: 0.985 }}
               transition={sharedTransition}
             >
               <span className="nav-search-icon" aria-hidden="true">⌕</span>
@@ -288,7 +369,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 ref={inputRef}
                 value={query}
                 aria-label="Search movies, TV series, and anime"
-                placeholder="Search to add..."
+                placeholder="Search TMDB..."
                 onFocus={() => setHighlightedIndex(results.length > 0 ? 0 : -1)}
                 onKeyDown={handleInputKeyDown}
                 onChange={(event) => {
@@ -307,9 +388,9 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
           {isExpanded && (
             <motion.div
               className="nav-search-results-popover"
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.988 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: -6, scale: 0.988 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.988 }}
+              exit={{ opacity: 0, y: -4, scale: 0.988 }}
               transition={panelTransition}
             >
               {!normalizedQuery && (
@@ -320,11 +401,47 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Try “Dune” to open results below.</span>
+                  <span>Movies, TV series, and likely anime results come from TMDB.</span>
                 </motion.div>
               )}
 
-              {normalizedQuery && results.length === 0 && (
+              {normalizedQuery && !hasTmdbConfig && (
+                <motion.div
+                  className="nav-search-empty"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={panelTransition}
+                >
+                  <strong>TMDB key missing</strong>
+                  <span>Add VITE_TMDB_API_KEY or VITE_TMDB_ACCESS_TOKEN to .env.local to search.</span>
+                </motion.div>
+              )}
+
+              {normalizedQuery && isSearching && (
+                <motion.div
+                  className="nav-search-empty"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={panelTransition}
+                >
+                  <strong>Searching TMDB</strong>
+                  <span>Finding movies, TV series, and anime-like TV results...</span>
+                </motion.div>
+              )}
+
+              {normalizedQuery && searchError && (
+                <motion.div
+                  className="nav-search-empty"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={panelTransition}
+                >
+                  <strong>TMDB unavailable</strong>
+                  <span>{searchError}</span>
+                </motion.div>
+              )}
+
+              {normalizedQuery && hasTmdbConfig && !isSearching && !searchError && results.length === 0 && (
                 <motion.div
                   className="nav-search-empty"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
@@ -332,7 +449,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>No results found</strong>
-                  <span>This still uses the mock catalog until the API is connected.</span>
+                  <span>Try a different TMDB title.</span>
                 </motion.div>
               )}
 
@@ -342,7 +459,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
                 return (
                   <motion.button
-                    layout
+                    layout={!shouldSimplifyMotion}
                     key={`${result.source}-${result.externalId}`}
                     className={`nav-search-result${index === 0 ? ' is-top-result' : ''}${isSelected ? ' is-selected' : ''}${existingItem ? ' is-existing' : ''}`}
                     type="button"
@@ -351,15 +468,16 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                     onClick={() => handleSelectResult(result)}
                     initial={shouldReduceMotion ? false : { opacity: 0, y: 6, scale: 0.992 }}
                     animate={{ opacity: 1, y: 0, scale: isSelected ? 1.01 : 1 }}
-                    exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.992 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.992 }}
                     whileHover={shouldReduceMotion ? undefined : { y: -1, scale: isSelected ? 1.012 : 1.006 }}
+                    whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
                     transition={itemTransition}
                   >
                     <img src={result.poster} alt="" loading="lazy" />
                     <span>
                       <strong>{result.title}</strong>
                       <small>
-                        {result.type} • {result.year} • ★ {result.rating}
+                        {result.type} • {result.year} • ★ {result.rating} • TMDB
                         {existingItem ? ` • Saved as ${existingItem.status}` : ''}
                       </small>
                     </span>
@@ -371,8 +489,12 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
         </AnimatePresence>
       </div>
       {detailModalRoot ? createPortal(detailPreview, detailModalRoot) : detailPreview}
-    </LayoutGroup>
+    </>
   )
+
+  if (shouldSimplifyMotion) return searchContent
+
+  return <LayoutGroup id="search-add-flow">{searchContent}</LayoutGroup>
 }
 
 export default SearchAddModal

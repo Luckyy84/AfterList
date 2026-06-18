@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import MediaDetailsModal from '../components/media/MediaDetailsModal'
 import WatchlistRow from '../components/media/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
+import { useIsMobile } from '../hooks/useMediaQuery'
 
 type HomePageProps = {
   items: MediaItem[]
@@ -20,6 +21,7 @@ const watchRows: { title: string; status: MediaStatus }[] = [
 
 const HERO_ROTATION_MS = 30_000
 const HERO_PREVIEW_LIMIT = 5
+const heroEase = [0.22, 1, 0.36, 1] as const
 
 function getNextHeroIndex(currentIndex: number, itemCount: number) {
   if (itemCount <= 1) return 0
@@ -45,6 +47,9 @@ function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
 }
 
 function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
+  const shouldReduceMotion = useReducedMotion()
+  const isMobile = useIsMobile()
+  const shouldSimplifyMotion = shouldReduceMotion
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
@@ -84,10 +89,10 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             key={`${hero.id}-${safeHeroIndex}`}
             className="hero-card glass-panel"
             style={{ '--hero-image': `url(${hero.backdrop})` } as CSSProperties}
-            initial={{ opacity: 0, y: 18, scale: 0.985 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 1.01 }}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content">
               <p className="eyebrow">Apple TV calm · Netflix grid</p>
@@ -114,8 +119,8 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
                     className={`hero-preview-thumb${isActive ? ' is-active' : ''}`}
                     aria-label={`Show ${item.title} in hero`}
                     onClick={() => setHeroIndex(index)}
-                    whileHover={{ y: -3, scale: isActive ? 1.02 : 1.06 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={shouldSimplifyMotion ? undefined : { y: -3, scale: isActive ? 1.02 : 1.06 }}
+                    whileTap={shouldSimplifyMotion ? undefined : { scale: 0.96 }}
                   >
                     <img src={item.poster} alt="" loading="lazy" />
                   </motion.button>
