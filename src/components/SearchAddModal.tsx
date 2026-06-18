@@ -4,10 +4,10 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/r
 import { searchCatalog } from '../data/searchCatalog'
 import type { SearchCatalogItem } from '../data/searchCatalog'
 import type { MediaItem, MediaStatus } from '../types/media'
+import { findMatchingMediaItem } from '../utils/media'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
-const exitEase = [0.4, 0, 1, 1] as const
 
 const springTransition = {
   type: 'spring',
@@ -26,11 +26,13 @@ const fastSpringTransition = {
 const reducedTransition = { duration: 0.01 } as const
 
 type SearchAddModalProps = {
+  items: MediaItem[]
   onCreate: (item: MediaItem) => void
+  onOpenExisting: (id: string) => void
 }
 
 function createId(result: SearchCatalogItem) {
-  return `${result.source}-${result.externalId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return `${result.source}-${result.externalId}`
 }
 
 function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaItem {
@@ -50,7 +52,7 @@ function createMediaItem(result: SearchCatalogItem, status: MediaStatus): MediaI
   }
 }
 
-function SearchAddModal({ onCreate }: SearchAddModalProps) {
+function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps) {
   const shouldReduceMotion = useReducedMotion()
   const [isExpanded, setIsExpanded] = useState(false)
   const [query, setQuery] = useState('')
@@ -120,7 +122,19 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
     setHighlightedIndex(results.length > 0 ? 0 : -1)
   }
 
+  const openExistingItem = (item: MediaItem) => {
+    closeSearch()
+    onOpenExisting(item.id)
+  }
+
   const handleSelectResult = (result: SearchCatalogItem) => {
+    const existingItem = findMatchingMediaItem(items, result)
+
+    if (existingItem) {
+      openExistingItem(existingItem)
+      return
+    }
+
     setSelectedResult(result)
     setSelectedStatus('Planned')
   }
@@ -146,6 +160,13 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
 
   const handleCreate = () => {
     if (!selectedResult) return
+
+    const existingItem = findMatchingMediaItem(items, selectedResult)
+
+    if (existingItem) {
+      openExistingItem(existingItem)
+      return
+    }
 
     onCreate(createMediaItem(selectedResult, selectedStatus))
     closeSearch()
@@ -317,12 +338,13 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
 
               {results.map((result, index) => {
                 const isSelected = index === highlightedIndex
+                const existingItem = findMatchingMediaItem(items, result)
 
                 return (
                   <motion.button
                     layout
                     key={`${result.source}-${result.externalId}`}
-                    className={`nav-search-result${index === 0 ? ' is-top-result' : ''}${isSelected ? ' is-selected' : ''}`}
+                    className={`nav-search-result${index === 0 ? ' is-top-result' : ''}${isSelected ? ' is-selected' : ''}${existingItem ? ' is-existing' : ''}`}
                     type="button"
                     onFocus={() => setHighlightedIndex(index)}
                     onMouseEnter={() => setHighlightedIndex(index)}
@@ -336,7 +358,10 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
                     <img src={result.poster} alt="" loading="lazy" />
                     <span>
                       <strong>{result.title}</strong>
-                      <small>{result.type} • {result.year} • ★ {result.rating}</small>
+                      <small>
+                        {result.type} • {result.year} • ★ {result.rating}
+                        {existingItem ? ` • Saved as ${existingItem.status}` : ''}
+                      </small>
                     </span>
                   </motion.button>
                 )
