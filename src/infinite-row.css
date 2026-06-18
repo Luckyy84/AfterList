@@ -28,8 +28,28 @@
   transform: translate3d(0, 0, 0);
 }
 
+.row-scroll-track-infinite.loop-left {
+  animation-name: afterlistInfiniteSlideReverse;
+}
+
+.row-scroll-track-infinite.loop-right {
+  animation-name: afterlistInfiniteSlide;
+}
+
 .row-scroll-shell.is-infinite:hover .row-scroll-track-infinite {
   animation-play-state: paused;
+}
+
+.row-scroll-shell.is-infinite .row-scroll-button {
+  display: grid !important;
+  opacity: 0.92;
+  pointer-events: auto;
+  z-index: 9;
+}
+
+.row-scroll-shell.is-infinite .row-scroll-button:disabled {
+  opacity: 0.92;
+  cursor: pointer;
 }
 
 .row-scroll-set {
@@ -46,6 +66,16 @@
 
   to {
     transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes afterlistInfiniteSlideReverse {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
   }
 }
 
