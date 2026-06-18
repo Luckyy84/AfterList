@@ -42,8 +42,17 @@ function getYear(date?: string) {
   return date?.slice(0, 4) || 'Unknown'
 }
 
+function escapeSvgText(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
 function createPlaceholderImage(title: string, type: MediaType) {
-  const safeTitle = title.replace(/[<>]/g, '').slice(0, 42)
+  const safeTitle = escapeSvgText(title.slice(0, 42))
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="900" height="1350" viewBox="0 0 900 1350">
       <defs>
