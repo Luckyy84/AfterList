@@ -1,28 +1,57 @@
 .details-result-modal {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+.details-result-body {
+  box-sizing: border-box;
+  max-height: min(800px, 92vh);
+  align-items: start;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding-bottom: clamp(56px, 7vw, 84px);
   scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
 
-.details-result-modal::-webkit-scrollbar {
+.details-result-content,
+.details-result-modal .modal-content {
+  align-content: start;
+}
+
+.details-action-panel {
+  margin-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+.details-result-body::-webkit-scrollbar {
   width: 10px;
 }
 
-.details-result-modal::-webkit-scrollbar-track {
+.details-result-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.details-result-modal::-webkit-scrollbar-thumb {
+.details-result-body::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.24);
   background-clip: content-box;
 }
 
-.details-result-modal::-webkit-scrollbar-thumb:hover {
+.details-result-body::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.34);
   background-clip: content-box;
+}
+
+@media (max-width: 780px) {
+  .details-result-body {
+    max-height: 92vh;
+    padding-bottom: max(54px, calc(env(safe-area-inset-bottom) + 34px));
+  }
+
+  .details-action-panel {
+    margin-bottom: max(16px, env(safe-area-inset-bottom));
+  }
 }
