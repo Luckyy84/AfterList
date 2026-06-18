@@ -16,19 +16,26 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [offset, setOffset] = useState(0)
   const [maxOffset, setMaxOffset] = useState(0)
-  const showScrollControls = items.length > 4 && maxOffset > 8
+  const isInfiniteRow = title.toLowerCase() === 'watched' && items.length > 4
+  const showScrollControls = !isInfiniteRow && items.length > 4 && maxOffset > 8
 
   const updateMetrics = useCallback(() => {
     const viewport = viewportRef.current
     const track = trackRef.current
-    if (!viewport || !track) return
+    if (!viewport || !track || isInfiniteRow) return
 
     const nextMaxOffset = Math.max(0, track.scrollWidth - viewport.clientWidth)
     setMaxOffset(nextMaxOffset)
     setOffset((currentOffset) => Math.min(currentOffset, nextMaxOffset))
-  }, [])
+  }, [isInfiniteRow])
 
   useLayoutEffect(() => {
+    if (isInfiniteRow) {
+      setOffset(0)
+      setMaxOffset(0)
+      return
+    }
+
     updateMetrics()
 
     const viewport = viewportRef.current
@@ -40,7 +47,7 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
     resizeObserver.observe(track)
 
     return () => resizeObserver.disconnect()
-  }, [items.length, updateMetrics])
+  }, [items.length, isInfiniteRow, updateMetrics])
 
   if (items.length === 0) return null
 
@@ -57,9 +64,14 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
     })
   }
 
+  const renderCards = (setName = 'base') =>
+    items.map((item, index) => (
+      <MediaCard key={`${setName}-${item.id}-${index}`} item={item} onSelect={onSelect} />
+    ))
+
   return (
     <motion.section
-      className="watchlist-row"
+      className={`watchlist-row${isInfiniteRow ? ' watchlist-row-infinite' : ''}`}
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
@@ -70,7 +82,7 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
         <span>{items.length} items</span>
       </div>
 
-      <div className={`row-scroll-shell${showScrollControls ? ' has-scroll-controls' : ''}`}>
+      <div className={`row-scroll-shell${showScrollControls ? ' has-scroll-controls' : ''}${isInfiniteRow ? ' is-infinite' : ''}`}>
         {showScrollControls && (
           <button
             className="row-scroll-button row-scroll-button-left"
@@ -84,16 +96,23 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
         )}
 
         <div className="row-scroll" ref={viewportRef}>
-          <motion.div
-            className="row-scroll-track"
-            ref={trackRef}
-            animate={{ x: -offset }}
-            transition={{ type: 'spring', stiffness: 260, damping: 34, mass: 0.9 }}
-          >
-            {items.map((item, index) => (
-              <MediaCard key={`${item.id}-${index}`} item={item} onSelect={onSelect} />
-            ))}
-          </motion.div>
+          {isInfiniteRow ? (
+            <div className="row-scroll-track row-scroll-track-infinite" ref={trackRef} aria-label={`${title} auto-scrolling list`}>
+              <div className="row-scroll-set">{renderCards('loop-a')}</div>
+              <div className="row-scroll-set" aria-hidden="true">
+                {renderCards('loop-b')}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              className="row-scroll-track"
+              ref={trackRef}
+              animate={{ x: -offset }}
+              transition={{ type: 'spring', stiffness: 260, damping: 34, mass: 0.9 }}
+            >
+              {renderCards()}
+            </motion.div>
+          )}
         </div>
 
         {showScrollControls && (
