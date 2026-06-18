@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { MouseEvent } from 'react'
 import { animate } from 'motion'
 import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
@@ -177,7 +178,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
     })
   }
 
-  const handleArrowClick = (direction: 'left' | 'right') => (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleArrowClick = (direction: 'left' | 'right') => (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
     event.stopPropagation()
     slideRow(direction)
