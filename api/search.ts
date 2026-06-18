@@ -40,11 +40,14 @@ type TmdbSearchResponse = {
 }
 
 function jsonResponse(body: unknown, init?: ResponseInit) {
+  const status = init?.status ?? 200
+  const cacheControl = status >= 400 ? 'no-store' : 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+
   return new Response(JSON.stringify(body), {
     ...init,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+      'cache-control': cacheControl,
       ...init?.headers,
     },
   })
@@ -138,47 +141,52 @@ function mapTmdbResult(result: TmdbSearchResult & { media_type: TmdbMediaType })
 }
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url)
-  const query = requestUrl.searchParams.get('query')?.trim() ?? ''
-  const apiKey = getTmdbApiKey()
-  const accessToken = getTmdbAccessToken()
+  try {
+    const requestUrl = new URL(request.url)
+    const query = requestUrl.searchParams.get('query')?.trim() ?? ''
+    const apiKey = getTmdbApiKey()
+    const accessToken = getTmdbAccessToken()
 
-  if (!query) {
-    return jsonResponse({ results: [] })
+    if (!query) {
+      return jsonResponse({ results: [] })
+    }
+
+    if (!apiKey && !accessToken) {
+      return jsonResponse({ error: 'TMDB is not configured on the server.' }, { status: 503 })
+    }
+
+    const params = new URLSearchParams({
+      query,
+      include_adult: 'false',
+      language: 'en-US',
+      page: '1',
+    })
+
+    if (!accessToken && apiKey) {
+      params.set('api_key', apiKey)
+    }
+
+    const response = await fetch(`${TMDB_API_BASE_URL}/search/multi?${params.toString()}`, {
+      headers: {
+        accept: 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    })
+
+    if (!response.ok) {
+      return jsonResponse({ error: `TMDB search failed with status ${response.status}.` }, { status: response.status })
+    }
+
+    const data = (await response.json()) as TmdbSearchResponse
+    const results = (data.results ?? [])
+      .filter(isMovieOrTvResult)
+      .map(mapTmdbResult)
+      .filter((item): item is SearchResultItem => Boolean(item))
+      .slice(0, 8)
+
+    return jsonResponse({ results })
+  } catch (error) {
+    console.error(error)
+    return jsonResponse({ error: 'TMDB proxy failed. Try again in a moment.' }, { status: 500 })
   }
-
-  if (!apiKey && !accessToken) {
-    return jsonResponse({ error: 'TMDB is not configured on the server.' }, { status: 503 })
-  }
-
-  const params = new URLSearchParams({
-    query,
-    include_adult: 'false',
-    language: 'en-US',
-    page: '1',
-  })
-
-  if (!accessToken && apiKey) {
-    params.set('api_key', apiKey)
-  }
-
-  const response = await fetch(`${TMDB_API_BASE_URL}/search/multi?${params.toString()}`, {
-    headers: {
-      accept: 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    },
-  })
-
-  if (!response.ok) {
-    return jsonResponse({ error: `TMDB search failed with status ${response.status}.` }, { status: response.status })
-  }
-
-  const data = (await response.json()) as TmdbSearchResponse
-  const results = (data.results ?? [])
-    .filter(isMovieOrTvResult)
-    .map(mapTmdbResult)
-    .filter((item): item is SearchResultItem => Boolean(item))
-    .slice(0, 8)
-
-  return jsonResponse({ results })
 }
