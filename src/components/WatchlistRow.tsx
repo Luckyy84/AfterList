@@ -1,5 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
 import type { MediaItem } from '../types/media'
 
@@ -7,18 +7,24 @@ type WatchlistRowProps = {
   title: string
   items: MediaItem[]
   onSelect: (item: MediaItem) => void
+  hideControls?: boolean
 }
 
 const SLIDE_EASE = [0.22, 1, 0.36, 1] as const
+const INFINITE_LOOP_DURATION = 34
+const INFINITE_ARROW_DURATION = 12
 
-export default function WatchlistRow({ title, items, onSelect }: WatchlistRowProps) {
+export default function WatchlistRow({ title, items, onSelect, hideControls = false }: WatchlistRowProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
+  const prefersReducedMotion = useReducedMotion()
   const [offset, setOffset] = useState(0)
   const [maxOffset, setMaxOffset] = useState(0)
   const [loopDirection, setLoopDirection] = useState<'left' | 'right'>('right')
+  const [loopDuration, setLoopDuration] = useState(INFINITE_LOOP_DURATION)
+  const [loopKick, setLoopKick] = useState(0)
   const isInfiniteRow = title.toLowerCase() === 'watched' && items.length > 4
-  const showScrollControls = items.length > 4 && (isInfiniteRow || maxOffset > 8)
+  const showScrollControls = !hideControls && items.length > 4 && (isInfiniteRow || maxOffset > 8)
 
   const updateMetrics = useCallback(() => {
     const viewport = viewportRef.current
@@ -50,11 +56,24 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
     return () => resizeObserver.disconnect()
   }, [items.length, isInfiniteRow, updateMetrics])
 
+  useEffect(() => {
+    if (!isInfiniteRow || loopDuration === INFINITE_LOOP_DURATION) return
+
+    const resetTimer = window.setTimeout(() => {
+      setLoopDuration(INFINITE_LOOP_DURATION)
+      setLoopKick((currentKick) => currentKick + 1)
+    }, 900)
+
+    return () => window.clearTimeout(resetTimer)
+  }, [isInfiniteRow, loopDuration])
+
   if (items.length === 0) return null
 
   const slideRow = (direction: 'left' | 'right') => {
     if (isInfiniteRow) {
       setLoopDirection(direction)
+      setLoopDuration(INFINITE_ARROW_DURATION)
+      setLoopKick((currentKick) => currentKick + 1)
       return
     }
 
@@ -103,16 +122,27 @@ export default function WatchlistRow({ title, items, onSelect }: WatchlistRowPro
 
         <div className="row-scroll" ref={viewportRef}>
           {isInfiniteRow ? (
-            <div
+            <motion.div
+              key={`watched-loop-${loopDirection}-${loopDuration}-${loopKick}`}
               className={`row-scroll-track row-scroll-track-infinite loop-${loopDirection}`}
               ref={trackRef}
               aria-label={`${title} auto-scrolling list`}
+              animate={
+                prefersReducedMotion
+                  ? { x: 0 }
+                  : { x: loopDirection === 'right' ? ['0%', '-50%'] : ['-50%', '0%'] }
+              }
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { duration: loopDuration, ease: 'linear', repeat: Infinity }
+              }
             >
               <div className="row-scroll-set">{renderCards('loop-a')}</div>
               <div className="row-scroll-set" aria-hidden="true">
                 {renderCards('loop-b')}
               </div>
-            </div>
+            </motion.div>
           ) : (
             <motion.div
               className="row-scroll-track"
