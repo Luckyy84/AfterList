@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import type { MediaItem, MediaStatus } from '../../types/media'
+import type { MediaDetails, MediaItem, MediaStatus } from '../../types/media'
+import { canFetchTmdbDetails, fetchTmdbDetails } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
@@ -20,8 +22,56 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
   const yearLabel = item.year ?? item.progress
+  const [tmdbDetails, setTmdbDetails] = useState<MediaDetails | null>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
 
   const modalTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileModalTransition : desktopModalTransition
+  const canLoadDetails = canFetchTmdbDetails(item)
+
+  useEffect(() => {
+    setTmdbDetails(null)
+    setDetailsError(null)
+
+    if (!canLoadDetails) {
+      setIsLoadingDetails(false)
+      return undefined
+    }
+
+    const controller = new AbortController()
+    setIsLoadingDetails(true)
+
+    fetchTmdbDetails(item, { signal: controller.signal })
+      .then((details) => {
+        if (!controller.signal.aborted) {
+          setTmdbDetails(details)
+        }
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return
+        console.error(error)
+        setDetailsError(error instanceof Error ? error.message : 'Could not load TMDB details.')
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoadingDetails(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [canLoadDetails, item])
+
+  const extraMeta = useMemo(() => {
+    if (!tmdbDetails) return []
+
+    return [
+      tmdbDetails.runtimeLabel,
+      tmdbDetails.seasonsLabel,
+      tmdbDetails.episodesLabel,
+      tmdbDetails.status,
+      tmdbDetails.originalLanguage ? `Original ${tmdbDetails.originalLanguage}` : undefined,
+    ].filter((value): value is string => Boolean(value))
+  }, [tmdbDetails])
 
   return (
     <motion.div
@@ -79,9 +129,53 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
               {yearLabel && <span>{yearLabel}</span>}
               <span>★ {item.rating}</span>
               <span className={`pill ${item.status}`}>{item.status}</span>
+              {extraMeta.map((label) => (
+                <span key={label}>{label}</span>
+              ))}
             </div>
 
+            {tmdbDetails?.tagline && <p className="details-tagline">“{tmdbDetails.tagline}”</p>}
+
             <p className="details-result-description">{item.description}</p>
+
+            {isLoadingDetails && <p className="details-api-note">Loading TMDB details…</p>}
+            {detailsError && <p className="details-api-note details-api-error">{detailsError}</p>}
+
+            {tmdbDetails && (
+              <div className="details-api-panel" aria-label="TMDB details">
+                {tmdbDetails.genres.length > 0 && (
+                  <div>
+                    <span className="details-api-label">Genres</span>
+                    <div className="details-api-chips">
+                      {tmdbDetails.genres.map((genre) => (
+                        <span key={genre}>{genre}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tmdbDetails.countries.length > 0 && (
+                  <div>
+                    <span className="details-api-label">Countries</span>
+                    <p>{tmdbDetails.countries.join(', ')}</p>
+                  </div>
+                )}
+
+                <div className="details-api-links">
+                  {typeof tmdbDetails.voteCount === 'number' && tmdbDetails.voteCount > 0 && <span>{tmdbDetails.voteCount.toLocaleString()} TMDB votes</span>}
+                  {tmdbDetails.homepage && (
+                    <a href={tmdbDetails.homepage} target="_blank" rel="noreferrer">
+                      Official site
+                    </a>
+                  )}
+                  {tmdbDetails.tmdbUrl && (
+                    <a href={tmdbDetails.tmdbUrl} target="_blank" rel="noreferrer">
+                      View on TMDB
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="details-action-panel">
               <label className="status-editor details-status-editor">
