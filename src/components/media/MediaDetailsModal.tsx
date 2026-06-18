@@ -98,7 +98,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
         />
 
         <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
-          x
+          ✕
         </button>
 
         <div className="details-result-body">
