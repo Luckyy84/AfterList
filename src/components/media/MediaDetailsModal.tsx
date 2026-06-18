@@ -64,13 +64,9 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
   const extraMeta = useMemo(() => {
     if (!tmdbDetails) return []
 
-    return [
-      tmdbDetails.runtimeLabel,
-      tmdbDetails.seasonsLabel,
-      tmdbDetails.episodesLabel,
-      tmdbDetails.status,
-      tmdbDetails.originalLanguage ? `Original ${tmdbDetails.originalLanguage}` : undefined,
-    ].filter((value): value is string => Boolean(value))
+    const seasonEpisodeLabel = [tmdbDetails.seasonsLabel, tmdbDetails.episodesLabel].filter(Boolean).join(' · ')
+
+    return [tmdbDetails.runtimeLabel, seasonEpisodeLabel].filter((value): value is string => Boolean(value))
   }, [tmdbDetails])
 
   return (
@@ -102,7 +98,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
         />
 
         <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
-          ✕
+          x
         </button>
 
         <div className="details-result-body">
@@ -160,20 +156,6 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
                     <p>{tmdbDetails.countries.join(', ')}</p>
                   </div>
                 )}
-
-                <div className="details-api-links">
-                  {typeof tmdbDetails.voteCount === 'number' && tmdbDetails.voteCount > 0 && <span>{tmdbDetails.voteCount.toLocaleString()} TMDB votes</span>}
-                  {tmdbDetails.homepage && (
-                    <a href={tmdbDetails.homepage} target="_blank" rel="noreferrer">
-                      Official site
-                    </a>
-                  )}
-                  {tmdbDetails.tmdbUrl && (
-                    <a href={tmdbDetails.tmdbUrl} target="_blank" rel="noreferrer">
-                      View on TMDB
-                    </a>
-                  )}
-                </div>
               </div>
             )}
 
@@ -196,8 +178,8 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
               <button
                 className="delete-btn details-delete-btn"
                 type="button"
-                aria-label={`Delete ${item.title}`}
-                title="Delete"
+                aria-label={`Remove ${item.title}`}
+                title="Remove"
                 onClick={() => onRemove(item.id)}
               >
                 Remove from AfterList
