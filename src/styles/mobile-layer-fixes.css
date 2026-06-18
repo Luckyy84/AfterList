@@ -1,0 +1,81 @@
+/* Final mobile layering fixes.
+   Keep this imported last so it wins over the earlier polish layers. */
+
+.nav {
+  z-index: 900;
+}
+
+.nav-search-shell,
+.nav-search-shell.expanded {
+  z-index: 950;
+}
+
+.nav-search-results-popover {
+  z-index: 1100;
+}
+
+.details-result-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: clamp(14px, 4vw, 32px);
+}
+
+.details-result-modal {
+  margin: auto;
+}
+
+@media (max-width: 700px) {
+  .nav {
+    position: sticky;
+    z-index: 900;
+  }
+
+  .nav-search-shell.expanded .nav-search-results-popover {
+    position: fixed !important;
+    top: calc(env(safe-area-inset-top, 0px) + 150px) !important;
+    right: 18px !important;
+    left: 18px !important;
+    z-index: 1100 !important;
+    width: auto !important;
+    max-height: min(370px, 44svh);
+  }
+
+  .details-result-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    width: 100vw !important;
+    min-width: 100vw;
+    height: 100dvh !important;
+    min-height: 100dvh;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: auto;
+    padding: max(14px, env(safe-area-inset-top, 0px)) 14px max(14px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .details-result-modal {
+    width: min(414px, calc(100vw - 28px)) !important;
+    max-height: min(82dvh, 720px) !important;
+    margin: auto !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-search-shell.expanded .nav-search-results-popover {
+    top: calc(env(safe-area-inset-top, 0px) + 142px) !important;
+    right: 14px !important;
+    left: 14px !important;
+  }
+
+  .details-result-modal {
+    width: min(400px, calc(100vw - 24px)) !important;
+  }
+}
