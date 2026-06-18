@@ -11,20 +11,25 @@
   display: none !important;
 }
 
+/*
+  Use the same RGB as the row/page dark background (#08090d) for the mask stops.
+  The mask still uses alpha for visibility, but matching the RGB prevents browser
+  interpolation artifacts that can look like a hard gray/black edge.
+*/
 .row-scroll-shell.has-scroll-controls .row-scroll {
   -webkit-mask-image: linear-gradient(
     to right,
-    transparent 0%,
-    black 10%,
-    black 90%,
-    transparent 100%
+    rgba(8, 9, 13, 0) 0%,
+    rgba(8, 9, 13, 1) 15%,
+    rgba(8, 9, 13, 1) 85%,
+    rgba(8, 9, 13, 0) 100%
   ) !important;
   mask-image: linear-gradient(
     to right,
-    transparent 0%,
-    black 10%,
-    black 90%,
-    transparent 100%
+    rgba(8, 9, 13, 0) 0%,
+    rgba(8, 9, 13, 1) 15%,
+    rgba(8, 9, 13, 1) 85%,
+    rgba(8, 9, 13, 0) 100%
   ) !important;
 }
 
@@ -32,17 +37,17 @@
   .row-scroll-shell.has-scroll-controls .row-scroll {
     -webkit-mask-image: linear-gradient(
       to right,
-      transparent 0%,
-      black 10%,
-      black 90%,
-      transparent 100%
+      rgba(8, 9, 13, 0) 0%,
+      rgba(8, 9, 13, 1) 18%,
+      rgba(8, 9, 13, 1) 82%,
+      rgba(8, 9, 13, 0) 100%
     ) !important;
     mask-image: linear-gradient(
       to right,
-      transparent 0%,
-      black 10%,
-      black 90%,
-      transparent 100%
+      rgba(8, 9, 13, 0) 0%,
+      rgba(8, 9, 13, 1) 18%,
+      rgba(8, 9, 13, 1) 82%,
+      rgba(8, 9, 13, 0) 100%
     ) !important;
   }
 }
