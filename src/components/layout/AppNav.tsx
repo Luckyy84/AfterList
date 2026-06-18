@@ -10,7 +10,7 @@ type AppNavProps = {
 }
 
 const navItems = [
-  { label: 'All', to: '/', end: true },
+  { label: 'Home', to: '/', end: true },
   { label: 'Anime', to: '/anime' },
   { label: 'Movies', to: '/movies' },
   { label: 'TV Series', to: '/series' },
