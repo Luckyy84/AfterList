@@ -1,0 +1,43 @@
+.nav-links {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), gap 0.28s ease;
+  will-change: transform;
+}
+
+.nav:has(.nav-search-shell.expanded) .nav-links {
+  transform: translateX(-96px);
+  gap: 6px;
+}
+
+.nav:has(.nav-search-shell.expanded) .nav-links a {
+  padding-inline: 13px;
+}
+
+.nav:has(.nav-search-shell.expanded) .nav-search-shell {
+  justify-self: end;
+}
+
+@media (max-width: 1020px) {
+  .nav:has(.nav-search-shell.expanded) .nav-links {
+    transform: translateX(-68px);
+  }
+
+  .nav:has(.nav-search-shell.expanded) .nav-links a {
+    padding-inline: 11px;
+  }
+}
+
+@media (max-width: 860px) {
+  .nav:has(.nav-search-shell.expanded) .nav-links {
+    transform: translateX(-34px);
+  }
+}
+
+@media (max-width: 700px) {
+  .nav:has(.nav-search-shell.expanded) .nav-links {
+    transform: none;
+  }
+
+  .nav:has(.nav-search-shell.expanded) .nav-links a {
+    padding-inline: 15px;
+  }
+}
