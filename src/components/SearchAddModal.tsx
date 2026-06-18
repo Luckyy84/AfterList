@@ -122,9 +122,9 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
             key="search-bar"
             className="nav-search-bar"
             layoutId="nav-search-control"
-            initial={{ opacity: 0.7, width: 96 }}
-            animate={{ opacity: 1, width: 'min(360px, 42vw)' }}
-            exit={{ opacity: 0, width: 96 }}
+            initial={{ opacity: 0.7, width: 112 }}
+            animate={{ opacity: 1, width: 'min(430px, 44vw)' }}
+            exit={{ opacity: 0, width: 112 }}
             transition={{ type: 'spring', stiffness: 420, damping: 34 }}
           >
             <span className="nav-search-icon" aria-hidden="true">⌕</span>
@@ -149,10 +149,10 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
         {isExpanded && (
           <motion.div
             className="nav-search-results-popover"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: modalEase }}
+            initial={{ opacity: 0, y: -10, scale: 0.965, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -10, scale: 0.965, filter: 'blur(8px)' }}
+            transition={{ duration: 0.22, ease: modalEase }}
           >
             {!normalizedQuery && (
               <div className="nav-search-empty">
@@ -168,19 +168,22 @@ function SearchAddModal({ onCreate }: SearchAddModalProps) {
               </div>
             )}
 
-            {results.map((result) => (
-              <button
+            {results.map((result, index) => (
+              <motion.button
                 key={`${result.source}-${result.externalId}`}
-                className="nav-search-result"
+                className={`nav-search-result${index === 0 ? ' is-top-result' : ''}`}
                 type="button"
                 onClick={() => handleSelectResult(result)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.025, duration: 0.2, ease: modalEase }}
               >
                 <img src={result.poster} alt="" loading="lazy" />
                 <span>
                   <strong>{result.title}</strong>
-                  <small>{result.type} · {result.year} · ★ {result.rating}</small>
+                  <small>{result.type} • {result.year} • ★ {result.rating}</small>
                 </span>
-              </button>
+              </motion.button>
             ))}
           </motion.div>
         )}
