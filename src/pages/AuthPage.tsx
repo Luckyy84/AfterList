@@ -18,6 +18,10 @@ export default function AuthPage({ mode }: AuthPageProps) {
     setNotice('Auth UI is ready. Supabase wiring comes next.')
   }
 
+  const handleGoogleAuth = () => {
+    setNotice('Google auth button is ready. Supabase OAuth wiring comes next.')
+  }
+
   return (
     <motion.section
       className="auth-page"
@@ -45,10 +49,19 @@ export default function AuthPage({ mode }: AuthPageProps) {
         <div className="auth-panel-head">
           <p className="eyebrow">{isSignup ? 'Sign up' : 'Sign in'}</p>
           <h2>{isSignup ? 'Start tracking everywhere.' : 'Continue your list.'}</h2>
-          <p>{isSignup ? 'Use email and password for the first auth version.' : 'Use the account you will connect with Supabase.'}</p>
+          <p>{isSignup ? 'Use Google or email and password for the first auth version.' : 'Use Google or the account you will connect with Supabase.'}</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          <button className="auth-google" type="button" onClick={handleGoogleAuth}>
+            <span className="auth-google-icon" aria-hidden="true">G</span>
+            Continue with Google
+          </button>
+
+          <div className="auth-divider" role="separator">
+            <span>or continue with email</span>
+          </div>
+
           {isSignup && (
             <label className="auth-field">
               <span>Display name</span>
