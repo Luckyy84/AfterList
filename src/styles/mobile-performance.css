@@ -1,7 +1,7 @@
 /* Mobile performance pass.
-   The desktop UI uses heavy blur, animated background clouds, big shadows, and filters.
-   Those look premium on PC but can feel laggy on real phones, especially while scrolling.
-   This file keeps the same visual direction but removes the most expensive paint work on mobile. */
+   The desktop UI uses heavy blur, animated background clouds, big shadows, filters,
+   masks, and layout animations. On phones we keep the premium dark-glass direction
+   with layered gradients, but avoid the expensive repaint/compositing work. */
 
 @media (max-width: 700px) {
   /* Stop animated full-page layers on phones. */
@@ -20,9 +20,13 @@
   body::after {
     opacity: 0.28 !important;
     background-size: 64px 64px, 64px 64px, auto, auto !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
   }
 
-  /* Backdrop-filter is one of the biggest mobile lag sources. Use solid glass instead. */
+  /* Backdrop-filter forces the browser to sample and filter pixels behind the element.
+     On mobile, keep the glass look through solid layered gradients instead. */
+  .glass-panel,
   .nav,
   .nav-search-bar,
   .nav-search-results-popover,
@@ -32,20 +36,25 @@
   .details-result-modal,
   .details-result-modal .modal-close,
   .modal-close,
+  .hero-meta span:not(.pill),
   .row-scroll-button {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
 
   .nav {
-    background: linear-gradient(145deg, rgba(26, 27, 33, 0.96), rgba(13, 14, 18, 0.98)) !important;
+    background:
+      radial-gradient(circle at 78% 0%, rgba(255, 255, 255, 0.08), transparent 34%),
+      linear-gradient(145deg, rgba(26, 27, 33, 0.96), rgba(13, 14, 18, 0.98)) !important;
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42) !important;
   }
 
   .nav-search-bar,
   .nav-search-results-popover {
-    background: linear-gradient(145deg, rgba(42, 43, 50, 0.96), rgba(15, 16, 21, 0.98)) !important;
-    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.48) !important;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.12), transparent 36%),
+      linear-gradient(145deg, rgba(42, 43, 50, 0.96), rgba(15, 16, 21, 0.98)) !important;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.44) !important;
   }
 
   .search-result-backdrop,
@@ -55,20 +64,36 @@
 
   .search-result-detail-modal,
   .details-result-modal {
-    background: linear-gradient(145deg, rgba(32, 33, 39, 0.98), rgba(8, 9, 13, 0.99)) !important;
-    box-shadow: 0 26px 72px rgba(0, 0, 0, 0.68) !important;
+    background:
+      radial-gradient(circle at 14% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.055), transparent 36%),
+      linear-gradient(145deg, rgba(32, 33, 39, 0.98), rgba(8, 9, 13, 0.99)) !important;
+    box-shadow: 0 24px 58px rgba(0, 0, 0, 0.62) !important;
   }
 
-  /* Filters and masks on large images are expensive while scrolling. */
+  /* Filters and masks on large images are expensive while scrolling/opening overlays. */
+  .hero-card::before,
   .details-modal-backdrop-art,
   .search-result-backdrop-art,
-  .hero-bg {
+  .search-detail-backdrop,
+  .hero-bg,
+  .media-poster {
     filter: none !important;
   }
 
   .details-modal-backdrop-art,
-  .search-result-backdrop-art {
-    opacity: 0.11 !important;
+  .search-result-backdrop-art,
+  .search-detail-backdrop {
+    opacity: 0.12 !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .hero-card::before {
+    background:
+      radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.13), transparent 52%),
+      linear-gradient(110deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.7) 48%, rgba(0, 0, 0, 0.22) 100%),
+      var(--hero-image) center/cover !important;
   }
 
   /* Keep cards responsive but reduce hover/shine work on touch devices. */
@@ -79,6 +104,20 @@
   .hero-preview-thumb,
   .nav-search-result {
     transition-duration: 0.12s !important;
+  }
+
+  .media-card-wrapper,
+  .media-poster-shell,
+  .nav-search-bar,
+  .nav-search-button,
+  .nav-search-results-popover,
+  .nav-search-result,
+  .search-result-detail-modal,
+  .search-detail-poster,
+  .search-detail-backdrop,
+  .row-scroll-track {
+    will-change: auto !important;
+    transform-style: flat !important;
   }
 
   .media-card-wrapper:hover,
@@ -99,11 +138,18 @@
   .media-poster-shell,
   .details-result-poster,
   .details-result-modal .modal-poster,
-  .search-result-poster {
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.44) !important;
+  .search-result-poster,
+  .search-detail-poster {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42) !important;
   }
 
-  /* Edge fade overlays can feel like a moving repaint layer on mobile. Keep the mask, remove overlay blocks. */
+  .media-card:hover .media-poster-shell,
+  .media-poster-shell:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42) !important;
+    filter: none !important;
+  }
+
+  /* Edge fade overlays can feel like a moving repaint layer on mobile. Keep the row clean, remove overlay blocks. */
   .row-scroll-shell::before,
   .row-scroll-shell::after {
     display: none !important;
@@ -111,6 +157,11 @@
 
   .row-scroll-track {
     will-change: auto !important;
+  }
+
+  .watchlist-row {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 360px;
   }
 }
 
@@ -121,5 +172,17 @@
   .modal-close:hover,
   .row-scroll-button:hover {
     transform: none !important;
+  }
+
+  .media-card:hover .media-poster-shell,
+  .media-poster-shell:hover,
+  .media-card:hover .media-poster,
+  .media-poster-frame:hover .media-poster,
+  .nav-search-result:hover,
+  .create-item-btn:hover,
+  .details-delete-btn:hover {
+    filter: none !important;
+    transform: none !important;
+    box-shadow: none;
   }
 }
