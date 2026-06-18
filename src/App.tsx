@@ -9,6 +9,7 @@ import './glassy-fixes.css'
 import './hover-polish.css'
 import './background-polish.css'
 import './edge-fade-polish.css'
+import './infinite-row.css'
 import Footer from './components/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 function App() {
