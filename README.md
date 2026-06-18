@@ -8,7 +8,7 @@ The goal is to build a clean Apple TV / Netflix-inspired watchlist while learnin
 
 AfterList is deployed on **Vercel** from the `main` branch.
 
-The app uses Vercel's static Vite deployment flow and a `vercel.json` rewrite so direct refreshes on routes like `/anime`, `/movies`, and `/series` work correctly.
+The app uses Vercel's static Vite deployment flow, a Vercel API function for TMDB search, and a `vercel.json` rewrite so direct refreshes on routes like `/anime`, `/movies`, and `/series` work correctly.
 
 ## Project Goals
 
@@ -16,17 +16,19 @@ The app uses Vercel's static Vite deployment flow and a `vercel.json` rewrite so
 - Keep the design dark, cinematic, glassy, and polished
 - Learn React and TypeScript from the ground up
 - Use real API search results instead of local mock catalogs
+- Keep TMDB credentials server-side through a Vercel API proxy
 - Deploy the app as a real hosted website
 - Keep the codebase organized enough to grow without becoming messy
 
 ## Current Status
 
-Phase 1 is complete and Phase 2 has started. The app saves API-backed items to `localStorage`, uses a polished dark glass UI with Motion-powered hero, carousel, search, and modal animations, and uses TMDB-powered search when a TMDB env key is configured.
+Phase 1 is complete and Phase 2 has started. The app saves API-backed items to `localStorage`, uses a polished dark glass UI with Motion-powered hero, carousel, search, and modal animations, and searches TMDB through an AfterList Vercel API proxy.
 
 Implemented so far:
 
 - Live Vercel deployment
 - Homepage hero with automatic random rotation
+- Empty homepage hero for new/empty lists
 - Motion-powered hero transitions
 - Hero preview rail with clickable thumbnails
 - Netflix-like watchlist rows
@@ -40,7 +42,7 @@ Implemented so far:
 - Edit status from the details modal
 - Remove saved item
 - Search button that expands into a nav search bar
-- TMDB movie/TV search when configured
+- Server-side TMDB movie/TV search proxy
 - Conservative TMDB anime detection for Japanese animation results
 - No local demo/search fallback data
 - Motion search morph and result transitions
@@ -49,6 +51,7 @@ Implemented so far:
 - Duplicate prevention and duplicate cleanup on load
 - Mobile layering fixes for search and details modal
 - Mobile performance pass for expensive blur/filter work while keeping Motion animations active
+- TMDB attribution in the UI
 
 ## Roadmap
 
@@ -76,8 +79,8 @@ Implemented so far:
 - Map TMDB results into the app `MediaItem` structure ✅
 - Prevent duplicates using API IDs/source IDs ✅
 - Add API-based item creation ✅
-- Add TMDB attribution in the UI
-- Move TMDB requests behind a Vercel/serverless API proxy
+- Add TMDB attribution in the UI ✅
+- Move TMDB requests behind a Vercel/serverless API proxy ✅
 - Add anime API later, likely AniList or Jikan
 
 ### Phase 3 — Accounts and Sync
@@ -93,7 +96,15 @@ Implemented so far:
 - Friend sharing
 - Optional public watchlists
 
-## TMDB Setup
+## TMDB Proxy Setup
+
+AfterList searches TMDB through the Vercel function at:
+
+```text
+/api/search?query=dune
+```
+
+The frontend calls the local API proxy, not TMDB directly. The real TMDB credential should be stored as a server-side environment variable.
 
 Create a local env file:
 
@@ -104,18 +115,20 @@ cp .env.example .env.local
 Then add one TMDB credential:
 
 ```env
-VITE_TMDB_API_KEY=your_tmdb_v3_api_key
+TMDB_API_KEY=your_tmdb_v3_api_key
 # or
-VITE_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
+TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
 ```
 
-Restart the dev server after changing env files:
+Do **not** use the `VITE_` prefix for TMDB credentials. `VITE_*` values are exposed in the browser bundle, while this project reads `TMDB_*` from the Vercel API function.
+
+For local testing of the API proxy, use Vercel's local dev server:
 
 ```bash
-npm run dev
+npx vercel dev
 ```
 
-Important: Vite exposes `VITE_*` variables to the browser bundle. This is fine for local learning and personal demos, but a production version should proxy TMDB through a backend/serverless function instead of shipping private credentials to the client.
+Using plain `npm run dev` starts Vite only, so `/api/search` will not run locally unless Vercel's dev server is handling the request.
 
 ## Vercel Deployment
 
@@ -133,30 +146,32 @@ Production Branch: main
 Required environment variable on Vercel:
 
 ```env
-VITE_TMDB_API_KEY=your_tmdb_v3_api_key
+TMDB_API_KEY=your_tmdb_v3_api_key
 ```
 
 or:
 
 ```env
-VITE_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
+TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
 ```
 
-The project includes `vercel.json` with a single-page-app rewrite:
+Add the variable to **Production** and **Preview** environments so both live and preview deployments can search.
+
+The project includes `vercel.json` with a single-page-app rewrite that leaves API routes alone:
 
 ```json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/.*).*)",
       "destination": "/"
     }
   ]
 }
 ```
 
-That keeps route refreshes working for `/anime`, `/movies`, and `/series`.
+That keeps route refreshes working for `/anime`, `/movies`, and `/series` without swallowing `/api/search`.
 
 ## TMDB Notice
 
@@ -178,6 +193,8 @@ TMDB usage in this project is intended for personal, educational, and non-commer
 ## Project Structure
 
 ```text
+api/
+└─ search.ts         # Vercel API proxy for TMDB search
 src/
 ├─ components/
 │  ├─ layout/       # App shell pieces like nav and footer
@@ -185,10 +202,10 @@ src/
 │  └─ search/       # Search bar, result dropdown, and preview/create flow
 ├─ hooks/           # Reusable React hooks
 ├─ pages/           # Route pages for home/anime/movies/series
-├─ services/        # API services such as TMDB search
+├─ services/        # Frontend services that call AfterList API routes
 ├─ styles/
 │  ├─ details/      # Details modal/status editor styles
-│  ├─ hero/         # Hero preview rail styles
+│  ├─ hero/         # Hero and empty-state hero styles
 │  ├─ media/        # Cards, hover, and row styles
 │  ├─ search/       # Search/nav/modal styles
 │  ├─ base.css      # Core layout and shared styles
@@ -211,10 +228,16 @@ Install dependencies:
 npm install
 ```
 
-Start the dev server:
+Start the Vite-only dev server:
 
 ```bash
 npm run dev
+```
+
+Start the Vercel dev server when testing `/api/search`:
+
+```bash
+npx vercel dev
 ```
 
 Build for production:
