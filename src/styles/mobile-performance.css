@@ -1,10 +1,10 @@
 /* Mobile performance pass.
-   The desktop UI uses heavy blur, animated background clouds, big shadows, filters,
-   masks, and layout animations. On phones we keep the premium dark-glass direction
-   with layered gradients, but avoid the expensive repaint/compositing work. */
+   Keep the premium dark-glass direction and restore the app motion, but avoid the
+   truly expensive mobile paint work: giant animated background layers, blur-heavy
+   overlays, full-image filters, and masked repaint layers. */
 
 @media (max-width: 700px) {
-  /* Stop animated full-page layers on phones. */
+  /* Giant animated full-page layers cost way more than component motion. */
   body::before,
   body::after,
   .app::before {
@@ -24,8 +24,7 @@
     mask-image: none !important;
   }
 
-  /* Backdrop-filter forces the browser to sample and filter pixels behind the element.
-     On mobile, keep the glass look through solid layered gradients instead. */
+  /* Backdrop-filter is the heavy part. Use layered gradients for glass on phones. */
   .glass-panel,
   .nav,
   .nav-search-bar,
@@ -84,7 +83,7 @@
   .details-modal-backdrop-art,
   .search-result-backdrop-art,
   .search-detail-backdrop {
-    opacity: 0.12 !important;
+    opacity: 0.16 !important;
     -webkit-mask-image: none !important;
     mask-image: none !important;
   }
@@ -96,67 +95,70 @@
       var(--hero-image) center/cover !important;
   }
 
-  /* Keep cards responsive but reduce hover/shine work on touch devices. */
+  /* Keep fast component motion. Do not override Motion transforms. */
   .media-card-wrapper,
   .media-poster-shell,
   .media-card,
   .poster-shine,
   .hero-preview-thumb,
   .nav-search-result {
-    transition-duration: 0.12s !important;
+    transition-duration: 0.18s !important;
   }
 
-  .media-card-wrapper,
-  .media-poster-shell,
   .nav-search-bar,
   .nav-search-button,
   .nav-search-results-popover,
   .nav-search-result,
   .search-result-detail-modal,
+  .details-result-modal,
   .search-detail-poster,
+  .details-result-poster,
   .search-detail-backdrop,
+  .details-modal-backdrop-art,
   .row-scroll-track {
-    will-change: auto !important;
+    will-change: transform, opacity;
     transform-style: flat !important;
   }
 
-  .media-card-wrapper:hover,
-  .media-card:hover,
-  .media-card:hover .poster-shine,
-  .hero-preview-thumb:hover,
-  .nav-search-result:hover {
-    animation: none !important;
-    filter: none !important;
-    transform: none !important;
+  .media-card-wrapper,
+  .media-poster-shell,
+  .media-card {
+    will-change: transform;
   }
 
   .poster-shine {
-    display: none !important;
+    display: block !important;
+    opacity: 0.34 !important;
   }
 
-  /* Big drop-shadows cause repeated repaint while scrolling rows. */
+  /* Big drop-shadows cause repeated repaint while scrolling rows. Keep them cinematic but smaller. */
   .media-poster-shell,
   .details-result-poster,
   .details-result-modal .modal-poster,
   .search-result-poster,
   .search-detail-poster {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42) !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.48) !important;
   }
 
   .media-card:hover .media-poster-shell,
   .media-poster-shell:hover {
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42) !important;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.52) !important;
     filter: none !important;
+  }
+
+  .media-card:active,
+  .hero-preview-thumb:active,
+  .nav-search-result:active,
+  .row-scroll-button:active,
+  .create-item-btn:active,
+  .details-delete-btn:active {
+    transform: scale(0.985);
   }
 
   /* Edge fade overlays can feel like a moving repaint layer on mobile. Keep the row clean, remove overlay blocks. */
   .row-scroll-shell::before,
   .row-scroll-shell::after {
     display: none !important;
-  }
-
-  .row-scroll-track {
-    will-change: auto !important;
   }
 
   .watchlist-row {
@@ -166,23 +168,17 @@
 }
 
 @media (hover: none) and (pointer: coarse) {
-  .media-card-wrapper:hover,
   .details-delete-btn:hover,
   .nav-search-clear:hover,
   .modal-close:hover,
-  .row-scroll-button:hover {
-    transform: none !important;
+  .row-scroll-button:hover,
+  .create-item-btn:hover {
+    filter: none !important;
   }
 
-  .media-card:hover .media-poster-shell,
-  .media-poster-shell:hover,
-  .media-card:hover .media-poster,
-  .media-poster-frame:hover .media-poster,
-  .nav-search-result:hover,
-  .create-item-btn:hover,
-  .details-delete-btn:hover {
-    filter: none !important;
-    transform: none !important;
-    box-shadow: none;
+  .media-card-wrapper:active,
+  .nav-search-result:active,
+  .hero-preview-thumb:active {
+    transform: scale(0.985);
   }
 }
