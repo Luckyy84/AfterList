@@ -29,14 +29,14 @@ The project is being built from scratch to understand every part of the codebase
 - Status filters ✅
 - Edit Status
 - Search
-- Add item
 - Remove item
-- Save data with localStorage
+- Save data with localStorage ✅
 
 ### Phase 2 — API Search
 
 - AniList search for anime
 - TMDB search for movies and TV series
+- Add item from API search results
 - Auto-fill posters, titles, descriptions, and metadata
 
 ### Phase 3 — Accounts and Sync
