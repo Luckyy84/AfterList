@@ -1,0 +1,22 @@
+.nav-search-result.is-selected {
+  transform: translateY(-1px) scale(1.006);
+  border-color: rgba(255, 255, 255, 0.34);
+  color: #fff;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.22), transparent 48%),
+    linear-gradient(135deg, rgba(82, 83, 90, 0.9), rgba(35, 36, 42, 0.92)),
+    rgba(40, 41, 47, 0.94);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.nav-search-result.is-selected strong {
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.34);
+}
+
+.nav-search-result.is-selected small {
+  color: rgba(255, 255, 255, 0.78);
+}
