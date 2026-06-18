@@ -24,7 +24,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
   const isMobile = useIsMobile()
-  const shouldSimplifyMotion = prefersReducedMotion || isMobile
+  const shouldSimplifyMotion = prefersReducedMotion
   const [offset, setOffset] = useState(0)
   const [maxOffset, setMaxOffset] = useState(0)
 
@@ -96,7 +96,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
       initial={shouldSimplifyMotion ? false : { opacity: 0, y: 24 }}
       whileInView={shouldSimplifyMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={shouldSimplifyMotion ? undefined : { once: true, margin: '-80px' }}
-      transition={shouldSimplifyMotion ? { duration: 0 } : { duration: 0.5, ease: SLIDE_EASE }}
+      transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.36 : 0.5, ease: SLIDE_EASE }}
     >
       <div className="row-head">
         <h2>{title}</h2>
@@ -124,7 +124,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
               prefersReducedMotion
                 ? { duration: 0 }
                 : isMobile
-                  ? { duration: 0.18, ease: SLIDE_EASE }
+                  ? { type: 'spring', stiffness: 340, damping: 38, mass: 0.8 }
                   : { type: 'spring', stiffness: 280, damping: 36, mass: 0.9 }
             }
           >
