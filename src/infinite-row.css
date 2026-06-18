@@ -1,10 +1,14 @@
 /* Circular infinite carousel for the Watched row.
    The UI renders several identical sets internally, starts from the middle set,
-   and wraps the Motion x value back into the center range. That keeps the row
-   feeling continuous instead of visibly showing one doubled list. */
+   and wraps the native scroll position back into the center range. That keeps the
+   desktop arrow controls reliable while preserving the seamless loop feeling. */
 
 .row-scroll-shell.is-infinite .row-scroll {
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-behavior: smooth !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
   -webkit-mask-image: linear-gradient(
     to right,
     rgba(8, 9, 13, 0) 0%,
@@ -21,20 +25,27 @@
   ) !important;
 }
 
+.row-scroll-shell.is-infinite .row-scroll::-webkit-scrollbar {
+  display: none !important;
+}
+
 .row-scroll-track-infinite {
   display: flex !important;
   width: max-content !important;
   gap: 0 !important;
   animation: none !important;
-  will-change: transform;
+  transform: none !important;
+  will-change: scroll-position;
 }
 
 .row-scroll-shell.is-infinite .row-scroll-button {
-  z-index: 90 !important;
+  z-index: 120 !important;
   display: grid !important;
   opacity: 0.94 !important;
   pointer-events: auto !important;
   cursor: pointer !important;
+  user-select: none !important;
+  touch-action: manipulation !important;
 }
 
 .row-scroll-shell.is-infinite .row-scroll-button:hover {
@@ -56,8 +67,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .row-scroll-track-infinite {
-    transform: translate3d(0, 0, 0) !important;
+  .row-scroll-shell.is-infinite .row-scroll {
+    scroll-behavior: auto !important;
   }
 }
 
