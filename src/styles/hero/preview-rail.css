@@ -9,26 +9,17 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 999px;
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(9, 10, 13, 0.56) 18%, rgba(9, 10, 13, 0.72) 100%);
-  backdrop-filter: blur(18px) saturate(150%);
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.44),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .hero-preview-rail::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: '';
-  background:
-    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.12), transparent 34%),
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.045));
+  display: none;
 }
 
 .hero-preview-thumb {
@@ -52,7 +43,8 @@
     opacity 200ms ease,
     border-color 200ms ease,
     box-shadow 200ms ease,
-    filter 200ms ease;
+    filter 200ms ease,
+    transform 200ms ease;
 }
 
 .hero-preview-thumb img {
@@ -74,6 +66,7 @@
 
 .hero-preview-thumb:hover,
 .hero-preview-thumb:focus-visible {
+  transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.46);
   opacity: 0.92;
   outline: none;
@@ -104,7 +97,7 @@
     bottom: 18px;
     max-width: min(360px, calc(100% - 36px));
     gap: 8px;
-    padding: 8px;
+    padding: 0;
   }
 
   .hero-preview-thumb {
@@ -133,6 +126,7 @@
     max-width: none;
     justify-content: flex-start;
     overflow-x: auto;
+    overflow-y: visible;
     scrollbar-width: none;
   }
 
