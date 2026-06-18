@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import MediaDetailsModal from '../components/MediaDetailsModal'
-import WatchlistRow from '../components/WatchlistRow'
+import WatchlistRow from '../components/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
 
 type HomePageProps = {
