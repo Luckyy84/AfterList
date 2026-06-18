@@ -3,6 +3,24 @@
    truly expensive mobile paint work: giant animated background layers, blur-heavy
    overlays, full-image filters, and masked repaint layers. */
 
+/* Shared carousel track fix.
+   Desktop arrows animate this track with Motion x-offset. Mobile keeps native swipe
+   scrolling through the .row-scroll-native overrides below. */
+.row-scroll {
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  scroll-snap-type: none !important;
+}
+
+.row-scroll-track {
+  display: flex !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+  will-change: transform;
+}
+
 @media (max-width: 700px) {
   /* Giant animated full-page layers cost way more than component motion. */
   body::before,
@@ -137,16 +155,11 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scroll-padding-inline: 14px;
-    scroll-snap-type: x proximity;
+    scroll-snap-type: x proximity !important;
     touch-action: pan-x pan-y;
   }
 
   .row-scroll-native .row-scroll-track {
-    display: flex !important;
-    width: max-content !important;
-    min-width: 100% !important;
-    align-items: stretch !important;
-    gap: 16px !important;
     transform: none !important;
     will-change: auto !important;
   }
