@@ -49,7 +49,7 @@ function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
 function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
-  const shouldSimplifyMotion = shouldReduceMotion || isMobile
+  const shouldSimplifyMotion = shouldReduceMotion
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
@@ -89,10 +89,10 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             key={`${hero.id}-${safeHeroIndex}`}
             className="hero-card glass-panel"
             style={{ '--hero-image': `url(${hero.backdrop})` } as CSSProperties}
-            initial={shouldReduceMotion ? false : shouldSimplifyMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
-            animate={shouldSimplifyMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={shouldSimplifyMotion ? { opacity: 0 } : { opacity: 0, y: -12, scale: 1.01 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.22 : 0.75, ease: heroEase }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 1.01 }}
+            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content">
               <p className="eyebrow">Apple TV calm · Netflix grid</p>
