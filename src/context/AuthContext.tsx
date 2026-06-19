@@ -1,20 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '../services/supabase'
-
-type AuthContextValue = {
-  isConfigured: boolean
-  isLoading: boolean
-  session: Session | null
-  user: User | null
-  signIn: (email: string, password: string) => Promise<Session | null>
-  signUp: (email: string, password: string, displayName?: string) => Promise<Session | null>
-  signInWithGoogle: () => Promise<void>
-  signOut: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext } from './auth'
+import type { AuthContextValue } from './auth'
 
 type AuthProviderProps = {
   children: ReactNode
@@ -26,7 +15,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     if (!supabase) {
-      setIsLoading(false)
       return undefined
     }
 
@@ -104,14 +92,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [isLoading, session])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
-  }
-
-  return context
 }

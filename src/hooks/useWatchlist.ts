@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { MediaItem, MediaSource, MediaStatus } from '../types/media'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth'
 import {
   createCloudWatchlistItem,
   deleteCloudWatchlistItem,
@@ -53,27 +53,44 @@ function loadSavedItems(): MediaItem[] {
 export function useWatchlist() {
   const { user, isLoading: isAuthLoading } = useAuth()
   const [items, setItems] = useState<MediaItem[]>(loadSavedItems)
-  const [isSyncing, setIsSyncing] = useState(false)
+  const [pendingMutationCount, setPendingMutationCount] = useState(0)
   const [syncError, setSyncError] = useState<string | null>(null)
+  const [hydratedSource, setHydratedSource] = useState<string | null>(() => (!isAuthLoading && !user ? 'local' : null))
   const loadRequestRef = useRef(0)
   const isCloudMode = Boolean(user && supabase)
+  const expectedSource = isCloudMode ? user?.id ?? null : 'local'
+  const isHydrating = isAuthLoading || hydratedSource !== expectedSource
+  const visibleItems = isHydrating ? [] : items
+  const isSyncing = pendingMutationCount > 0
 
   useEffect(() => {
     if (isAuthLoading) return undefined
 
     if (!user || !supabase) {
-      setItems(loadSavedItems())
-      setIsSyncing(false)
-      setSyncError(null)
-      return undefined
+      const requestId = loadRequestRef.current + 1
+      loadRequestRef.current = requestId
+      let isCancelled = false
+
+      queueMicrotask(() => {
+        if (isCancelled || loadRequestRef.current !== requestId) return
+        setItems(loadSavedItems())
+        setSyncError(null)
+        setHydratedSource('local')
+      })
+
+      return () => {
+        isCancelled = true
+      }
     }
 
     const requestId = loadRequestRef.current + 1
     loadRequestRef.current = requestId
     let isCancelled = false
 
-    setIsSyncing(true)
-    setSyncError(null)
+    queueMicrotask(() => {
+      if (isCancelled || loadRequestRef.current !== requestId) return
+      setSyncError(null)
+    })
 
     fetchCloudWatchlist(user.id)
       .then((cloudItems) => {
@@ -88,7 +105,7 @@ export function useWatchlist() {
       })
       .finally(() => {
         if (isCancelled || loadRequestRef.current !== requestId) return
-        setIsSyncing(false)
+        setHydratedSource(user.id)
       })
 
     return () => {
@@ -97,12 +114,17 @@ export function useWatchlist() {
   }, [isAuthLoading, user])
 
   useEffect(() => {
-    if (isAuthLoading || isCloudMode) return
+    if (isAuthLoading || isCloudMode || hydratedSource !== 'local') return
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items))
-  }, [isAuthLoading, isCloudMode, items])
+  }, [hydratedSource, isAuthLoading, isCloudMode, items])
 
   const handleAddItem = async (item: MediaItem) => {
-    const alreadyExists = items.some((existingItem) => areSameMediaEntry(existingItem, item))
+    if (isHydrating) {
+      setSyncError('Wait for your watchlist to finish loading before making changes.')
+      return
+    }
+
+    const alreadyExists = visibleItems.some((existingItem) => areSameMediaEntry(existingItem, item))
     if (alreadyExists) return
 
     if (!user || !supabase) {
@@ -110,7 +132,7 @@ export function useWatchlist() {
       return
     }
 
-    setIsSyncing(true)
+    setPendingMutationCount((count) => count + 1)
     setSyncError(null)
 
     try {
@@ -123,17 +145,22 @@ export function useWatchlist() {
       console.error(error)
       setSyncError(error instanceof Error ? error.message : 'Could not save this item to your account.')
     } finally {
-      setIsSyncing(false)
+      setPendingMutationCount((count) => Math.max(0, count - 1))
     }
   }
 
   const handleRemoveItem = async (id: string) => {
+    if (isHydrating) {
+      setSyncError('Wait for your watchlist to finish loading before making changes.')
+      return
+    }
+
     const previousItems = items
     setItems((prevItems) => prevItems.filter((item) => item.id !== id))
 
     if (!user || !supabase) return
 
-    setIsSyncing(true)
+    setPendingMutationCount((count) => count + 1)
     setSyncError(null)
 
     try {
@@ -143,17 +170,22 @@ export function useWatchlist() {
       setSyncError(error instanceof Error ? error.message : 'Could not remove this item from your account.')
       setItems(previousItems)
     } finally {
-      setIsSyncing(false)
+      setPendingMutationCount((count) => Math.max(0, count - 1))
     }
   }
 
   const handleUpdateStatus = async (id: string, status: MediaStatus) => {
+    if (isHydrating) {
+      setSyncError('Wait for your watchlist to finish loading before making changes.')
+      return
+    }
+
     const previousItems = items
     setItems((prevItems) => prevItems.map((item) => (item.id === id ? { ...item, status } : item)))
 
     if (!user || !supabase) return
 
-    setIsSyncing(true)
+    setPendingMutationCount((count) => count + 1)
     setSyncError(null)
 
     try {
@@ -164,13 +196,14 @@ export function useWatchlist() {
       setSyncError(error instanceof Error ? error.message : 'Could not update this item.')
       setItems(previousItems)
     } finally {
-      setIsSyncing(false)
+      setPendingMutationCount((count) => Math.max(0, count - 1))
     }
   }
 
   return {
-    items,
+    items: visibleItems,
     isCloudMode,
+    isHydrating,
     isSyncing,
     syncError,
     handleAddItem,

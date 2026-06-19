@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { MediaDetails, MediaItem, MediaStatus } from '../../types/media'
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -15,51 +16,53 @@ type MediaDetailsModalProps = {
   onClose: () => void
   onRemove: (id: string) => void
   onStatusChange: (id: string, status: MediaStatus) => void
+  restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
-function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDetailsModalProps) {
+function MediaDetailsModal({ item, onClose, onRemove, onStatusChange, restoreFocusRef }: MediaDetailsModalProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
   const yearLabel = item.year ?? item.progress
-  const [tmdbDetails, setTmdbDetails] = useState<MediaDetails | null>(null)
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
-  const [detailsError, setDetailsError] = useState<string | null>(null)
+  const detailsKey = `${item.source ?? ''}-${item.externalId ?? ''}`
+  const [detailsState, setDetailsState] = useState<{
+    key: string
+    details: MediaDetails | null
+    error: string | null
+  }>({ key: '', details: null, error: null })
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useDialogAccessibility({ isOpen: true, onClose, initialFocusRef: closeButtonRef, restoreFocusRef })
 
   const modalTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileModalTransition : desktopModalTransition
   const canLoadDetails = canFetchTmdbDetails(item)
+  const hasCurrentDetails = detailsState.key === detailsKey
+  const tmdbDetails = hasCurrentDetails ? detailsState.details : null
+  const detailsError = hasCurrentDetails ? detailsState.error : null
+  const isLoadingDetails = canLoadDetails && !hasCurrentDetails
 
   useEffect(() => {
-    setTmdbDetails(null)
-    setDetailsError(null)
-
-    if (!canLoadDetails) {
-      setIsLoadingDetails(false)
-      return undefined
-    }
+    if (!canLoadDetails) return undefined
 
     const controller = new AbortController()
-    setIsLoadingDetails(true)
 
     fetchTmdbDetails(item, { signal: controller.signal })
       .then((details) => {
         if (!controller.signal.aborted) {
-          setTmdbDetails(details)
+          setDetailsState({ key: detailsKey, details, error: null })
         }
       })
       .catch((error) => {
         if (controller.signal.aborted) return
         console.error(error)
-        setDetailsError(error instanceof Error ? error.message : 'Could not load TMDB details.')
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setIsLoadingDetails(false)
-        }
+        setDetailsState({
+          key: detailsKey,
+          details: null,
+          error: error instanceof Error ? error.message : 'Could not load TMDB details.',
+        })
       })
 
     return () => controller.abort()
-  }, [canLoadDetails, item])
+  }, [canLoadDetails, detailsKey, item])
 
   const extraMeta = useMemo(() => {
     if (!tmdbDetails) return []
@@ -78,10 +81,12 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
       transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
     >
       <motion.section
+        ref={dialogRef}
         className="details-modal details-result-modal"
         role="dialog"
         aria-modal="true"
         aria-label={item.title}
+        tabIndex={-1}
         initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={modalTransition}
@@ -97,7 +102,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
           transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
         />
 
-        <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
+        <button ref={closeButtonRef} className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
           ✕
         </button>
 

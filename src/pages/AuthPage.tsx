@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/auth'
 
 type AuthPageProps = {
   mode: 'login' | 'signup'

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
@@ -13,7 +13,17 @@ import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 
 function App() {
-  const { items, handleAddItem, handleRemoveItem, handleUpdateStatus } = useWatchlist()
+  const {
+    items,
+    isCloudMode,
+    isHydrating,
+    isSyncing,
+    syncError,
+    handleAddItem,
+    handleRemoveItem,
+    handleUpdateStatus,
+  } = useWatchlist()
+  const searchTriggerRef = useRef<HTMLButtonElement | null>(null)
   const [searchOpenedItemId, setSearchOpenedItemId] = useState<string | null>(null)
   const searchOpenedItem = searchOpenedItemId ? items.find((item) => item.id === searchOpenedItemId) : null
 
@@ -24,7 +34,18 @@ function App() {
 
   return (
     <main className="app">
-      <AppNav items={items} onCreate={handleAddItem} onOpenExisting={setSearchOpenedItemId} />
+      <AppNav
+        items={items}
+        onCreate={handleAddItem}
+        onOpenExisting={setSearchOpenedItemId}
+        searchTriggerRef={searchTriggerRef}
+      />
+
+      <div className="watchlist-sync-status" role={syncError ? 'alert' : 'status'} aria-live={syncError ? 'assertive' : 'polite'}>
+        {isHydrating && <span>Loading your {isCloudMode ? 'cloud' : 'local'} watchlist...</span>}
+        {!isHydrating && isSyncing && <span>Syncing your watchlist...</span>}
+        {syncError && <span>Watchlist sync failed: {syncError}</span>}
+      </div>
 
       <Routes>
         <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
@@ -41,6 +62,7 @@ function App() {
           onClose={() => setSearchOpenedItemId(null)}
           onRemove={handleSearchDetailsRemove}
           onStatusChange={handleUpdateStatus}
+          restoreFocusRef={searchTriggerRef}
         />
       )}
 

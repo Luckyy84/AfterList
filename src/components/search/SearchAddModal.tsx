@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import type { SearchResultItem } from '../../types/search'
@@ -6,6 +7,7 @@ import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useDialogAccessibility } from '../../hooks/useDialogAccessibility'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -51,6 +53,7 @@ type SearchAddModalProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
   onOpenExisting: (id: string) => void
+  searchTriggerRef: RefObject<HTMLButtonElement | null>
 }
 
 function createId(result: SearchResultItem) {
@@ -86,7 +89,7 @@ function mergeUniqueResults(results: SearchResultItem[]) {
   })
 }
 
-function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps) {
+function SearchAddModal({ items, onCreate, onOpenExisting, searchTriggerRef }: SearchAddModalProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
@@ -99,6 +102,25 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const previewCloseRef = useRef<HTMLButtonElement | null>(null)
+
+  const closeSearch = useCallback(() => {
+    setIsExpanded(false)
+    setQuery('')
+    setApiResults([])
+    setIsSearching(false)
+    setSearchError(null)
+    setSelectedResult(null)
+    setSelectedStatus('Planned')
+    setHighlightedIndex(-1)
+  }, [])
+
+  const closePreview = useCallback(() => setSelectedResult(null), [])
+  const previewDialogRef = useDialogAccessibility({
+    isOpen: Boolean(selectedResult),
+    onClose: closePreview,
+    initialFocusRef: previewCloseRef,
+  })
 
   const normalizedQuery = query.trim().toLowerCase()
   const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: modalEase }
@@ -114,21 +136,24 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
   useEffect(() => {
     if (!isExpanded || !normalizedQuery) {
-      setApiResults([])
-      setIsSearching(false)
-      setSearchError(null)
-      return
+      return undefined
     }
 
     const controller = new AbortController()
-    setApiResults([])
-    setIsSearching(true)
-    setSearchError(null)
+    let isCancelled = false
+
+    queueMicrotask(() => {
+      if (isCancelled) return
+      setApiResults([])
+      setIsSearching(true)
+      setSearchError(null)
+    })
 
     const searchTimer = window.setTimeout(async () => {
       try {
         const tmdbResults = await searchTmdb(query, { signal: controller.signal })
         setApiResults(tmdbResults)
+        setHighlightedIndex(tmdbResults.length > 0 ? 0 : -1)
       } catch (error) {
         if (controller.signal.aborted) return
 
@@ -143,6 +168,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     }, 300)
 
     return () => {
+      isCancelled = true
       window.clearTimeout(searchTimer)
       controller.abort()
     }
@@ -154,12 +180,6 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     const focusTimer = window.setTimeout(() => inputRef.current?.focus(), shouldReduceMotion ? 0 : isMobile ? 40 : 80)
     return () => window.clearTimeout(focusTimer)
   }, [isExpanded, shouldReduceMotion, isMobile])
-
-  useEffect(() => {
-    if (!isExpanded) return
-
-    setHighlightedIndex(results.length > 0 ? 0 : -1)
-  }, [isExpanded, results])
 
   useEffect(() => {
     if (!isExpanded) return
@@ -177,18 +197,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isExpanded, selectedResult])
-
-  const closeSearch = () => {
-    setIsExpanded(false)
-    setQuery('')
-    setApiResults([])
-    setIsSearching(false)
-    setSearchError(null)
-    setSelectedResult(null)
-    setSelectedStatus('Planned')
-    setHighlightedIndex(-1)
-  }
+  }, [closeSearch, isExpanded, selectedResult])
 
   const openSearch = () => {
     setIsExpanded(true)
@@ -250,24 +259,26 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
       {selectedResult && (
         <motion.div
           className="modal-backdrop search-result-backdrop"
-          onClick={() => setSelectedResult(null)}
+          onClick={closePreview}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
         >
           <motion.section
+            ref={previewDialogRef}
             className="search-result-detail-modal"
             role="dialog"
             aria-modal="true"
             aria-label={`Add ${selectedResult.title}`}
+            tabIndex={-1}
             initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.985 }}
             transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.24, ease: modalEase }}
             onClick={(event) => event.stopPropagation()}
           >
-            <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
+            <button ref={previewCloseRef} className="modal-close" type="button" aria-label="Close preview" onClick={closePreview}>
               ✕
             </button>
 
@@ -335,6 +346,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
           {!isExpanded ? (
             <motion.button
               key="search-button"
+              ref={searchTriggerRef}
               className="nav-search-button"
               type="button"
               layoutId={shouldSimplifyMotion ? undefined : 'nav-search-control'}

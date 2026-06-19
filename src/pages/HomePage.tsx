@@ -50,16 +50,13 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
   const hero = items[safeHeroIndex]
   const heroPreviewItems = getHeroPreviewItems(items, safeHeroIndex)
+  const selectedItem = selectedItemId ? items.find((item) => item.id === selectedItemId) ?? null : null
   const isDetailsModalOpen = Boolean(selectedItem)
-
-  useEffect(() => {
-    setHeroIndex((currentIndex) => (items.length ? currentIndex % items.length : 0))
-  }, [items.length])
 
   useEffect(() => {
     if (items.length <= 1) return undefined
@@ -73,12 +70,11 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
 
   const handleRemove = (id: string) => {
     onRemove(id)
-    setSelectedItem((current) => (current && current.id === id ? null : current))
+    setSelectedItemId((currentId) => (currentId === id ? null : currentId))
   }
 
   const handleStatusChange = (id: string, status: MediaStatus) => {
     onStatusChange(id, status)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
   }
 
   return (
@@ -169,7 +165,7 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
                 key={row.status}
                 title={row.title}
                 items={items.filter((item) => item.status === row.status)}
-                onSelect={setSelectedItem}
+                onSelect={(item) => setSelectedItemId(item.id)}
                 hideControls={isDetailsModalOpen}
               />
             ))}
@@ -180,7 +176,7 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
       {selectedItem && (
         <MediaDetailsModal
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => setSelectedItemId(null)}
           onRemove={handleRemove}
           onStatusChange={handleStatusChange}
         />

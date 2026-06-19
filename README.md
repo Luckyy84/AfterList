@@ -1,134 +1,54 @@
 # AfterList
 
-AfterList is a dark-mode personal media tracker for **anime, movies, and TV series**.
+AfterList is a dark-mode personal watchlist for anime, movies, and TV series. It is built as a learning project around React, TypeScript, API integration, authentication, persistence, accessibility, and deployment.
 
-The goal is to build a clean Apple TV / Netflix-inspired watchlist while learning **React**, **TypeScript**, **Vite**, Motion, CSS architecture, deployment, auth, database sync, and real API integration step by step.
+Users can search TMDB, preview a title, add it to a watchlist, change its status, remove it, and browse saved titles by media type. AfterList supports two storage modes:
 
-## Live Deployment
+- **Signed out:** the watchlist is stored in this browser's `localStorage`.
+- **Signed in:** the watchlist is loaded from and written to a Supabase `watchlist_items` table.
 
-AfterList is deployed on **Vercel** from the `main` branch.
+Guest items are not currently imported into an account automatically. See [Cloud sync](docs/cloud-sync.md) for the current persistence contract and its security limitations.
 
-The app uses Vercel's static Vite deployment flow, Vercel API functions for TMDB search/details, and a `vercel.json` rewrite so direct refreshes on routes like `/anime`, `/movies`, `/series`, `/login`, and `/signup` work correctly.
+## Tech stack
 
-## Project Goals
+- React 19 and React Router
+- TypeScript
+- Vite
+- Plain CSS and Motion
+- Supabase Auth and database persistence
+- TMDB through Vercel serverless API functions
+- Vitest, Testing Library, and ESLint
+- Vercel deployment
 
-- Track anime, movies, and TV series
-- Keep the design dark, cinematic, glassy, and polished
-- Learn React and TypeScript from the ground up
-- Use real API search results instead of local mock catalogs
-- Keep TMDB credentials server-side through a Vercel API proxy
-- Add real accounts and prepare for cross-device sync
-- Deploy the app as a real hosted website
-- Keep the codebase organized enough to grow without becoming messy
+## Getting started
 
-## Current Status
+Requirements:
 
-Phase 1 is complete, Phase 2 is active, and Phase 3 has started with Supabase Auth UI + account wiring. The app saves API-backed items to `localStorage`, uses a polished dark glass UI with Motion-powered hero, carousel, search, and modal animations, searches/fetches TMDB data through AfterList Vercel API proxies, and now includes Supabase-powered login/signup routes.
+- Node.js and npm
+- A TMDB API credential for search and details
+- A Supabase project for account and cloud-watchlist features
+- Vercel CLI when testing the local API proxy
 
-Implemented so far:
-
-- Live Vercel deployment
-- Homepage hero with automatic random rotation
-- Empty homepage hero for new/empty lists
-- Motion-powered hero transitions
-- Hero preview rail with clickable thumbnails
-- Netflix-like watchlist rows
-- Desktop row arrows
-- Mobile native swipe/grab rows
-- Media cards with poster, title, type, and status
-- Statuses: `Planned`, `Watching`, `Watched`, `Dropped`
-- Automatic migration from old `Completed` status to `Watched`
-- Details modal for saved items
-- Richer TMDB details in saved-item modal: genres, runtime, seasons, episodes, and country metadata
-- Motion details modal animation
-- Edit status from the details modal
-- Remove saved item
-- Search button that expands into a nav search bar
-- Server-side TMDB movie/TV search proxy
-- Server-side TMDB movie/TV details proxy
-- Conservative TMDB anime detection for Japanese animation results
-- No local demo/search fallback data
-- Motion search morph and result transitions
-- Search preview/create modal
-- Keyboard navigation for search results
-- Duplicate prevention and duplicate cleanup on load
-- Mobile layering fixes for search and details modal
-- Mobile performance pass for expensive blur/filter work while keeping Motion animations active
-- TMDB attribution in the UI
-- Supabase auth client setup
-- Login and signup routes
-- Email/password auth wiring
-- Google OAuth button wiring
-- Signed-in nav state and sign-out button
-
-## Roadmap
-
-### Phase 1 — App Foundation
-
-- Basic homepage ✅
-- Media cards ✅
-- Type filters ✅
-- Status filters ✅
-- Edit status ✅
-- Search / create preview flow ✅
-- Remove item ✅
-- Save data with localStorage ✅
-- Duplicate prevention ✅
-- Motion animations for hero, rows, search, and modals ✅
-- Mobile layout and performance stabilization ✅
-- Vercel deployment ✅
-
-### Phase 2 — Real API Search/Add Flow
-
-- Connect TMDB for movies and TV series ✅
-- Replace mock movie/TV search results with API results ✅
-- Remove local search/demo fallback data ✅
-- Add loading and error states ✅
-- Map TMDB results into the app `MediaItem` structure ✅
-- Prevent duplicates using API IDs/source IDs ✅
-- Add API-based item creation ✅
-- Add TMDB attribution in the UI ✅
-- Move TMDB requests behind a Vercel/serverless API proxy ✅
-- Fetch richer TMDB details for saved items ✅
-- Add anime API later, likely AniList or Jikan
-
-### Phase 3 — Accounts and Sync
-
-- Auth UI ✅
-- Supabase client setup ✅
-- Email/password login ✅
-- Email/password signup ✅
-- Google OAuth wiring ✅
-- Signed-in nav state ✅
-- Database storage
-- Sync watchlist across devices
-- Optional local-to-account import
-
-### Phase 4 — Sharing
-
-- Public user profiles
-- Friend sharing
-- Optional public watchlists
-
-## TMDB Proxy Setup
-
-AfterList talks to TMDB through Vercel functions:
-
-```text
-/api/search?query=dune
-/api/details?externalId=movie:550
-/api/details?externalId=tv:1399
-```
-
-The frontend calls the local API proxy, not TMDB directly. The real TMDB credential should be stored as a server-side environment variable.
-
-Create a local env file:
+Install dependencies and create a local environment file:
 
 ```bash
+npm install
 cp .env.example .env.local
 ```
 
-Then add one TMDB credential:
+On PowerShell, create the environment file with:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Never commit `.env.local` or real credentials.
+
+## Environment variables
+
+### TMDB server variables
+
+Configure one of these values:
 
 ```env
 TMDB_API_KEY=your_tmdb_v3_api_key
@@ -136,151 +56,112 @@ TMDB_API_KEY=your_tmdb_v3_api_key
 TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
 ```
 
-Do **not** use the `VITE_` prefix for TMDB credentials. `VITE_*` values are exposed in the browser bundle, while this project reads `TMDB_*` from Vercel API functions.
+TMDB credentials are read by the functions in `api/`. Do not prefix them with `VITE_`: Vite exposes `VITE_*` values to the browser bundle.
 
-For local testing of the API proxy, use Vercel's local dev server:
+### Supabase browser variables
+
+Configure both values to enable authentication and signed-in persistence:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+```
+
+These are intentionally browser-visible publishable values. Never put a Supabase secret key or service-role key in a `VITE_*` variable.
+
+For deployed Preview and Production builds, configure the corresponding values in Vercel. If Google login is enabled, also configure the local and deployed callback URLs in Supabase Auth.
+
+## Local development
+
+Start the Vite frontend only:
+
+```bash
+npm run dev
+```
+
+This is useful for frontend work, but Vite does not run the Vercel functions under `/api`. Search and details requests therefore require the Vercel development server:
 
 ```bash
 npx vercel dev
 ```
 
-Using plain `npm run dev` starts Vite only, so `/api/search` and `/api/details` will not run locally unless Vercel's dev server is handling the request.
-
-## Supabase Auth Setup
-
-AfterList uses Supabase for account auth.
-
-Create a Supabase project, then add these frontend publishable values to `.env.local`:
-
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
-```
-
-These are the client-side values from the Supabase project settings/connect dialog. Do **not** use a Supabase secret/service role key in the frontend.
-
-For Vercel, add the same variables to **Preview** and **Production**:
-
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
-```
-
-For Google OAuth, enable Google as a provider in Supabase Auth, then add your local and deployed URLs in Supabase Auth redirect settings, for example:
+Use `vercel dev` when validating the complete local flow, including:
 
 ```text
-http://localhost:5173
-https://your-afterlist-vercel-domain.vercel.app
+/api/search?query=dune
+/api/details?externalId=movie:550
+/api/details?externalId=tv:1399
 ```
 
-## Vercel Deployment
+## Commands
 
-Recommended Vercel settings:
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite frontend development server |
+| `npm run preview` | Preview an existing production build |
+| `npm run lint` | Lint active project code |
+| `npm test` | Run the Vitest suite once in jsdom |
+| `npm run build` | Type-check configured projects and create the Vite production build |
 
-```text
-Framework Preset: Vite
-Root Directory: ./
-Install Command: npm install
-Build Command: npm run build
-Output Directory: dist
-Production Branch: main
-```
-
-Required environment variable on Vercel:
-
-```env
-TMDB_API_KEY=your_tmdb_v3_api_key
-```
-
-or:
-
-```env
-TMDB_ACCESS_TOKEN=your_tmdb_read_access_token
-```
-
-Add the variable to **Production** and **Preview** environments so both live and preview deployments can search and fetch details.
-
-The project includes `vercel.json` with a single-page-app rewrite that leaves API routes alone:
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/((?!api/.*).*)",
-      "destination": "/"
-    }
-  ]
-}
-```
-
-That keeps route refreshes working for `/anime`, `/movies`, `/series`, `/login`, and `/signup` without swallowing `/api/search` or `/api/details`.
-
-## TMDB Notice
-
-This product uses the TMDB API but is not endorsed or certified by TMDB.
-
-TMDB usage in this project is intended for personal, educational, and non-commercial use unless a separate commercial agreement with TMDB is obtained.
-
-## Tech Stack
-
-- React
-- TypeScript
-- Vite
-- CSS
-- Motion / `motion/react`
-- TMDB API
-- Supabase Auth
-- Vercel
-- Git and GitHub
-
-## Project Structure
-
-```text
-api/
-├─ details.ts        # Vercel API proxy for richer TMDB details
-└─ search.ts         # Vercel API proxy for TMDB search
-src/
-├─ components/
-│  ├─ layout/       # App shell pieces like nav and footer
-│  ├─ media/        # Media cards, rows, and saved-item details modal
-│  └─ search/       # Search bar, result dropdown, and preview/create flow
-├─ context/         # App-level React contexts like Supabase auth
-├─ hooks/           # Reusable React hooks
-├─ pages/           # Route pages for home/anime/movies/series/auth
-├─ services/        # Frontend services that call AfterList API routes and Supabase
-├─ styles/
-│  ├─ auth/         # Login/signup/account styles
-│  ├─ details/      # Details modal/status editor styles
-│  ├─ hero/         # Hero and empty-state hero styles
-│  ├─ media/        # Cards, hover, and row styles
-│  ├─ search/       # Search/nav/modal styles
-│  ├─ base.css      # Core layout and shared styles
-│  ├─ background.css
-│  ├─ index.css     # Imports all grouped CSS files
-│  ├─ mobile-fixes.css
-│  ├─ mobile-layer-fixes.css
-│  └─ mobile-performance.css
-└─ types/           # Shared TypeScript types
-```
-
-## Git Notes
-
-`main` is the deployed production branch.
-
-Use feature branches for bigger changes:
+Before opening or merging a pull request, run:
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b feature-name
-```
-
-Before merging back into `main`:
-
-```bash
-npm install
+npm run lint
+npm test
 npm run build
 ```
 
-Then open a pull request into `main`, test the Vercel preview, and merge after it looks good.
+Use `npx vercel dev` for manual search/details validation because the production build alone does not exercise live API requests.
+
+## Current features
+
+- Responsive watchlist for anime, movies, and TV series
+- Planned, Watching, Watched, and Dropped statuses
+- TMDB-backed search and richer title details
+- Saved-item and search-preview dialogs
+- Duplicate prevention and legacy `Completed` to `Watched` migration
+- Guest persistence in `localStorage`
+- Supabase email/password and Google authentication wiring
+- Signed-in watchlist CRUD through Supabase
+- Vercel Analytics and SPA route rewrites
+
+## Project structure
+
+```text
+api/                 Vercel functions for TMDB search and details
+docs/                Behavior and setup documentation
+src/components/      Layout, media, and search UI
+src/context/         Authentication context
+src/hooks/           Watchlist and reusable React hooks
+src/pages/           Home, category, and authentication routes
+src/services/        TMDB proxy and Supabase clients
+src/styles/          Grouped plain CSS and mobile overrides
+src/types/           Shared TypeScript types
+src/utils/           Media identity, migration, and normalization helpers
+```
+
+`_repo/`, `outputs/`, and archive files are reference or generated material rather than active application source. They should not be used as the implementation source of truth.
+
+## Supabase schema status
+
+The frontend currently expects a `watchlist_items` table, but this repository does **not** contain a reviewed Supabase schema migration or RLS policy migration. That means a fresh Supabase project cannot be reproduced from this repository alone, and the repository cannot prove the security of an existing project's database policies.
+
+Before treating cloud sync as production-ready, a future dedicated change should capture and review:
+
+- table columns, defaults, checks, and indexes;
+- uniqueness rules for user and external media identity;
+- grants and Row Level Security enablement;
+- per-operation ownership policies; and
+- migration and rollback instructions.
+
+Do not apply guessed production policies or use a service-role key in the frontend as a workaround.
+
+## Deployment
+
+AfterList is designed for Vercel with the Vite preset, `npm run build`, and `dist` as the output directory. `vercel.json` rewrites non-API routes to the SPA entry point while leaving `/api/*` available to serverless functions.
+
+Configure both TMDB and Supabase variables for the Vercel environments that need the relevant features. Keep TMDB values server-only and use only Supabase publishable values in `VITE_*` variables.
+
+## TMDB notice
+
+This product uses the TMDB API but is not endorsed or certified by TMDB. Usage is intended for personal, educational, and non-commercial purposes unless separately licensed.

@@ -15,13 +15,13 @@ type CategoryPageProps = {
 }
 
 function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }: CategoryPageProps) {
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const filteredItems = items.filter((item) => item.type === type)
   const hero = filteredItems[0]
+  const selectedItem = selectedItemId ? filteredItems.find((item) => item.id === selectedItemId) ?? null : null
 
   const handleStatusChange = (id: string, status: MediaStatus) => {
     onStatusChange(id, status)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
   }
 
   return (
@@ -51,7 +51,7 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
 
         <motion.div layout className="media-grid">
           {filteredItems.map((item) => (
-            <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
+            <MediaCard key={item.id} item={item} onSelect={(selected) => setSelectedItemId(selected.id)} />
           ))}
         </motion.div>
       </section>
@@ -59,10 +59,10 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
       {selectedItem && (
         <MediaDetailsModal
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => setSelectedItemId(null)}
           onRemove={(id) => {
             onRemove(id)
-            setSelectedItem(null)
+            setSelectedItemId(null)
           }}
           onStatusChange={handleStatusChange}
         />

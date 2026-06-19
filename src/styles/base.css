@@ -67,6 +67,18 @@ h3,
   backdrop-filter: blur(24px) saturate(160%);
 }
 
+.watchlist-sync-status {
+  min-height: 24px;
+  margin: -20px auto 12px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.watchlist-sync-status[role='alert'] {
+  color: #ffb8b8;
+}
+
 .nav {
   position: sticky;
   top: 16px;

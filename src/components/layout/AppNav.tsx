@@ -3,13 +3,15 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
 import SearchAddModal from '../search/SearchAddModal'
 import type { MediaItem } from '../../types/media'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/auth'
 import type { User } from '@supabase/supabase-js'
+import type { RefObject } from 'react'
 
 type AppNavProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
   onOpenExisting: (id: string) => void
+  searchTriggerRef: RefObject<HTMLButtonElement | null>
 }
 
 const navItems = [
@@ -44,7 +46,7 @@ function getDisplayName(user: User | null) {
   return typeof name === 'string' && name.trim() ? name.trim() : 'Account'
 }
 
-export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps) {
+export default function AppNav({ items, onCreate, onOpenExisting, searchTriggerRef }: AppNavProps) {
   const { isLoading, signOut, user } = useAuth()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement | null>(null)
@@ -133,7 +135,12 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
         )}
       </div>
 
-      <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
+      <SearchAddModal
+        items={items}
+        onCreate={onCreate}
+        onOpenExisting={onOpenExisting}
+        searchTriggerRef={searchTriggerRef}
+      />
     </nav>
   )
 }
