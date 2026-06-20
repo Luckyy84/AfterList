@@ -202,6 +202,32 @@ body::after {
   outline: none !important;
 }
 
+.media-card-hover-layer {
+  contain: layout style !important;
+  filter: drop-shadow(0 34px 90px rgba(0, 0, 0, 0.78)) !important;
+}
+
+.media-card-hover-preview {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.media-card-hover-preview .media-poster-shell {
+  border-color: rgba(255, 255, 255, 0.36) !important;
+  background:
+    radial-gradient(circle at 26% 14%, rgba(255, 255, 255, 0.18), transparent 31%),
+    linear-gradient(145deg, #404049 0%, #303038 50%, #22222a 100%) !important;
+  box-shadow:
+    0 34px 96px rgba(0, 0, 0, 0.82),
+    0 18px 46px rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  filter: brightness(1.06) !important;
+}
+
 .media-card:focus-visible .media-poster-shell {
   border-color: rgba(255, 255, 255, 0.42) !important;
   box-shadow:
