@@ -103,8 +103,19 @@ function SearchAddModal({ items, onCreate, onOpenExisting, searchTriggerRef }: S
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const previewCloseRef = useRef<HTMLButtonElement | null>(null)
+  const shouldRestoreSearchFocusRef = useRef(false)
 
-  const closeSearch = useCallback(() => {
+  const setSearchTriggerRef = useCallback((node: HTMLButtonElement | null) => {
+    searchTriggerRef.current = node
+
+    if (node && shouldRestoreSearchFocusRef.current) {
+      shouldRestoreSearchFocusRef.current = false
+      node.focus()
+    }
+  }, [searchTriggerRef])
+
+  const resetSearch = useCallback((shouldRestoreFocus: boolean) => {
+    shouldRestoreSearchFocusRef.current = shouldRestoreFocus
     setIsExpanded(false)
     setQuery('')
     setApiResults([])
@@ -114,6 +125,8 @@ function SearchAddModal({ items, onCreate, onOpenExisting, searchTriggerRef }: S
     setSelectedStatus('Planned')
     setHighlightedIndex(-1)
   }, [])
+
+  const closeSearch = useCallback(() => resetSearch(true), [resetSearch])
 
   const closePreview = useCallback(() => setSelectedResult(null), [])
   const previewDialogRef = useDialogAccessibility({
@@ -205,7 +218,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting, searchTriggerRef }: S
   }
 
   const openExistingItem = (item: MediaItem) => {
-    closeSearch()
+    resetSearch(false)
     onOpenExisting(item.id)
   }
 
@@ -346,7 +359,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting, searchTriggerRef }: S
           {!isExpanded ? (
             <motion.button
               key="search-button"
-              ref={searchTriggerRef}
+              ref={setSearchTriggerRef}
               className="nav-search-button"
               type="button"
               layoutId={shouldSimplifyMotion ? undefined : 'nav-search-control'}

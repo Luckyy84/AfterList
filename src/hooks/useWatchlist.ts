@@ -67,6 +67,8 @@ export function useWatchlist() {
     if (isAuthLoading) return undefined
 
     if (!user || !supabase) {
+      if (hydratedSource === 'local') return undefined
+
       const requestId = loadRequestRef.current + 1
       loadRequestRef.current = requestId
       let isCancelled = false
@@ -82,6 +84,8 @@ export function useWatchlist() {
         isCancelled = true
       }
     }
+
+    if (hydratedSource === user.id) return undefined
 
     const requestId = loadRequestRef.current + 1
     loadRequestRef.current = requestId
@@ -111,7 +115,7 @@ export function useWatchlist() {
     return () => {
       isCancelled = true
     }
-  }, [isAuthLoading, user])
+  }, [hydratedSource, isAuthLoading, user])
 
   useEffect(() => {
     if (isAuthLoading || isCloudMode || hydratedSource !== 'local') return

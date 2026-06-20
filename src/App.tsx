@@ -41,11 +41,18 @@ function App() {
         searchTriggerRef={searchTriggerRef}
       />
 
-      <div className="watchlist-sync-status" role={syncError ? 'alert' : 'status'} aria-live={syncError ? 'assertive' : 'polite'}>
-        {isHydrating && <span>Loading your {isCloudMode ? 'cloud' : 'local'} watchlist...</span>}
-        {!isHydrating && isSyncing && <span>Syncing your watchlist...</span>}
-        {syncError && <span>Watchlist sync failed: {syncError}</span>}
-      </div>
+      {(isHydrating || isSyncing || syncError) && (
+        <div
+          className={`watchlist-sync-status${syncError ? ' is-error' : ''}`}
+          role={syncError ? 'alert' : 'status'}
+          aria-live={syncError ? 'assertive' : 'polite'}
+        >
+          <span className="sync-status-indicator" aria-hidden="true" />
+          {isHydrating && <span>Loading your {isCloudMode ? 'cloud' : 'local'} watchlist...</span>}
+          {!isHydrating && isSyncing && <span>Syncing your watchlist...</span>}
+          {syncError && <span>Watchlist sync failed: {syncError}</span>}
+        </div>
+      )}
 
       <Routes>
         <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />

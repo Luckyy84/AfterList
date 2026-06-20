@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
 import MediaDetailsModal from './MediaDetailsModal'
 import type { MediaItem, MediaStatus, MediaType } from '../../types/media'
@@ -14,11 +14,17 @@ type CategoryPageProps = {
   onStatusChange: (id: string, status: MediaStatus) => void
 }
 
+const statusFilters = ['All', 'Planned', 'Watching', 'Watched', 'Dropped'] as const
+type StatusFilter = (typeof statusFilters)[number]
+
 function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }: CategoryPageProps) {
+  const shouldReduceMotion = useReducedMotion()
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-  const filteredItems = items.filter((item) => item.type === type)
-  const hero = filteredItems[0]
-  const selectedItem = selectedItemId ? filteredItems.find((item) => item.id === selectedItemId) ?? null : null
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
+  const categoryItems = items.filter((item) => item.type === type)
+  const visibleItems = statusFilter === 'All' ? categoryItems : categoryItems.filter((item) => item.status === statusFilter)
+  const hero = categoryItems[0]
+  const selectedItem = selectedItemId ? categoryItems.find((item) => item.id === selectedItemId) ?? null : null
 
   const handleStatusChange = (id: string, status: MediaStatus) => {
     onStatusChange(id, status)
@@ -29,9 +35,9 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
       <motion.section
         className="hero-card category-hero glass-panel"
         style={{ '--hero-image': `url(${hero?.backdrop ?? ''})` } as CSSProperties}
-        initial={{ opacity: 0, y: 18 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="hero-content">
           <p className="eyebrow">AfterList category</p>
@@ -46,14 +52,39 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
             <p className="eyebrow">Library</p>
             <h2>{title} list</h2>
           </div>
-          <p className="section-copy">{filteredItems.length} saved {title.toLowerCase()} in your current list.</p>
+          <p className="section-copy">{categoryItems.length} saved {title.toLowerCase()} in your current list.</p>
         </div>
 
-        <motion.div layout className="media-grid">
-          {filteredItems.map((item) => (
-            <MediaCard key={item.id} item={item} onSelect={(selected) => setSelectedItemId(selected.id)} />
+        <div className="status-filter-bar" aria-label={`Filter ${title} by status`}>
+          {statusFilters.map((status) => (
+            <button
+              key={status}
+              className={`status-filter-chip${statusFilter === status ? ' is-active' : ''}`}
+              type="button"
+              aria-pressed={statusFilter === status}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status}
+              <span aria-hidden="true">
+                {status === 'All' ? categoryItems.length : categoryItems.filter((item) => item.status === status).length}
+              </span>
+            </button>
           ))}
-        </motion.div>
+        </div>
+
+        {visibleItems.length > 0 ? (
+          <motion.div layout={!shouldReduceMotion} className="media-grid">
+            {visibleItems.map((item) => (
+              <MediaCard key={item.id} item={item} onSelect={(selected) => setSelectedItemId(selected.id)} />
+            ))}
+          </motion.div>
+        ) : (
+          <div className="category-empty-state" role="status">
+            <p className="eyebrow">Nothing here yet</p>
+            <h3>{statusFilter === 'All' ? `No saved ${title.toLowerCase()}` : `No ${statusFilter.toLowerCase()} ${title.toLowerCase()}`}</h3>
+            <p>Choose another status or use search to add something new.</p>
+          </div>
+        )}
       </section>
 
       {selectedItem && (

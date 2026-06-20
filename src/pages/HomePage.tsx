@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import MediaDetailsModal from '../components/media/MediaDetailsModal'
 import WatchlistRow from '../components/media/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
-import { useIsMobile } from '../hooks/useMediaQuery'
+import { useIsMobile, useMediaQuery } from '../hooks/useMediaQuery'
 
 type HomePageProps = {
   items: MediaItem[]
@@ -49,7 +49,8 @@ function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
 function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
-  const shouldSimplifyMotion = shouldReduceMotion
+  const supportsFinePointerHover = useMediaQuery('(hover: hover) and (pointer: fine)')
+  const shouldAnimatePreviewInteractions = !shouldReduceMotion && supportsFinePointerHover
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
@@ -91,7 +92,7 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content">
-              <p className="eyebrow">Apple TV calm · Netflix grid</p>
+              <p className="eyebrow">Your next story starts here</p>
               <h1>AfterList</h1>
               <p className="hero-title">{hero.title}</p>
               <p className="hero-description">
@@ -114,9 +115,10 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
                     type="button"
                     className={`hero-preview-thumb${isActive ? ' is-active' : ''}`}
                     aria-label={`Show ${item.title} in hero`}
+                    aria-pressed={isActive}
                     onClick={() => setHeroIndex(index)}
-                    whileHover={shouldSimplifyMotion ? undefined : { y: -3, scale: isActive ? 1.02 : 1.06 }}
-                    whileTap={shouldSimplifyMotion ? undefined : { scale: 0.96 }}
+                    whileHover={shouldAnimatePreviewInteractions ? { y: -3, scale: isActive ? 1.02 : 1.06 } : undefined}
+                    whileTap={shouldAnimatePreviewInteractions ? { scale: 0.96 } : undefined}
                   >
                     <img src={item.poster} alt="" loading="lazy" />
                   </motion.button>

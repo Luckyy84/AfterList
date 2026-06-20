@@ -139,8 +139,8 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange, restoreFoc
 
             <p className="details-result-description">{item.description}</p>
 
-            {isLoadingDetails && <p className="details-api-note">Loading TMDB details…</p>}
-            {detailsError && <p className="details-api-note details-api-error">{detailsError}</p>}
+            {isLoadingDetails && <p className="details-api-note" role="status">Loading TMDB details…</p>}
+            {detailsError && <p className="details-api-note details-api-error" role="alert">{detailsError}</p>}
 
             {tmdbDetails && (
               <div className="details-api-panel" aria-label="TMDB details">

@@ -1,5 +1,6 @@
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 type MediaCardProps = {
   item: MediaItem
@@ -8,10 +9,14 @@ type MediaCardProps = {
 }
 
 function MediaCard({ item, onSelect }: MediaCardProps) {
+  const shouldReduceMotion = useReducedMotion()
+  const supportsFinePointerHover = useMediaQuery('(hover: hover) and (pointer: fine)')
+  const shouldAnimateHover = !shouldReduceMotion && supportsFinePointerHover
+
   return (
     <motion.article
       className="media-card-wrapper"
-      whileHover={{ y: -4, scale: 1.04 }}
+      whileHover={shouldAnimateHover ? { y: -6, scale: 1.045 } : undefined}
       transition={{ type: 'spring', stiffness: 420, damping: 30 }}
     >
       <button

@@ -43,6 +43,29 @@ function ReplacedOpenerHarness() {
   )
 }
 
+function LateFallbackHarness() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [showFallback, setShowFallback] = useState(false)
+  const fallbackRef = useRef<HTMLButtonElement | null>(null)
+  const dialogRef = useDialogAccessibility({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    restoreFocusRef: fallbackRef,
+  })
+
+  return (
+    <>
+      {!showFallback && <button type="button" onClick={() => setIsOpen(true)}>Open late fallback dialog</button>}
+      {showFallback && <button ref={fallbackRef} type="button">Remounted search</button>}
+      {isOpen && (
+        <section ref={dialogRef} role="dialog" tabIndex={-1}>
+          <button type="button" onClick={() => setShowFallback(true)}>Mount fallback</button>
+        </section>
+      )}
+    </>
+  )
+}
+
 describe('useDialogAccessibility', () => {
   it('manages focus, keyboard dismissal, and body scroll while open', async () => {
     const user = userEvent.setup()
@@ -74,5 +97,16 @@ describe('useDialogAccessibility', () => {
     await user.keyboard('{Escape}')
 
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Search' }))
+  })
+
+  it('resolves a fallback that remounts after the dialog opens', async () => {
+    const user = userEvent.setup()
+    render(<LateFallbackHarness />)
+
+    await user.click(screen.getByRole('button', { name: 'Open late fallback dialog' }))
+    await user.click(screen.getByRole('button', { name: 'Mount fallback' }))
+    await user.keyboard('{Escape}')
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remounted search' }))
   })
 })

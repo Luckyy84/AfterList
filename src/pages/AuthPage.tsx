@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useAuth } from '../context/auth'
 
 type AuthPageProps = {
@@ -16,6 +16,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function AuthPage({ mode }: AuthPageProps) {
+  const shouldReduceMotion = useReducedMotion()
   const { isConfigured, isLoading, signIn, signUp, signInWithGoogle, user } = useAuth()
   const navigate = useNavigate()
   const [notice, setNotice] = useState('')
@@ -89,9 +90,9 @@ export default function AuthPage({ mode }: AuthPageProps) {
   return (
     <motion.section
       className="auth-page"
-      initial={{ opacity: 0, y: 18 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease: authEase }}
+      transition={shouldReduceMotion ? { duration: 0.01 } : { duration: 0.55, ease: authEase }}
     >
       <div className="auth-copy glass-panel">
         <p className="eyebrow">AfterList account</p>
@@ -162,7 +163,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
             {isSubmitting ? 'Working...' : isSignup ? 'Create account' : 'Sign in'}
           </button>
 
-          {notice && <p className="auth-notice">{notice}</p>}
+          {notice && <p className="auth-notice" role="alert">{notice}</p>}
         </form>
 
         <p className="auth-switch">

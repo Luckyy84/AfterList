@@ -28,7 +28,8 @@ function ActiveNavBackground() {
       style={{
         position: 'absolute',
         inset: 0,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'rgba(45, 212, 191, 0.16)',
+        border: '1px solid rgba(94, 234, 212, 0.28)',
         borderRadius: '999px',
         zIndex: 1,
       }}
@@ -82,7 +83,8 @@ export default function AppNav({ items, onCreate, onOpenExisting, searchTriggerR
   return (
     <nav className="nav">
       <NavLink className="brand" to="/" end>
-        AfterList
+        <span className="brand-tile" aria-hidden="true">A</span>
+        <span className="brand-wordmark">AfterList</span>
       </NavLink>
 
       <div className="nav-links">

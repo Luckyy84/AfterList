@@ -16,6 +16,10 @@ type DialogAccessibilityOptions = {
   restoreFocusRef?: React.RefObject<HTMLElement | null>
 }
 
+function getRestoreFocusTarget(ref?: React.RefObject<HTMLElement | null>) {
+  return ref?.current ?? null
+}
+
 export function useDialogAccessibility({ isOpen, onClose, initialFocusRef, restoreFocusRef }: DialogAccessibilityOptions) {
   const dialogRef = useRef<HTMLElement | null>(null)
   const onCloseRef = useRef(onClose)
@@ -28,7 +32,6 @@ export function useDialogAccessibility({ isOpen, onClose, initialFocusRef, resto
     if (!isOpen) return undefined
 
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const fallbackFocus = restoreFocusRef?.current ?? null
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
@@ -72,7 +75,7 @@ export function useDialogAccessibility({ isOpen, onClose, initialFocusRef, resto
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = previousOverflow
       const canRestorePrevious = previouslyFocused && previouslyFocused !== document.body && previouslyFocused.isConnected
-      const restoreTarget = canRestorePrevious ? previouslyFocused : fallbackFocus
+      const restoreTarget = canRestorePrevious ? previouslyFocused : getRestoreFocusTarget(restoreFocusRef)
       restoreTarget?.focus()
     }
   }, [initialFocusRef, isOpen, restoreFocusRef])
