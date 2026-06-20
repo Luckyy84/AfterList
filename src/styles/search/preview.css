@@ -10,8 +10,6 @@
   width: min(860px, calc(100vw - 28px));
   max-height: min(820px, 92vh);
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: clamp(24px, 4vw, 34px);
@@ -215,7 +213,6 @@
 
   .search-result-detail-modal {
     max-height: 92vh;
-    overflow-y: auto;
     border-radius: 28px;
   }
 
