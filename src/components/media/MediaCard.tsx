@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 
@@ -9,9 +9,8 @@ type MediaCardProps = {
 }
 
 function MediaCard({ item, onSelect }: MediaCardProps) {
-  const shouldReduceMotion = useReducedMotion()
   const supportsFinePointerHover = useMediaQuery('(hover: hover) and (pointer: fine)')
-  const shouldAnimateHover = !shouldReduceMotion && supportsFinePointerHover
+  const shouldAnimateHover = supportsFinePointerHover
 
   return (
     <motion.article
