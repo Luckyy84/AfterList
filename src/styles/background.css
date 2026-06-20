@@ -85,17 +85,14 @@ body::after {
 /* Motion-powered carousel row. The viewport clips the row, Motion slides the track. */
 .row-scroll-shell {
   position: relative !important;
-  overflow: visible !important;
 }
 
 .row-scroll {
   display: block !important;
   min-height: auto !important;
-  overflow: hidden !important;
   scroll-behavior: auto !important;
   scroll-snap-type: none !important;
   scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
 }
 
 .row-scroll::-webkit-scrollbar {
