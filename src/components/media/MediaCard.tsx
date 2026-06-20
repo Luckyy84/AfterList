@@ -1,6 +1,5 @@
 import { motion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
-import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 type MediaCardProps = {
   item: MediaItem
@@ -9,20 +8,16 @@ type MediaCardProps = {
 }
 
 function MediaCard({ item, onSelect }: MediaCardProps) {
-  const supportsFinePointerHover = useMediaQuery('(hover: hover) and (pointer: fine)')
-  const shouldAnimateHover = supportsFinePointerHover
-
   return (
-    <motion.article
-      className="media-card-wrapper"
-      whileHover={shouldAnimateHover ? { y: -6, scale: 1.045 } : undefined}
-      transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-    >
-      <button
+    <article className="media-card-wrapper">
+      <motion.button
         className="media-card"
         type="button"
         aria-label={`Open details for ${item.title}`}
         onClick={() => onSelect(item)}
+        whileHover={{ y: -8, scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        transition={{ type: 'spring', stiffness: 520, damping: 18, mass: 0.7 }}
       >
         <span className="media-poster-shell">
           <span className="media-poster-frame">
@@ -46,8 +41,8 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
             </span>
           </span>
         </span>
-      </button>
-    </motion.article>
+      </motion.button>
+    </article>
   )
 }
 
