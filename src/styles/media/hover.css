@@ -1,15 +1,4 @@
 /* Final hover polish: cards grow cleanly without adding chunky row spacing. */
-.app,
-.library-section,
-.watchlist-stack,
-.watchlist-row,
-.row-scroll-shell,
-.media-grid,
-.media-card-wrapper,
-.media-card {
-  overflow: visible !important;
-}
-
 .row-scroll-shell {
   position: relative !important;
   margin-inline: -12px !important;
@@ -20,12 +9,9 @@
   min-height: auto !important;
   padding-top: 16px !important;
   padding-bottom: 8px !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
   scroll-behavior: smooth !important;
   scroll-snap-type: x proximity !important;
   scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
 }
 
 .row-scroll::-webkit-scrollbar {
