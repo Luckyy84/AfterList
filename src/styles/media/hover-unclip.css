@@ -1,0 +1,51 @@
+/* Final override: do not clip Motion-scaled media cards.
+   Imported last so it wins over background, edge-fade, and mobile performance rules. */
+.app,
+.library-section,
+.watchlist-stack,
+.watchlist-row,
+.row-scroll-shell,
+.row-scroll,
+.row-scroll-native,
+.row-scroll-track,
+.media-grid,
+.media-card-wrapper,
+.media-card {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+/* Masks/fade layers visually clip the hover even when overflow is visible. */
+.row-scroll,
+.row-scroll-native,
+.row-scroll-shell.has-scroll-controls .row-scroll,
+.row-scroll-shell.has-scroll-controls .row-scroll-native {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  clip-path: none !important;
+}
+
+.row-scroll-shell::before,
+.row-scroll-shell::after,
+.row-fade {
+  display: none !important;
+}
+
+/* Keep hovered/focused cards above neighboring rows and carousel controls. */
+.media-card-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+  transform-origin: center center !important;
+}
+
+.media-card-wrapper:hover,
+.media-card-wrapper:focus-within {
+  z-index: 999 !important;
+}
+
+/* Mobile performance rules add containment; remove it for rows so pop-out hover is not clipped. */
+.watchlist-row {
+  contain: none !important;
+  content-visibility: visible !important;
+}
