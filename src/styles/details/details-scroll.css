@@ -1,5 +1,4 @@
 .details-result-modal {
-  overflow: hidden;
   scrollbar-gutter: stable;
 }
 
@@ -7,8 +6,6 @@
   box-sizing: border-box;
   max-height: min(800px, 92vh);
   align-items: start;
-  overflow-x: hidden;
-  overflow-y: auto;
   overscroll-behavior: contain;
   padding-bottom: clamp(56px, 7vw, 84px);
   scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
@@ -23,26 +20,6 @@
 
 .details-action-panel {
   margin-bottom: max(18px, env(safe-area-inset-bottom));
-}
-
-.details-result-body::-webkit-scrollbar {
-  width: 10px;
-}
-
-.details-result-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.details-result-body::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.24);
-  background-clip: content-box;
-}
-
-.details-result-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.34);
-  background-clip: content-box;
 }
 
 @media (max-width: 780px) {
