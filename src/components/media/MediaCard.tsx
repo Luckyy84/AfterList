@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
+import { cardSpring } from '../../utils/motion'
 
 type MediaCardProps = {
   item: MediaItem
@@ -11,8 +12,9 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
   return (
     <motion.article
       className="media-card-wrapper"
-      whileHover={{ y: -4, scale: 1.04 }}
-      transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+      whileHover={{ y: -8, scale: 1.025, rotateX: 1.5 }}
+      whileTap={{ scale: 0.975 }}
+      transition={cardSpring}
     >
       <button
         className="media-card"
@@ -32,13 +34,14 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
               }}
             />
             <span className="poster-shine" aria-hidden="true" />
+            <span className={`poster-status status-${item.status.toLowerCase()}`}>{item.status}</span>
           </span>
 
           <span className="media-info media-info-inside">
             <strong>{item.title}</strong>
             <span className="card-meta">
               <span className="type-label">{item.type}</span>
-              <span className={`pill ${item.status}`}>{item.status}</span>
+              <span>{item.year || item.progress}</span>
             </span>
           </span>
         </span>

@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { MediaDetails, MediaItem, MediaStatus } from '../../types/media'
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { motionEase, panelSpring, reducedTransition } from '../../utils/motion'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
-const modalEase = [0.22, 1, 0.36, 1] as const
-const reducedTransition = { duration: 0.01 } as const
-const mobileModalTransition = { type: 'spring', stiffness: 430, damping: 34, mass: 0.72 } as const
-const desktopModalTransition = { type: 'spring', stiffness: 360, damping: 32, mass: 0.8 } as const
-
 type MediaDetailsModalProps = {
   item: MediaItem
   onClose: () => void
@@ -21,13 +17,32 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const yearLabel = item.year ?? item.progress
   const [tmdbDetails, setTmdbDetails] = useState<MediaDetails | null>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [detailsError, setDetailsError] = useState<string | null>(null)
 
-  const modalTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileModalTransition : desktopModalTransition
+  const modalTransition = shouldReduceMotion ? reducedTransition : panelSpring
   const canLoadDetails = canFetchTmdbDetails(item)
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    closeButtonRef.current?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousOverflow
+      previouslyFocused?.focus()
+    }
+  }, [onClose])
 
   useEffect(() => {
     setTmdbDetails(null)
@@ -75,7 +90,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
       onClick={onClose}
       initial={shouldReduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
+      transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: motionEase }}
     >
       <motion.section
         className="details-modal details-result-modal"
@@ -94,10 +109,10 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
           aria-hidden="true"
           initial={shouldSimplifyMotion ? false : { opacity: 0, scale: 1.04 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
+          transition={shouldSimplifyMotion ? reducedTransition : { duration: isMobile ? 0.28 : 0.34, ease: motionEase }}
         />
 
-        <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
+        <button ref={closeButtonRef} className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
           ✕
         </button>
 
@@ -108,14 +123,14 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
             alt={item.title}
             initial={shouldSimplifyMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.22 : 0.26, ease: modalEase }}
+            transition={shouldSimplifyMotion ? reducedTransition : { duration: isMobile ? 0.22 : 0.26, ease: motionEase }}
           />
 
           <motion.div
             className="modal-content details-result-content"
             initial={shouldSimplifyMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
+            transition={shouldSimplifyMotion ? reducedTransition : { duration: isMobile ? 0.2 : 0.24, ease: motionEase, delay: 0.04 }}
           >
             <p className="eyebrow details-preview-label">Saved item</p>
             <h2>{item.title}</h2>

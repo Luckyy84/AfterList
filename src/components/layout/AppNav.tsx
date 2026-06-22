@@ -5,6 +5,7 @@ import SearchAddModal from '../search/SearchAddModal'
 import type { MediaItem } from '../../types/media'
 import { useAuth } from '../../context/AuthContext'
 import type { User } from '@supabase/supabase-js'
+import { controlSpring } from '../../utils/motion'
 
 type AppNavProps = {
   items: MediaItem[]
@@ -30,7 +31,7 @@ function ActiveNavBackground() {
         borderRadius: '999px',
         zIndex: 1,
       }}
-      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      transition={controlSpring}
     />
   )
 }
@@ -78,17 +79,17 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
   }
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Primary navigation">
       <NavLink className="brand" to="/" end>
         AfterList
       </NavLink>
 
       <div className="nav-links">
         {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
+          <NavLink key={item.to} to={item.to} end={item.end}>
             {({ isActive }) => (
               <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
+              <span>{item.label}</span>
                 {isActive && <ActiveNavBackground />}
               </>
             )}
@@ -122,10 +123,10 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
             )}
           </div>
         ) : (
-          <NavLink to="/login" style={{ position: 'relative' }}>
+          <NavLink to="/login">
             {({ isActive }) => (
               <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{isLoading ? 'Account' : 'Sign in'}</span>
+                <span>{isLoading ? 'Account' : 'Sign in'}</span>
                 {isActive && <ActiveNavBackground />}
               </>
             )}

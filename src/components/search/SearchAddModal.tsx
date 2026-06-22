@@ -6,47 +6,9 @@ import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { cardSpring, controlSpring, motionEase, panelSpring, reducedTransition } from '../../utils/motion'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
-const modalEase = [0.22, 1, 0.36, 1] as const
-
-const springTransition = {
-  type: 'spring',
-  stiffness: 480,
-  damping: 42,
-  mass: 0.82,
-} as const
-
-const mobileSpringTransition = {
-  type: 'spring',
-  stiffness: 520,
-  damping: 40,
-  mass: 0.72,
-} as const
-
-const fastSpringTransition = {
-  type: 'spring',
-  stiffness: 620,
-  damping: 44,
-  mass: 0.72,
-} as const
-
-const mobileItemTransition = {
-  type: 'spring',
-  stiffness: 560,
-  damping: 42,
-  mass: 0.68,
-} as const
-
-const mobilePanelTransition = {
-  type: 'spring',
-  stiffness: 420,
-  damping: 38,
-  mass: 0.76,
-} as const
-
-const reducedTransition = { duration: 0.01 } as const
-
 type SearchAddModalProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
@@ -101,10 +63,10 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
-  const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: modalEase }
-  const sharedTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileSpringTransition : springTransition
-  const itemTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileItemTransition : fastSpringTransition
-  const panelTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobilePanelTransition : { duration: 0.2, ease: modalEase }
+  const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: motionEase }
+  const sharedTransition = shouldReduceMotion ? reducedTransition : controlSpring
+  const itemTransition = shouldReduceMotion ? reducedTransition : cardSpring
+  const panelTransition = shouldReduceMotion ? reducedTransition : panelSpring
   const detailModalRoot = typeof document === 'undefined' ? null : document.body
 
   const results = useMemo(() => {
@@ -179,7 +141,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isExpanded, selectedResult])
 
-  const closeSearch = () => {
+  function closeSearch() {
     setIsExpanded(false)
     setQuery('')
     setApiResults([])
@@ -254,7 +216,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
+          transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: motionEase }}
         >
           <motion.section
             className="search-result-detail-modal"
@@ -264,7 +226,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
             initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.985 }}
-            transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.24, ease: modalEase }}
+            transition={shouldReduceMotion ? compactTransition : panelSpring}
             onClick={(event) => event.stopPropagation()}
           >
             <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
@@ -277,7 +239,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
               alt=""
               initial={shouldReduceMotion ? false : { scale: 1.04, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
+              transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.28 : 0.34, ease: motionEase }}
             />
             <div className="search-detail-body">
               <motion.img
@@ -286,12 +248,12 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 alt={selectedResult.title}
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.26, ease: modalEase }}
+                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.26, ease: motionEase }}
               />
               <motion.div
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
+                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.2 : 0.24, ease: motionEase, delay: 0.04 }}
               >
                 <p className="eyebrow">Preview result</p>
                 <h3>{selectedResult.title}</h3>

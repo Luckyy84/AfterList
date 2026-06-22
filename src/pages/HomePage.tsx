@@ -1,10 +1,10 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, FocusEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import MediaDetailsModal from '../components/media/MediaDetailsModal'
 import WatchlistRow from '../components/media/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
-import { useIsMobile } from '../hooks/useMediaQuery'
+import { controlSpring, panelSpring, reducedTransition } from '../utils/motion'
 
 type HomePageProps = {
   items: MediaItem[]
@@ -19,147 +19,182 @@ const watchRows: { title: string; status: MediaStatus }[] = [
   { title: 'Dropped', status: 'Dropped' },
 ]
 
-const HERO_ROTATION_MS = 30_000
+const HERO_ROTATION_MS = 12_000
 const HERO_PREVIEW_LIMIT = 5
-const heroEase = [0.22, 1, 0.36, 1] as const
 
 function getNextHeroIndex(currentIndex: number, itemCount: number) {
-  if (itemCount <= 1) return 0
-
-  const offset = Math.floor(Math.random() * (itemCount - 1)) + 1
-  return (currentIndex + offset) % itemCount
+  return itemCount > 1 ? (currentIndex + 1) % itemCount : 0
 }
 
 function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
-  if (!items.length) return []
-
   const previewCount = Math.min(items.length, HERO_PREVIEW_LIMIT)
 
   return Array.from({ length: previewCount }, (_, step) => {
     const index = (currentIndex + step) % items.length
-
-    return {
-      item: items[index],
-      index,
-      isActive: step === 0,
-    }
+    return { item: items[index], index, isActive: step === 0 }
   })
 }
 
 function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
-  const isMobile = useIsMobile()
-  const shouldSimplifyMotion = shouldReduceMotion
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
+  const [isAutoplayPaused, setIsAutoplayPaused] = useState(false)
+  const [isHeroActive, setIsHeroActive] = useState(false)
+  const [isDocumentVisible, setIsDocumentVisible] = useState(!document.hidden)
+
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
   const hero = items[safeHeroIndex]
   const heroPreviewItems = getHeroPreviewItems(items, safeHeroIndex)
   const isDetailsModalOpen = Boolean(selectedItem)
+  const isRotationPaused = Boolean(
+    shouldReduceMotion || isAutoplayPaused || isHeroActive || isDetailsModalOpen || !isDocumentVisible,
+  )
 
   useEffect(() => {
-    setHeroIndex((currentIndex) => (items.length ? currentIndex % items.length : 0))
-  }, [items.length])
+    const handleVisibilityChange = () => setIsDocumentVisible(!document.hidden)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   useEffect(() => {
-    if (items.length <= 1) return undefined
+    if (items.length <= 1 || isRotationPaused) return undefined
 
-    const intervalId = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setHeroIndex((currentIndex) => getNextHeroIndex(currentIndex, items.length))
     }, HERO_ROTATION_MS)
 
-    return () => window.clearInterval(intervalId)
-  }, [items.length])
+    return () => window.clearTimeout(timer)
+  }, [heroIndex, isRotationPaused, items.length])
+
+  const handleHeroBlur = (event: FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setIsHeroActive(false)
+  }
 
   const handleRemove = (id: string) => {
     onRemove(id)
-    setSelectedItem((current) => (current && current.id === id ? null : current))
+    setSelectedItem((current) => (current?.id === id ? null : current))
   }
 
   const handleStatusChange = (id: string, status: MediaStatus) => {
     onStatusChange(id, status)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
+    setSelectedItem((current) => (current?.id === id ? { ...current, status } : current))
   }
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        {hero ? (
-          <motion.section
-            key={`${hero.id}-${safeHeroIndex}`}
-            className="hero-card glass-panel"
-            style={{ '--hero-image': `url(${hero.backdrop})` } as CSSProperties}
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 1.01 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
-          >
-            <div className="hero-content">
-              <p className="eyebrow">Apple TV calm · Netflix grid</p>
-              <h1>AfterList</h1>
-              <p className="hero-title">{hero.title}</p>
-              <p className="hero-description">
-                {hero.description || 'A premium watchlist for anime, movies, and TV series — clean, personal, and not bloated.'}
-              </p>
+      <section
+        className="hero-shell"
+        onMouseEnter={() => setIsHeroActive(true)}
+        onMouseLeave={() => setIsHeroActive(false)}
+        onFocusCapture={() => setIsHeroActive(true)}
+        onBlurCapture={handleHeroBlur}
+      >
+        <AnimatePresence mode="wait">
+          {hero ? (
+            <motion.div
+              key={hero.id}
+              className="hero-card glass-panel"
+              style={{ '--hero-image': `url(${hero.backdrop || hero.poster})` } as CSSProperties}
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.975, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 1.015, y: -14 }}
+              transition={shouldReduceMotion ? reducedTransition : panelSpring}
+            >
+              <div className="hero-content">
+                <p className="eyebrow">Now in your AfterList</p>
+                <h1>{hero.title}</h1>
+                <p className="hero-description">
+                  {hero.description || 'A saved title from your personal watchlist.'}
+                </p>
 
-              <div className="hero-meta">
-                <span className={`pill ${hero.status}`}>{hero.status}</span>
-                <span>{hero.type}</span>
-                <span>{hero.year || hero.progress}</span>
-                <span>★ {hero.rating}</span>
-              </div>
-            </div>
+                <div className="hero-meta">
+                  <span className={`pill ${hero.status}`}>{hero.status}</span>
+                  <span>{hero.type}</span>
+                  {(hero.year || hero.progress) && <span>{hero.year || hero.progress}</span>}
+                  <span>Rating {hero.rating}</span>
+                </div>
 
-            {heroPreviewItems.length > 1 && (
-              <div className="hero-preview-rail" aria-label="Upcoming hero previews">
-                {heroPreviewItems.map(({ item, index, isActive }, position) => (
+                <div className="hero-actions">
                   <motion.button
-                    key={`${item.id}-${index}-${position}`}
+                    className="primary"
                     type="button"
-                    className={`hero-preview-thumb${isActive ? ' is-active' : ''}`}
-                    aria-label={`Show ${item.title} in hero`}
-                    onClick={() => setHeroIndex(index)}
-                    whileHover={shouldSimplifyMotion ? undefined : { y: -3, scale: isActive ? 1.02 : 1.06 }}
-                    whileTap={shouldSimplifyMotion ? undefined : { scale: 0.96 }}
+                    onClick={() => setSelectedItem(hero)}
+                    whileHover={shouldReduceMotion ? undefined : { y: -3, scale: 1.035 }}
+                    whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                    transition={controlSpring}
                   >
-                    <img src={item.poster} alt="" loading="lazy" />
+                    View details
                   </motion.button>
-                ))}
+                  {items.length > 1 && (
+                    <button
+                      className="secondary hero-pause"
+                      type="button"
+                      aria-pressed={isAutoplayPaused}
+                      onClick={() => setIsAutoplayPaused((isPaused) => !isPaused)}
+                    >
+                      {isAutoplayPaused ? 'Resume showcase' : 'Pause showcase'}
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </motion.section>
-        ) : (
-          <motion.section
-            key="empty-homepage"
-            className="hero-card empty-home-hero glass-panel"
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 1.01 }}
-            transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
-          >
-            <div className="hero-content empty-home-content">
-              <p className="eyebrow">AfterList library</p>
-              <h1>Start your list</h1>
-              <p className="hero-description">
-                Search from the top navigation and add your first anime, movie, or TV series to make this space yours.
-              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty-homepage"
+              className="hero-card empty-home-hero glass-panel"
+              initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.975, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={shouldReduceMotion ? reducedTransition : panelSpring}
+            >
+              <div className="hero-content empty-home-content">
+                <p className="eyebrow">Your personal media space</p>
+                <h1>Build a list worth coming back to.</h1>
+                <p className="hero-description">
+                  Search for anime, movies, and TV series, then track what you plan to watch and what you finish.
+                </p>
+                <div className="empty-home-actions" aria-label="Getting started steps">
+                  <span>01 Search</span>
+                  <span>02 Save</span>
+                  <span>03 Keep watching</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <div className="empty-home-actions" aria-label="Getting started steps">
-                <span>Search Media </span>
-                <span>Add to List </span>
-                <span>Track everything</span>
-              </div>
-            </div>
-          </motion.section>
+        {heroPreviewItems.length > 1 && (
+          <div className="hero-preview-rail" aria-label="Choose featured title">
+            {heroPreviewItems.map(({ item, index, isActive }) => (
+              <motion.button
+                key={item.id}
+                type="button"
+                className={`hero-preview-thumb${isActive ? ' is-active' : ''}`}
+                aria-label={`Feature ${item.title}`}
+                aria-pressed={isActive}
+                onClick={() => setHeroIndex(index)}
+                whileHover={shouldReduceMotion ? undefined : { y: -6, scale: 1.07 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.93 }}
+                transition={controlSpring}
+              >
+                <img src={item.poster} alt="" loading="lazy" />
+                <span>{item.title}</span>
+              </motion.button>
+            ))}
+          </div>
         )}
-      </AnimatePresence>
+      </section>
 
       {items.length > 0 && (
         <section className="library-section">
           <div className="section-head library-head">
             <div>
-              <p className="eyebrow">Library</p>
-              <h2>Your watchlist</h2>
+              <p className="eyebrow">Your library</p>
+              <h2>Everything you saved</h2>
+            </div>
+            <div className="library-summary" aria-label={`${items.length} saved titles`}>
+              <strong>{items.length}</strong>
+              <span>saved titles</span>
             </div>
           </div>
 

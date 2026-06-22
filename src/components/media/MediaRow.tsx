@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
 import type { MediaItem } from '../../types/media'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { panelSpring, reducedTransition } from '../../utils/motion'
 
 type WatchlistRowProps = {
   title: string
@@ -12,7 +13,6 @@ type WatchlistRowProps = {
   hideControls?: boolean
 }
 
-const SLIDE_EASE = [0.22, 1, 0.36, 1] as const
 const ROW_GAP = 16
 
 function clamp(value: number, min: number, max: number) {
@@ -75,7 +75,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
 
     const pageAmount = getPageAmount()
     const currentOffset = viewport.scrollLeft
-    let nextOffset = 0
+    let nextOffset: number
 
     if (direction === 'right') {
       const isAlreadyAtEnd = currentOffset >= maxOffset - 1
@@ -103,7 +103,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
       initial={shouldSimplifyMotion ? false : { opacity: 0, y: 24 }}
       whileInView={shouldSimplifyMotion ? undefined : { opacity: 1, y: 0 }}
       viewport={shouldSimplifyMotion ? undefined : { once: true, margin: '-80px' }}
-      transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.36 : 0.5, ease: SLIDE_EASE }}
+      transition={shouldSimplifyMotion ? reducedTransition : panelSpring}
     >
       <div className="row-head">
         <h2>{title}</h2>

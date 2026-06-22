@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
+import { panelSpring, reducedTransition } from '../utils/motion'
 
 type AuthPageProps = {
   mode: 'login' | 'signup'
 }
-
-const authEase = [0.22, 1, 0.36, 1] as const
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message
@@ -16,6 +15,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function AuthPage({ mode }: AuthPageProps) {
+  const shouldReduceMotion = useReducedMotion()
   const { isConfigured, isLoading, signIn, signUp, signInWithGoogle, user } = useAuth()
   const navigate = useNavigate()
   const [notice, setNotice] = useState('')
@@ -89,9 +89,9 @@ export default function AuthPage({ mode }: AuthPageProps) {
   return (
     <motion.section
       className="auth-page"
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease: authEase }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 22, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={shouldReduceMotion ? reducedTransition : panelSpring}
     >
       <div className="auth-copy glass-panel">
         <p className="eyebrow">AfterList account</p>
