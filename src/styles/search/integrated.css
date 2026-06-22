@@ -149,7 +149,7 @@
 }
 
 .nav:has(.nav-search-shell.expanded) .nav-links {
-  transform: translateX(-42px);
+  transform: none;
   gap: 5px;
   opacity: 0.86;
 }
@@ -161,10 +161,6 @@
 @media (max-width: 1060px) {
   .nav-search-shell.expanded {
     width: clamp(330px, 36vw, 420px);
-  }
-
-  .nav:has(.nav-search-shell.expanded) .nav-links {
-    transform: translateX(-32px);
   }
 
   .nav:has(.nav-search-shell.expanded) .nav-links a {
