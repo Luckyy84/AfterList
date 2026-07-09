@@ -95,18 +95,18 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content">
-              <p className="eyebrow">Apple TV calm · Netflix grid</p>
+              <p className="eyebrow">Calm streaming-style library</p>
               <h1>AfterList</h1>
               <p className="hero-title">{hero.title}</p>
               <p className="hero-description">
-                {hero.description || 'A premium watchlist for anime, movies, and TV series — clean, personal, and not bloated.'}
+                {hero.description || 'A premium watchlist for anime, movies, and TV series - clean, personal, and not bloated.'}
               </p>
 
               <div className="hero-meta">
                 <span className={`pill ${hero.status}`}>{hero.status}</span>
                 <span>{hero.type}</span>
                 <span>{hero.year || hero.progress}</span>
-                <span>★ {hero.rating}</span>
+                <span>Rating {hero.rating}</span>
               </div>
             </div>
 

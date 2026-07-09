@@ -268,7 +268,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
             onClick={(event) => event.stopPropagation()}
           >
             <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
-              ✕
+              x
             </button>
 
             <motion.img
@@ -298,7 +298,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 <div className="hero-meta search-detail-meta">
                   <span>{selectedResult.type}</span>
                   <span>{selectedResult.year}</span>
-                  <span>★ {selectedResult.rating}</span>
+                  <span>Rating {selectedResult.rating}</span>
                 </div>
                 <p>{selectedResult.description}</p>
 
@@ -356,12 +356,11 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
               exit={{ opacity: 0, scale: 0.985 }}
               transition={sharedTransition}
             >
-              <span className="nav-search-icon" aria-hidden="true">⌕</span>
               <input
                 ref={inputRef}
                 value={query}
                 aria-label="Search movies, TV series, and anime"
-                placeholder="Search TMDB..."
+                placeholder="Search titles..."
                 onFocus={() => setHighlightedIndex(results.length > 0 ? 0 : -1)}
                 onKeyDown={handleInputKeyDown}
                 onChange={(event) => {
@@ -370,7 +369,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 }}
               />
               <button className="nav-search-clear" type="button" aria-label="Close search" onClick={closeSearch}>
-                ✕
+                x
               </button>
             </motion.div>
           )}
@@ -393,7 +392,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Movies, TV series, and likely anime results come from TMDB through AfterList's API proxy.</span>
+                  <span>Movies, TV series, and anime results come from TMDB through AfterList's API proxy.</span>
                 </motion.div>
               )}
 
@@ -405,7 +404,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                   transition={panelTransition}
                 >
                   <strong>Searching TMDB</strong>
-                  <span>Finding movies, TV series, and anime-like TV results...</span>
+                  <span>Finding movies, TV series, and anime results...</span>
                 </motion.div>
               )}
 
@@ -457,8 +456,8 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                     <span>
                       <strong>{result.title}</strong>
                       <small>
-                        {result.type} • {result.year} • ★ {result.rating} • TMDB
-                        {existingItem ? ` • Saved as ${existingItem.status}` : ''}
+                        {result.type} / {result.year} / Rating {result.rating} / TMDB
+                        {existingItem ? ` / Saved as ${existingItem.status}` : ''}
                       </small>
                     </span>
                   </motion.button>

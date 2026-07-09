@@ -169,6 +169,12 @@ export default function AuthPage({ mode }: AuthPageProps) {
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <Link to={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Create one'}</Link>
         </p>
+
+        {isSignup && (
+          <p className="auth-legal">
+            By creating an account, you agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.
+          </p>
+        )}
       </div>
     </motion.section>
   )

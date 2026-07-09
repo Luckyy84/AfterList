@@ -105,7 +105,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
               onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
             >
               <span>{displayName}</span>
-              <span className="nav-user-chevron" aria-hidden="true">⌄</span>
+              <span className="nav-user-chevron" aria-hidden="true">v</span>
             </button>
 
             {isAccountOpen && (

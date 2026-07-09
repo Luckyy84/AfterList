@@ -6,6 +6,7 @@ import AnimePage from './pages/AnimePage'
 import MoviesPage from './pages/MoviesPage'
 import SeriesPage from './pages/SeriesPage'
 import AuthPage from './pages/AuthPage'
+import LegalPage from './pages/LegalPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
 import MediaDetailsModal from './components/media/MediaDetailsModal'
@@ -23,17 +24,24 @@ function App() {
   }
 
   return (
-    <main className="app">
+    <div className="app">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <AppNav items={items} onCreate={handleAddItem} onOpenExisting={setSearchOpenedItemId} />
 
-      <Routes>
-        <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/login" element={<AuthPage mode="login" />} />
-        <Route path="/signup" element={<AuthPage mode="signup" />} />
-      </Routes>
+      <main id="main-content" className="app-content">
+        <Routes>
+          <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+          <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+          <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+          <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/privacy" element={<LegalPage type="privacy" />} />
+          <Route path="/terms" element={<LegalPage type="terms" />} />
+        </Routes>
+      </main>
 
       {searchOpenedItem && (
         <MediaDetailsModal
@@ -46,7 +54,7 @@ function App() {
 
       <Footer />
       <Analytics />
-    </main>
+    </div>
   )
 }
 

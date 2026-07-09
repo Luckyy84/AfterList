@@ -254,14 +254,24 @@
   text-align: center;
 }
 
-.auth-switch a {
+.auth-switch a,
+.auth-legal a {
   color: #fff;
   font-weight: 860;
   text-decoration: none;
 }
 
-.auth-switch a:hover {
+.auth-switch a:hover,
+.auth-legal a:hover {
   text-decoration: underline;
+}
+
+.auth-legal {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
 }
 
 .nav-auth-menu {

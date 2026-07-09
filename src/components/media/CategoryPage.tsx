@@ -54,6 +54,13 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
             <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
           ))}
         </motion.div>
+
+        {filteredItems.length === 0 && (
+          <div className="empty-state">
+            <h3>No {title.toLowerCase()} saved yet</h3>
+            <p>Use search in the navigation to add a title, then track it here.</p>
+          </div>
+        )}
       </section>
 
       {selectedItem && (

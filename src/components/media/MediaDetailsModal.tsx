@@ -64,7 +64,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
   const extraMeta = useMemo(() => {
     if (!tmdbDetails) return []
 
-    const seasonEpisodeLabel = [tmdbDetails.seasonsLabel, tmdbDetails.episodesLabel].filter(Boolean).join(' · ')
+    const seasonEpisodeLabel = [tmdbDetails.seasonsLabel, tmdbDetails.episodesLabel].filter(Boolean).join(' / ')
 
     return [tmdbDetails.runtimeLabel, seasonEpisodeLabel].filter((value): value is string => Boolean(value))
   }, [tmdbDetails])
@@ -98,7 +98,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
         />
 
         <button className="modal-close" type="button" aria-label="Close details" onClick={onClose}>
-          ✕
+          x
         </button>
 
         <div className="details-result-body">
@@ -123,18 +123,18 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
             <div className="hero-meta details-result-meta">
               <span>{item.type}</span>
               {yearLabel && <span>{yearLabel}</span>}
-              <span>★ {item.rating}</span>
+              <span>Rating {item.rating}</span>
               <span className={`pill ${item.status}`}>{item.status}</span>
               {extraMeta.map((label) => (
                 <span key={label}>{label}</span>
               ))}
             </div>
 
-            {tmdbDetails?.tagline && <p className="details-tagline">“{tmdbDetails.tagline}”</p>}
+            {tmdbDetails?.tagline && <p className="details-tagline">"{tmdbDetails.tagline}"</p>}
 
             <p className="details-result-description">{item.description}</p>
 
-            {isLoadingDetails && <p className="details-api-note">Loading TMDB details…</p>}
+            {isLoadingDetails && <p className="details-api-note">Loading TMDB details...</p>}
             {detailsError && <p className="details-api-note details-api-error">{detailsError}</p>}
 
             {tmdbDetails && (
