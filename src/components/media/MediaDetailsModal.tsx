@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import type { MediaDetails, MediaItem, MediaStatus } from '../../types/media'
+import type { MediaDetails, MediaItem, MediaStatus, MediaUpdate } from '../../types/media'
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
@@ -14,10 +14,12 @@ type MediaDetailsModalProps = {
   item: MediaItem
   onClose: () => void
   onRemove: (id: string) => void
-  onStatusChange: (id: string, status: MediaStatus) => void
+  onUpdate: (id: string, updates: MediaUpdate) => void
+  isSaved?: boolean
+  onAdd?: (item: MediaItem) => void
 }
 
-function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDetailsModalProps) {
+function MediaDetailsModal({ item, onClose, onRemove, onUpdate, isSaved = true, onAdd }: MediaDetailsModalProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
@@ -25,23 +27,59 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
   const [tmdbDetails, setTmdbDetails] = useState<MediaDetails | null>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [detailsError, setDetailsError] = useState<string | null>(null)
+  const dialogRef = useRef<HTMLElement | null>(null)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   const modalTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileModalTransition : desktopModalTransition
   const canLoadDetails = canFetchTmdbDetails(item)
 
   useEffect(() => {
-    setTmdbDetails(null)
-    setDetailsError(null)
+    const previousOverflow = document.body.style.overflow
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    document.body.style.overflow = 'hidden'
+    queueMicrotask(() => dialogRef.current?.querySelector<HTMLElement>('.modal-close')?.focus())
 
-    if (!canLoadDetails) {
-      setIsLoadingDetails(false)
-      return undefined
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCloseRef.current()
+      if (event.key !== 'Tab' || !dialogRef.current) return
+
+      const controls = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')]
+      if (!controls.length) return
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+      previousFocus?.focus()
+    }
+  }, [])
 
+  useEffect(() => {
     const controller = new AbortController()
-    setIsLoadingDetails(true)
 
-    fetchTmdbDetails(item, { signal: controller.signal })
+    void Promise.resolve().then(() => {
+      if (controller.signal.aborted) return
+      setTmdbDetails(null)
+      setDetailsError(null)
+      setIsLoadingDetails(canLoadDetails)
+    })
+
+    if (!canLoadDetails) return () => controller.abort()
+
+    fetchTmdbDetails({ externalId: item.externalId }, { signal: controller.signal })
       .then((details) => {
         if (!controller.signal.aborted) {
           setTmdbDetails(details)
@@ -59,7 +97,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
       })
 
     return () => controller.abort()
-  }, [canLoadDetails, item])
+  }, [canLoadDetails, item.externalId])
 
   const extraMeta = useMemo(() => {
     if (!tmdbDetails) return []
@@ -78,6 +116,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
       transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
     >
       <motion.section
+        ref={dialogRef}
         className="details-modal details-result-modal"
         role="dialog"
         aria-modal="true"
@@ -117,7 +156,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
             animate={{ opacity: 1, y: 0 }}
             transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
           >
-            <p className="eyebrow details-preview-label">Saved item</p>
+            <p className="eyebrow details-preview-label">{isSaved ? 'Saved item' : 'Discovery preview'}</p>
             <h2>{item.title}</h2>
 
             <div className="hero-meta details-result-meta">
@@ -159,21 +198,25 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
               </div>
             )}
 
-            <div className="details-action-panel">
-              <label className="status-editor details-status-editor">
-                <span>Edit status</span>
-                <select
-                  value={item.status}
-                  aria-label={`Edit status for ${item.title}`}
-                  onChange={(event) => onStatusChange(item.id, event.target.value as MediaStatus)}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {!isSaved ? (
+              <button className="primary-action" type="button" onClick={() => { onAdd?.(item); onClose() }}>Add to watchlist</button>
+            ) : <div className="details-action-panel">
+              <fieldset className="status-choice-group">
+                <legend>Watch status</legend>
+                {statusOptions.map((status) => <button type="button" key={status} className={item.status === status ? 'is-active' : ''} aria-pressed={item.status === status} onClick={() => onUpdate(item.id, { status })}>{status}</button>)}
+              </fieldset>
+
+              {item.type !== 'Movie' && (
+                <div className="tracking-fields">
+                  <label>Current episode<input type="number" min="0" max={item.totalEpisodes || undefined} value={item.currentEpisode ?? 0} onChange={(event) => onUpdate(item.id, { currentEpisode: Number(event.target.value) })} /></label>
+                  <label>Total episodes<input type="number" min="1" value={item.totalEpisodes ?? ''} placeholder="Unknown" onChange={(event) => onUpdate(item.id, { totalEpisodes: event.target.value ? Number(event.target.value) : undefined })} /></label>
+                </div>
+              )}
+
+              <div className="tracking-fields">
+                <label>My rating<input type="number" min="1" max="10" value={item.personalRating ?? ''} placeholder="1–10" onChange={(event) => onUpdate(item.id, { personalRating: event.target.value ? Number(event.target.value) : null })} /></label>
+                <button type="button" className={`favorite-button${item.isFavorite ? ' is-active' : ''}`} aria-pressed={Boolean(item.isFavorite)} onClick={() => onUpdate(item.id, { isFavorite: !item.isFavorite })}>{item.isFavorite ? 'Remove favorite' : 'Add favorite'}</button>
+              </div>
 
               <button
                 className="delete-btn details-delete-btn"
@@ -184,7 +227,7 @@ function MediaDetailsModal({ item, onClose, onRemove, onStatusChange }: MediaDet
               >
                 Remove from AfterList
               </button>
-            </div>
+            </div>}
           </motion.div>
         </div>
       </motion.section>

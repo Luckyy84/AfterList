@@ -40,8 +40,6 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
   }, [measureScrollRange])
 
   useLayoutEffect(() => {
-    updateMetrics()
-
     const viewport = viewportRef.current
     const track = trackRef.current
     if (!viewport || !track) return
@@ -75,23 +73,21 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
 
     const pageAmount = getPageAmount()
     const currentOffset = viewport.scrollLeft
-    let nextOffset = 0
-
-    if (direction === 'right') {
+    const nextOffset = direction === 'right' ? (() => {
       const isAlreadyAtEnd = currentOffset >= maxOffset - 1
       const candidateOffset = currentOffset + pageAmount
-      nextOffset = isAlreadyAtEnd ? 0 : clamp(candidateOffset, 0, maxOffset)
-    } else {
+      return isAlreadyAtEnd ? 0 : clamp(candidateOffset, 0, maxOffset)
+    })() : (() => {
       const isAlreadyAtStart = currentOffset <= 1
       const candidateOffset = currentOffset - pageAmount
-      nextOffset = isAlreadyAtStart ? maxOffset : clamp(candidateOffset, 0, maxOffset)
-    }
+      return isAlreadyAtStart ? maxOffset : clamp(candidateOffset, 0, maxOffset)
+    })()
 
     viewport.scrollTo({ left: nextOffset, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
     setMaxScrollLeft(maxOffset)
   }
 
-  const handleArrowClick = (direction: 'left' | 'right') => (event: MouseEvent<HTMLButtonElement>) => {
+  const handleArrowClick = (event: MouseEvent<HTMLButtonElement>, direction: 'left' | 'right') => {
     event.preventDefault()
     event.stopPropagation()
     slideRow(direction)
@@ -116,7 +112,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
             className="row-scroll-button row-scroll-button-left"
             type="button"
             aria-label={`Slide ${title} left`}
-            onClick={handleArrowClick('left')}
+            onClick={(event) => handleArrowClick(event, 'left')}
           >
             ‹
           </button>
@@ -135,7 +131,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
             className="row-scroll-button row-scroll-button-right"
             type="button"
             aria-label={`Slide ${title} right`}
-            onClick={handleArrowClick('right')}
+            onClick={(event) => handleArrowClick(event, 'right')}
           >
             ›
           </button>

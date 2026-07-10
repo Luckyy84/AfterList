@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
-import AnimePage from './pages/AnimePage'
-import MoviesPage from './pages/MoviesPage'
-import SeriesPage from './pages/SeriesPage'
 import AuthPage from './pages/AuthPage'
 import LegalPage from './pages/LegalPage'
+import DiscoverPage from './pages/DiscoverPage'
+import LibraryPage from './pages/LibraryPage'
+import StatisticsPage from './pages/StatisticsPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
 import MediaDetailsModal from './components/media/MediaDetailsModal'
@@ -14,7 +14,7 @@ import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 
 function App() {
-  const { items, handleAddItem, handleRemoveItem, handleUpdateStatus } = useWatchlist()
+  const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
   const [searchOpenedItemId, setSearchOpenedItemId] = useState<string | null>(null)
   const searchOpenedItem = searchOpenedItemId ? items.find((item) => item.id === searchOpenedItemId) : null
 
@@ -30,12 +30,22 @@ function App() {
       </a>
       <AppNav items={items} onCreate={handleAddItem} onOpenExisting={setSearchOpenedItemId} />
 
+      {(syncError || isSyncing) && (
+        <div className={`sync-banner${syncError ? ' is-error' : ''}`} role={syncError ? 'alert' : 'status'}>
+          <span>{syncError ?? 'Syncing your watchlist…'}</span>
+          {syncError && <button type="button" onClick={retrySync}>Retry sync</button>}
+        </div>
+      )}
+
       <main id="main-content" className="app-content">
         <Routes>
-          <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-          <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-          <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-          <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/library" element={<LibraryPage items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/statistics" element={<StatisticsPage items={items} />} />
+          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
@@ -48,7 +58,7 @@ function App() {
           item={searchOpenedItem}
           onClose={() => setSearchOpenedItemId(null)}
           onRemove={handleSearchDetailsRemove}
-          onStatusChange={handleUpdateStatus}
+          onUpdate={handleUpdateItem}
         />
       )}
 

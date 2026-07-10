@@ -1,4 +1,4 @@
-import type { MediaItem, MediaSource, MediaType } from '../types/media'
+import type { MediaItem, MediaSource, MediaType, MediaUpdate } from '../types/media'
 
 export function getStatusLabel(status: string) {
   return status.toUpperCase()
@@ -49,4 +49,56 @@ export function dedupeMediaItems(items: MediaItem[]) {
 
 export function findMatchingMediaItem<TItem extends MediaComparable>(items: MediaItem[], targetItem: TItem) {
   return items.find((item) => areSameMediaEntry(item, targetItem))
+}
+
+export function getMediaKey(item: Pick<MediaItem, 'source' | 'externalId'>) {
+  return item.source && item.externalId ? `${item.source}:${item.externalId}` : ''
+}
+
+export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = new Date().toISOString()): MediaItem {
+  const updated = { ...item, ...updates, updatedAt: now }
+
+  updated.personalRating = updated.personalRating == null || !Number.isFinite(updated.personalRating)
+    ? null
+    : Math.min(10, Math.max(1, Math.round(updated.personalRating)))
+
+  if (updated.type === 'Movie') {
+    updated.currentEpisode = undefined
+    updated.totalEpisodes = undefined
+    return updated
+  }
+
+  updated.currentEpisode = Number.isFinite(updated.currentEpisode)
+    ? Math.max(0, Math.floor(updated.currentEpisode ?? 0))
+    : 0
+  updated.totalEpisodes = Number.isFinite(updated.totalEpisodes) && updated.totalEpisodes! > 0
+    ? Math.floor(updated.totalEpisodes!)
+    : undefined
+  if (updated.totalEpisodes) {
+    updated.currentEpisode = Math.min(updated.currentEpisode ?? 0, updated.totalEpisodes)
+    if (updated.currentEpisode === updated.totalEpisodes) updated.status = 'Watched'
+    else if (updates.currentEpisode !== undefined && item.status === 'Watched') updated.status = 'Watching'
+  }
+
+  return updated
+}
+
+export function mergeWatchlists(
+  localItems: MediaItem[],
+  cloudItems: MediaItem[],
+  localItemsWithUnknownRecency = new Set<string>(),
+) {
+  return localItems.reduce((merged, localItem) => {
+    const cloudIndex = merged.findIndex((cloudItem) => areSameMediaEntry(localItem, cloudItem))
+    if (cloudIndex < 0) return [...merged, localItem]
+
+    const cloudItem = merged[cloudIndex]
+    const localKey = getMediaKey(localItem)
+    const localIsNewer = !localItemsWithUnknownRecency.has(localKey)
+      && Boolean(localItem.updatedAt)
+      && (!cloudItem.updatedAt || localItem.updatedAt! > cloudItem.updatedAt)
+
+    if (localIsNewer) merged[cloudIndex] = { ...localItem, id: cloudItem.id }
+    return merged
+  }, [...cloudItems])
 }

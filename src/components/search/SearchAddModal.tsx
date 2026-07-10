@@ -99,6 +99,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const detailModalRef = useRef<HTMLElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
   const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: modalEase }
@@ -113,19 +114,13 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   }, [apiResults, normalizedQuery, searchError])
 
   useEffect(() => {
-    if (!isExpanded || !normalizedQuery) {
-      setApiResults([])
-      setIsSearching(false)
-      setSearchError(null)
-      return
-    }
+    if (!isExpanded || !normalizedQuery) return
 
     const controller = new AbortController()
-    setApiResults([])
-    setIsSearching(true)
-    setSearchError(null)
-
     const searchTimer = window.setTimeout(async () => {
+      setApiResults([])
+      setIsSearching(true)
+      setSearchError(null)
       try {
         const tmdbResults = await searchTmdb(query, { signal: controller.signal })
         setApiResults(tmdbResults)
@@ -156,28 +151,34 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   }, [isExpanded, shouldReduceMotion, isMobile])
 
   useEffect(() => {
-    if (!isExpanded) return
+    if (!selectedResult) return
+    const previousOverflow = document.body.style.overflow
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    document.body.style.overflow = 'hidden'
+    queueMicrotask(() => detailModalRef.current?.querySelector<HTMLElement>('.modal-close')?.focus())
 
-    setHighlightedIndex(results.length > 0 ? 0 : -1)
-  }, [isExpanded, results])
-
-  useEffect(() => {
-    if (!isExpanded) return
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (selectedResult) {
-          setSelectedResult(null)
-          return
-        }
-
-        closeSearch()
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !detailModalRef.current) return
+      const controls = [...detailModalRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')]
+      if (!controls.length) return
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isExpanded, selectedResult])
+    document.addEventListener('keydown', trapFocus)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', trapFocus)
+      previousFocus?.focus()
+    }
+  }, [selectedResult])
 
   const closeSearch = () => {
     setIsExpanded(false)
@@ -189,6 +190,19 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     setSelectedStatus('Planned')
     setHighlightedIndex(-1)
   }
+
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      if (selectedResult) setSelectedResult(null)
+      else closeSearch()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isExpanded, selectedResult])
 
   const openSearch = () => {
     setIsExpanded(true)
@@ -257,6 +271,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
           transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
         >
           <motion.section
+            ref={detailModalRef}
             className="search-result-detail-modal"
             role="dialog"
             aria-modal="true"
@@ -318,7 +333,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 </label>
 
                 <button className="create-item-btn" type="button" onClick={handleCreate}>
-                  Create
+                  Add to watchlist
                 </button>
               </motion.div>
             </div>

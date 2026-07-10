@@ -95,10 +95,10 @@ export default function AuthPage({ mode }: AuthPageProps) {
     >
       <div className="auth-copy glass-panel">
         <p className="eyebrow">AfterList account</p>
-        <h1>{isSignup ? 'Create your sync vault' : 'Welcome back'}</h1>
+        <h1>{isSignup ? 'Protect the list you built.' : 'Welcome back'}</h1>
         <p>
           {isSignup
-            ? 'Make your watchlist portable across desktop, phone, and every late-night search session.'
+            ? 'An account keeps your watchlist backed up and synced across your devices. You can keep using AfterList as a guest, too.'
             : 'Sign in to keep your anime, movies, and TV series synced across devices.'}
         </p>
 

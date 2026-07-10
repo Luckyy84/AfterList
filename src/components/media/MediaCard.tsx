@@ -8,6 +8,10 @@ type MediaCardProps = {
 }
 
 function MediaCard({ item, onSelect }: MediaCardProps) {
+  const progress = item.type !== 'Movie' && item.totalEpisodes
+    ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
+    : null
+
   return (
     <motion.article
       className="media-card-wrapper"
@@ -37,7 +41,7 @@ function MediaCard({ item, onSelect }: MediaCardProps) {
           <span className="media-info media-info-inside">
             <strong>{item.title}</strong>
             <span className="card-meta">
-              <span className="type-label">{item.type}</span>
+              <span className="type-label">{progress || item.type}</span>
               <span className={`pill ${item.status}`}>{item.status}</span>
             </span>
           </span>

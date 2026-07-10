@@ -14,9 +14,9 @@ type AppNavProps = {
 
 const navItems = [
   { label: 'Home', to: '/', end: true },
-  { label: 'Anime', to: '/anime' },
-  { label: 'Movies', to: '/movies' },
-  { label: 'TV Series', to: '/series' },
+  { label: 'Discover', to: '/discover' },
+  { label: 'Library', to: '/library' },
+  { label: 'Statistics', to: '/statistics' },
 ]
 
 function ActiveNavBackground() {
@@ -78,7 +78,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
   }
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Primary navigation">
       <NavLink className="brand" to="/" end>
         AfterList
       </NavLink>

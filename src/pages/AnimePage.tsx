@@ -1,11 +1,11 @@
 import CategoryPage from '../components/media/CategoryPage'
-import type { MediaItem, MediaStatus } from '../types/media'
+import type { MediaItem, MediaUpdate } from '../types/media'
 type AnimePageProps = {
   items: MediaItem[]
   onRemove: (id: string) => void
-  onStatusChange: (id: string, status: MediaStatus) => void
+  onUpdate: (id: string, updates: MediaUpdate) => void
 }
-function AnimePage({ items, onRemove, onStatusChange }: AnimePageProps) {
+function AnimePage({ items, onRemove, onUpdate }: AnimePageProps) {
   return (
     <CategoryPage
       title="Anime"
@@ -13,7 +13,7 @@ function AnimePage({ items, onRemove, onStatusChange }: AnimePageProps) {
       type="Anime"
       items={items}
       onRemove={onRemove}
-      onStatusChange={onStatusChange}
+      onUpdate={onUpdate}
     />
   )
 }

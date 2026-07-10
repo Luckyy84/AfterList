@@ -31,4 +31,13 @@ export type MediaItem = {
   year?: string
   source?: MediaSource
   externalId?: string
+  currentEpisode?: number
+  totalEpisodes?: number
+  personalRating?: number | null
+  isFavorite?: boolean
+  updatedAt?: string
 }
+
+export type MediaUpdate = Partial<
+  Pick<MediaItem, 'status' | 'currentEpisode' | 'totalEpisodes' | 'personalRating' | 'isFavorite'>
+>

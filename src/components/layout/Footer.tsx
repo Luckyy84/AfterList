@@ -17,10 +17,10 @@ export default function Footer() {
         <div className="footer-col">
           <h3>PAGES</h3>
           <ul>
-            <li><Link to="/">Homepage</Link></li>
-            <li><Link to="/anime">Anime</Link></li>
-            <li><Link to="/movies">Movies</Link></li>
-            <li><Link to="/series">TV Series</Link></li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/discover">Discover</Link></li>
+            <li><Link to="/library">Library</Link></li>
+            <li><Link to="/statistics">Statistics</Link></li>
           </ul>
         </div>
 
