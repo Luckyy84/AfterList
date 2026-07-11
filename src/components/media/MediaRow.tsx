@@ -8,7 +8,8 @@ import { useIsMobile } from '../../hooks/useMediaQuery'
 type WatchlistRowProps = {
   title: string
   items: MediaItem[]
-  onSelect: (item: MediaItem) => void
+  onAdd?: (item: MediaItem) => void
+  isItemSaved?: (item: MediaItem) => boolean
   hideControls?: boolean
 }
 
@@ -19,7 +20,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export default function WatchlistRow({ title, items, onSelect, hideControls = false }: WatchlistRowProps) {
+export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false }: WatchlistRowProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
@@ -40,8 +41,6 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
   }, [measureScrollRange])
 
   useLayoutEffect(() => {
-    updateMetrics()
-
     const viewport = viewportRef.current
     const track = trackRef.current
     if (!viewport || !track) return
@@ -75,23 +74,21 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
 
     const pageAmount = getPageAmount()
     const currentOffset = viewport.scrollLeft
-    let nextOffset = 0
-
-    if (direction === 'right') {
+    const nextOffset = direction === 'right' ? (() => {
       const isAlreadyAtEnd = currentOffset >= maxOffset - 1
       const candidateOffset = currentOffset + pageAmount
-      nextOffset = isAlreadyAtEnd ? 0 : clamp(candidateOffset, 0, maxOffset)
-    } else {
+      return isAlreadyAtEnd ? 0 : clamp(candidateOffset, 0, maxOffset)
+    })() : (() => {
       const isAlreadyAtStart = currentOffset <= 1
       const candidateOffset = currentOffset - pageAmount
-      nextOffset = isAlreadyAtStart ? maxOffset : clamp(candidateOffset, 0, maxOffset)
-    }
+      return isAlreadyAtStart ? maxOffset : clamp(candidateOffset, 0, maxOffset)
+    })()
 
     viewport.scrollTo({ left: nextOffset, behavior: prefersReducedMotion ? 'auto' : 'smooth' })
     setMaxScrollLeft(maxOffset)
   }
 
-  const handleArrowClick = (direction: 'left' | 'right') => (event: MouseEvent<HTMLButtonElement>) => {
+  const handleArrowClick = (event: MouseEvent<HTMLButtonElement>, direction: 'left' | 'right') => {
     event.preventDefault()
     event.stopPropagation()
     slideRow(direction)
@@ -116,7 +113,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
             className="row-scroll-button row-scroll-button-left"
             type="button"
             aria-label={`Slide ${title} left`}
-            onClick={handleArrowClick('left')}
+            onClick={(event) => handleArrowClick(event, 'left')}
           >
             ‹
           </button>
@@ -124,9 +121,10 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
 
         <div className={`row-scroll${shouldUseNativeScroll ? ' row-scroll-native' : ''}`} ref={viewportRef}>
           <motion.div className="row-scroll-track" ref={trackRef}>
-            {items.map((item, index) => (
-              <MediaCard key={`${item.id}-${index}`} item={item} onSelect={onSelect} />
-            ))}
+            {items.map((item, index) => {
+              const isSaved = isItemSaved?.(item) ?? !onAdd
+              return <MediaCard key={`${item.id}-${index}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : onAdd} />
+            })}
           </motion.div>
         </div>
 
@@ -135,7 +133,7 @@ export default function WatchlistRow({ title, items, onSelect, hideControls = fa
             className="row-scroll-button row-scroll-button-right"
             type="button"
             aria-label={`Slide ${title} right`}
-            onClick={handleArrowClick('right')}
+            onClick={(event) => handleArrowClick(event, 'right')}
           >
             ›
           </button>

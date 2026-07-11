@@ -1,15 +1,17 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import MediaDetailsModal from '../components/media/MediaDetailsModal'
+import { Link } from 'react-router-dom'
 import WatchlistRow from '../components/media/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
+import type { SearchResultItem } from '../types/search'
 import { useIsMobile } from '../hooks/useMediaQuery'
+import { discoverTmdb } from '../services/tmdb'
+import { findMatchingMediaItem, getMediaKey } from '../utils/media'
 
 type HomePageProps = {
   items: MediaItem[]
-  onRemove: (id: string) => void
-  onStatusChange: (id: string, status: MediaStatus) => void
+  onCreate: (item: MediaItem) => void
 }
 
 const watchRows: { title: string; status: MediaStatus }[] = [
@@ -22,6 +24,10 @@ const watchRows: { title: string; status: MediaStatus }[] = [
 const HERO_ROTATION_MS = 30_000
 const HERO_PREVIEW_LIMIT = 5
 const heroEase = [0.22, 1, 0.36, 1] as const
+
+function toMediaItem(result: SearchResultItem): MediaItem {
+  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
+}
 
 function getNextHeroIndex(currentIndex: number, itemCount: number) {
   if (itemCount <= 1) return 0
@@ -46,20 +52,20 @@ function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
   })
 }
 
-function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
+function HomePage({ items, onCreate }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [heroIndex, setHeroIndex] = useState(0)
+  const [discoveryItems, setDiscoveryItems] = useState<MediaItem[]>([])
+  const recommendationSeed = items.find((item) => item.externalId)
+  const recommendationExternalId = recommendationSeed?.externalId
+  const recommendationMediaType = recommendationSeed?.type === 'Movie' ? 'movie' : 'tv'
+  const savedMediaKeys = items.map(getMediaKey).filter(Boolean).sort().join('|')
   const safeHeroIndex = items.length ? heroIndex % items.length : 0
   const hero = items[safeHeroIndex]
   const heroPreviewItems = getHeroPreviewItems(items, safeHeroIndex)
-  const isDetailsModalOpen = Boolean(selectedItem)
-
-  useEffect(() => {
-    setHeroIndex((currentIndex) => (items.length ? currentIndex % items.length : 0))
-  }, [items.length])
+  const continueWatching = items.filter((item) => item.status === 'Watching')
 
   useEffect(() => {
     if (items.length <= 1) return undefined
@@ -71,15 +77,28 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
     return () => window.clearInterval(intervalId)
   }, [items.length])
 
-  const handleRemove = (id: string) => {
-    onRemove(id)
-    setSelectedItem((current) => (current && current.id === id ? null : current))
-  }
+  useEffect(() => {
+    const controller = new AbortController()
+    const savedKeys = new Set(savedMediaKeys.split('|').filter(Boolean))
 
-  const handleStatusChange = (id: string, status: MediaStatus) => {
-    onStatusChange(id, status)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
-  }
+    const loadDiscovery = async () => {
+      let results: SearchResultItem[] = []
+      if (recommendationExternalId) {
+        try {
+          results = await discoverTmdb({ feed: 'recommendations', externalId: recommendationExternalId, mediaType: recommendationMediaType, signal: controller.signal })
+        } catch { /* Fall through to public trending titles. */ }
+      }
+      if (!results.length) {
+        try {
+          results = await discoverTmdb({ feed: 'trending', mediaType: 'all', signal: controller.signal })
+        } catch { /* The watchlist remains usable when discovery is offline. */ }
+      }
+      if (!controller.signal.aborted) setDiscoveryItems(results.map(toMediaItem).filter((result) => !savedKeys.has(getMediaKey(result))).slice(0, 12))
+    }
+
+    void loadDiscovery()
+    return () => controller.abort()
+  }, [recommendationExternalId, recommendationMediaType, savedMediaKeys])
 
   return (
     <>
@@ -95,19 +114,20 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content">
-              <p className="eyebrow">Apple TV calm · Netflix grid</p>
-              <h1>AfterList</h1>
+              <p className="eyebrow">Your next story, remembered</p>
+              <h1>Pick up where you left off.</h1>
               <p className="hero-title">{hero.title}</p>
               <p className="hero-description">
-                {hero.description || 'A premium watchlist for anime, movies, and TV series — clean, personal, and not bloated.'}
+                {hero.description || 'A premium watchlist for anime, movies, and TV series - clean, personal, and not bloated.'}
               </p>
 
               <div className="hero-meta">
                 <span className={`pill ${hero.status}`}>{hero.status}</span>
                 <span>{hero.type}</span>
                 <span>{hero.year || hero.progress}</span>
-                <span>★ {hero.rating}</span>
+                <span>Rating {hero.rating}</span>
               </div>
+              <div className="hero-actions"><Link className="primary-action" to={`/details/${hero.source}/${encodeURIComponent(hero.externalId ?? hero.id)}`} state={{ item: hero }}>View {hero.title}</Link><Link className="secondary-action" to="/discover">Discover something new</Link></div>
             </div>
 
             {heroPreviewItems.length > 1 && (
@@ -138,21 +158,21 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
             transition={shouldReduceMotion ? { duration: 0.01 } : { duration: isMobile ? 0.42 : 0.75, ease: heroEase }}
           >
             <div className="hero-content empty-home-content">
-              <p className="eyebrow">AfterList library</p>
-              <h1>Start your list</h1>
+              <p className="eyebrow">Free to explore · no account required</p>
+              <h1>Find it. Save it. Watch it.</h1>
               <p className="hero-description">
-                Search from the top navigation and add your first anime, movie, or TV series to make this space yours.
+                Browse what is trending, then build a personal watchlist that stays in this browser. Sign in only when you want cloud sync.
               </p>
 
-              <div className="empty-home-actions" aria-label="Getting started steps">
-                <span>Search Media </span>
-                <span>Add to List </span>
-                <span>Track everything</span>
-              </div>
+              <div className="hero-actions"><Link className="primary-action" to="/discover">Explore trending titles</Link><span className="hero-reassurance">Guest watchlists are first-class.</span></div>
             </div>
           </motion.section>
         )}
       </AnimatePresence>
+
+      {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} /></section>}
+
+      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onAdd={onCreate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} /></section>}
 
       {items.length > 0 && (
         <section className="library-section">
@@ -169,22 +189,12 @@ function HomePage({ items, onRemove, onStatusChange }: HomePageProps) {
                 key={row.status}
                 title={row.title}
                 items={items.filter((item) => item.status === row.status)}
-                onSelect={setSelectedItem}
-                hideControls={isDetailsModalOpen}
               />
             ))}
           </div>
         </section>
       )}
 
-      {selectedItem && (
-        <MediaDetailsModal
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onRemove={handleRemove}
-          onStatusChange={handleStatusChange}
-        />
-      )}
     </>
   )
 }

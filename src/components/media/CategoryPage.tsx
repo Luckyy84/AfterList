@@ -1,9 +1,8 @@
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from './MediaCard'
-import MediaDetailsModal from './MediaDetailsModal'
-import type { MediaItem, MediaStatus, MediaType } from '../../types/media'
+import type { MediaItem, MediaType, MediaUpdate } from '../../types/media'
+import { softSpring } from '../../motion'
 
 type CategoryPageProps = {
   title: string
@@ -11,18 +10,12 @@ type CategoryPageProps = {
   type: MediaType
   items: MediaItem[]
   onRemove: (id: string) => void
-  onStatusChange: (id: string, status: MediaStatus) => void
+  onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
-function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }: CategoryPageProps) {
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+function CategoryPage({ title, subtitle, type, items }: CategoryPageProps) {
   const filteredItems = items.filter((item) => item.type === type)
   const hero = filteredItems[0]
-
-  const handleStatusChange = (id: string, status: MediaStatus) => {
-    onStatusChange(id, status)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, status } : current))
-  }
 
   return (
     <>
@@ -31,7 +24,7 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
         style={{ '--hero-image': `url(${hero?.backdrop ?? ''})` } as CSSProperties}
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={softSpring}
       >
         <div className="hero-content">
           <p className="eyebrow">AfterList category</p>
@@ -50,23 +43,21 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onStatusChange }
         </div>
 
         <motion.div layout className="media-grid">
+          <AnimatePresence mode="popLayout">
           {filteredItems.map((item) => (
-            <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
+            <MediaCard key={item.id} item={item} />
           ))}
+          </AnimatePresence>
         </motion.div>
+
+        {filteredItems.length === 0 && (
+          <div className="empty-state">
+            <h3>No {title.toLowerCase()} saved yet</h3>
+            <p>Use search in the navigation to add a title, then track it here.</p>
+          </div>
+        )}
       </section>
 
-      {selectedItem && (
-        <MediaDetailsModal
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onRemove={(id) => {
-            onRemove(id)
-            setSelectedItem(null)
-          }}
-          onStatusChange={handleStatusChange}
-        />
-      )}
     </>
   )
 }

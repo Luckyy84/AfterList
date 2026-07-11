@@ -1,52 +1,67 @@
-import { useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
-import AnimePage from './pages/AnimePage'
-import MoviesPage from './pages/MoviesPage'
-import SeriesPage from './pages/SeriesPage'
 import AuthPage from './pages/AuthPage'
+import LegalPage from './pages/LegalPage'
+import DiscoverPage from './pages/DiscoverPage'
+import LibraryPage from './pages/LibraryPage'
+import StatisticsPage from './pages/StatisticsPage'
+import MediaDetailsPage from './pages/MediaDetailsPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
-import MediaDetailsModal from './components/media/MediaDetailsModal'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
+import { pageMotion, softSpring } from './motion'
 
 function App() {
-  const { items, handleAddItem, handleRemoveItem, handleUpdateStatus } = useWatchlist()
-  const [searchOpenedItemId, setSearchOpenedItemId] = useState<string | null>(null)
-  const searchOpenedItem = searchOpenedItemId ? items.find((item) => item.id === searchOpenedItemId) : null
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
-  const handleSearchDetailsRemove = (id: string) => {
-    handleRemoveItem(id)
-    setSearchOpenedItemId((currentId) => (currentId === id ? null : currentId))
+  const openSavedItem = (id: string) => {
+    const item = items.find((candidate) => candidate.id === id)
+    if (item) navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })
   }
 
   return (
-    <main className="app">
-      <AppNav items={items} onCreate={handleAddItem} onOpenExisting={setSearchOpenedItemId} />
+    <MotionConfig reducedMotion="never" transition={softSpring}>
+    <div className="app">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <AppNav items={items} onCreate={handleAddItem} onOpenExisting={openSavedItem} />
 
-      <Routes>
-        <Route path="/" element={<HomePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/anime" element={<AnimePage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/movies" element={<MoviesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/series" element={<SeriesPage items={items} onRemove={handleRemoveItem} onStatusChange={handleUpdateStatus} />} />
-        <Route path="/login" element={<AuthPage mode="login" />} />
-        <Route path="/signup" element={<AuthPage mode="signup" />} />
-      </Routes>
-
-      {searchOpenedItem && (
-        <MediaDetailsModal
-          item={searchOpenedItem}
-          onClose={() => setSearchOpenedItemId(null)}
-          onRemove={handleSearchDetailsRemove}
-          onStatusChange={handleUpdateStatus}
-        />
+      {(syncError || isSyncing) && (
+        <div className={`sync-banner${syncError ? ' is-error' : ''}`} role={syncError ? 'alert' : 'status'}>
+          <span>{syncError ?? 'Syncing your watchlist…'}</span>
+          {syncError && <button type="button" onClick={retrySync}>Retry sync</button>}
+        </div>
       )}
+
+      <main id="main-content" className="app-content">
+        <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
+        <Routes location={location}>
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
+          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
+          <Route path="/library" element={<LibraryPage items={items} />} />
+          <Route path="/statistics" element={<StatisticsPage items={items} />} />
+          <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
+          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />
+          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} />} />
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/privacy" element={<LegalPage type="privacy" />} />
+          <Route path="/terms" element={<LegalPage type="terms" />} />
+        </Routes>
+        </motion.div>
+      </main>
 
       <Footer />
       <Analytics />
-    </main>
+    </div>
+    </MotionConfig>
   )
 }
 

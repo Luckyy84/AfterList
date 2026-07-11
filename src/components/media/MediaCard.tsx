@@ -1,48 +1,71 @@
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
 import type { MediaItem } from '../../types/media'
+import { snappySpring } from '../../motion'
 
 type MediaCardProps = {
   item: MediaItem
-  onSelect: (item: MediaItem) => void
-  onRemove?: (id: string) => void
+  isSaved?: boolean
+  onAdd?: (item: MediaItem) => void
+  animateLayout?: boolean
 }
 
-function MediaCard({ item, onSelect }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaCardProps) {
+  const navigate = useNavigate()
+  const progress = item.type !== 'Movie' && item.totalEpisodes
+    ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
+    : null
+  const primaryMeta = isSaved ? progress || item.type : [item.type, item.year].filter(Boolean).join(' · ')
+  const rating = isSaved && item.personalRating != null
+    ? `My rating ${item.personalRating}/10`
+    : item.rating !== 'N/A' ? `TMDB ${item.rating}` : null
+
   return (
     <motion.article
-      className="media-card-wrapper"
-      whileHover={{ y: -4, scale: 1.04 }}
-      transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+      layout={animateLayout ? 'position' : false}
+      className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+      whileHover={{ y: -7, scale: 1.025 }}
+      whileTap={{ scale: 0.975 }}
+      transition={snappySpring}
     >
       <button
         className="media-card"
         type="button"
         aria-label={`Open details for ${item.title}`}
-        onClick={() => onSelect(item)}
+        onClick={() => navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })}
       >
-        <span className="media-poster-shell">
-          <span className="media-poster-frame">
-            <img
-              className="media-poster"
-              src={item.poster}
-              alt={item.title}
-              loading="lazy"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none'
-              }}
-            />
-            <span className="poster-shine" aria-hidden="true" />
-          </span>
+        <span className="media-poster-shell" data-title={item.title}>
+          <img
+            className="media-poster"
+            src={item.poster}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
+          />
+          {isSaved && <span className={`card-status ${item.status}`}>{item.status}</span>}
+          {isSaved && item.isFavorite && <span className="card-favorite" aria-label="Favorite">♥</span>}
+        </span>
 
-          <span className="media-info media-info-inside">
-            <strong>{item.title}</strong>
-            <span className="card-meta">
-              <span className="type-label">{item.type}</span>
-              <span className={`pill ${item.status}`}>{item.status}</span>
-            </span>
+        <span className="media-info">
+          <strong>{item.title}</strong>
+          <span className="card-meta">
+            <span>{primaryMeta}</span>
+            {rating && <span>{rating}</span>}
           </span>
         </span>
       </button>
+
+      {!isSaved && onAdd && (
+        <button className="media-card-add" type="button" onClick={() => onAdd(item)}>
+          Add to watchlist
+        </button>
+      )}
     </motion.article>
   )
 }

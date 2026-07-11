@@ -39,6 +39,31 @@ button {
   cursor: pointer;
 }
 
+:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2000;
+  transform: translateY(-160%);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #050505;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: transform 0.16s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 h1,
 h2,
 h3,
@@ -293,6 +318,99 @@ h3,
   font-size: 13px;
   line-height: 1.6;
   text-align: right;
+}
+
+.empty-state {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 22px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.empty-state p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.legal-page {
+  display: grid;
+  gap: 18px;
+  max-width: 860px;
+  margin: 0 auto;
+  border-radius: 28px;
+  padding: clamp(26px, 5vw, 54px);
+}
+
+.legal-page h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(42px, 7vw, 76px);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.legal-updated,
+.legal-intro,
+.legal-note,
+.legal-sections p {
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+}
+
+.legal-updated {
+  margin: -6px 0 0;
+  font-size: 13px;
+}
+
+.legal-intro {
+  max-width: 680px;
+  font-size: 17px;
+}
+
+.legal-sections {
+  display: grid;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.legal-sections section {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.legal-sections h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.legal-sections p,
+.legal-note {
+  margin: 0;
+}
+
+.legal-back-link {
+  width: max-content;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #050505;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
 }
 
 .watchlist-stack {

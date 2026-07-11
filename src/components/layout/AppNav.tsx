@@ -14,15 +14,16 @@ type AppNavProps = {
 
 const navItems = [
   { label: 'Home', to: '/', end: true },
-  { label: 'Anime', to: '/anime' },
-  { label: 'Movies', to: '/movies' },
-  { label: 'TV Series', to: '/series' },
+  { label: 'Discover', to: '/discover' },
+  { label: 'Library', to: '/library' },
+  { label: 'Statistics', to: '/statistics' },
 ]
 
 function ActiveNavBackground() {
   return (
     <motion.span
-      layoutId="activeNavBg"
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1 }}
       style={{
         position: 'absolute',
         inset: 0,
@@ -78,7 +79,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
   }
 
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="Primary navigation">
       <NavLink className="brand" to="/" end>
         AfterList
       </NavLink>
@@ -105,7 +106,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
               onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
             >
               <span>{displayName}</span>
-              <span className="nav-user-chevron" aria-hidden="true">⌄</span>
+              <span className="nav-user-chevron" aria-hidden="true">v</span>
             </button>
 
             {isAccountOpen && (

@@ -10,4 +10,5 @@ export type SearchResultItem = {
   backdrop: string
   rating: string
   description: string
+  genreIds?: number[]
 }

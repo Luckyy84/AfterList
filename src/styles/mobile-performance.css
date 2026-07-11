@@ -220,7 +220,6 @@
     filter: none !important;
   }
 
-  .media-card-wrapper:active,
   .nav-search-result:active,
   .hero-preview-thumb:active {
     transform: scale(0.985);

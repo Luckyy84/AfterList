@@ -95,10 +95,10 @@ export default function AuthPage({ mode }: AuthPageProps) {
     >
       <div className="auth-copy glass-panel">
         <p className="eyebrow">AfterList account</p>
-        <h1>{isSignup ? 'Create your sync vault' : 'Welcome back'}</h1>
+        <h1>{isSignup ? 'Protect the list you built.' : 'Welcome back'}</h1>
         <p>
           {isSignup
-            ? 'Make your watchlist portable across desktop, phone, and every late-night search session.'
+            ? 'An account keeps your watchlist backed up and synced across your devices. You can keep using AfterList as a guest, too.'
             : 'Sign in to keep your anime, movies, and TV series synced across devices.'}
         </p>
 
@@ -169,6 +169,12 @@ export default function AuthPage({ mode }: AuthPageProps) {
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <Link to={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Create one'}</Link>
         </p>
+
+        {isSignup && (
+          <p className="auth-legal">
+            By creating an account, you agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.
+          </p>
+        )}
       </div>
     </motion.section>
   )
