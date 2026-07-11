@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence, MotionConfig, motion } from 'motion/react'
+import { MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
@@ -43,7 +43,6 @@ function App() {
       )}
 
       <main id="main-content" className="app-content">
-        <AnimatePresence mode="wait" initial={false}>
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
         <Routes location={location}>
           <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
@@ -60,7 +59,6 @@ function App() {
           <Route path="/terms" element={<LegalPage type="terms" />} />
         </Routes>
         </motion.div>
-        </AnimatePresence>
       </main>
 
       <Footer />

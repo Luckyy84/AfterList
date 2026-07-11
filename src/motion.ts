@@ -4,5 +4,4 @@ export const snappySpring = { type: 'spring', stiffness: 460, damping: 30, mass:
 export const pageMotion = {
   initial: { opacity: 0, y: 14, scale: 0.995 },
   animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -8, scale: 0.998 },
 } as const
