@@ -2,7 +2,6 @@
 @import './hero/preview-rail.css';
 @import './hero/empty-home.css';
 @import './auth/auth.css';
-@import './media/cards.css';
 @import './media/hover.css';
 @import './background.css';
 @import './media/edge-fade.css';
@@ -21,3 +20,4 @@
 @import './mobile-layer-fixes.css';
 @import './mobile-performance.css';
 @import './cinematic.css';
+@import './media/card-system.css';

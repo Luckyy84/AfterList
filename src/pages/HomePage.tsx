@@ -183,7 +183,7 @@ function HomePage({ items, onRemove, onUpdate, onCreate }: HomePageProps) {
 
       {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} onSelect={setSelectedItem} hideControls={isDetailsModalOpen} /></section>}
 
-      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onSelect={setSelectedItem} hideControls={isDetailsModalOpen} /></section>}
+      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onSelect={setSelectedItem} onAdd={onCreate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} hideControls={isDetailsModalOpen} /></section>}
 
       {items.length > 0 && (
         <section className="library-section">

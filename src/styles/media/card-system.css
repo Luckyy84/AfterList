@@ -1,0 +1,284 @@
+/* Poster-first card system. Loaded last so one layer owns every card surface. */
+.media-grid {
+  grid-template-columns: repeat(auto-fill, minmax(164px, 1fr));
+  gap: clamp(20px, 2.4vw, 30px) clamp(14px, 2vw, 24px);
+}
+
+.media-card-wrapper {
+  --card-info-height: 74px;
+  position: relative;
+  width: 176px;
+  min-width: 176px;
+  flex: 0 0 176px;
+  overflow: visible !important;
+  filter: none !important;
+  transform-origin: center bottom;
+}
+
+.media-grid .media-card-wrapper,
+.discover-grid .media-card-wrapper {
+  width: auto;
+  min-width: 0;
+  flex: initial;
+}
+
+.media-card {
+  display: grid !important;
+  width: 100%;
+  min-height: 0;
+  gap: 10px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--cream, #f4f0e6);
+  background: transparent !important;
+  text-align: left;
+}
+
+.media-poster-shell {
+  position: relative !important;
+  display: grid !important;
+  width: 100% !important;
+  aspect-ratio: 2 / 3 !important;
+  place-items: center;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(244, 240, 230, 0.14) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, #2a2926, #121211) !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34) !important;
+  isolation: isolate;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.media-poster-shell::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid !important;
+  place-items: center;
+  padding: 18px;
+  content: attr(data-title) !important;
+  color: rgba(244, 240, 230, 0.34);
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1;
+  text-align: center;
+}
+
+.media-poster-shell::after,
+.poster-shine,
+.media-poster-frame {
+  display: none !important;
+}
+
+.media-poster {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  object-fit: cover !important;
+  opacity: 1 !important;
+  filter: saturate(0.94) contrast(1.03) !important;
+  transform: none !important;
+  transition: filter 0.18s ease !important;
+}
+
+.media-card:hover .media-poster,
+.media-card:focus-visible .media-poster {
+  filter: saturate(1) contrast(1.05) brightness(1.02) !important;
+  transform: none !important;
+}
+
+.media-card:hover .media-poster-shell,
+.media-card:focus-visible .media-poster-shell {
+  border-color: rgba(244, 240, 230, 0.3) !important;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.46) !important;
+}
+
+.media-card:focus-visible {
+  outline: 0;
+}
+
+.media-card:focus-visible .media-poster-shell {
+  box-shadow: 0 0 0 3px rgba(244, 240, 230, 0.22), 0 20px 42px rgba(0, 0, 0, 0.46) !important;
+}
+
+.card-status,
+.card-favorite {
+  position: absolute;
+  z-index: 3;
+  top: 9px;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #171613;
+  background: rgba(244, 240, 230, 0.94);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.card-status {
+  left: 9px;
+  padding: 5px 8px;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.card-status.Watched { background: rgba(184, 214, 176, 0.95); }
+.card-status.Dropped { color: #eeeae1; background: rgba(52, 50, 46, 0.94); }
+
+.card-favorite {
+  right: 9px;
+  width: 28px;
+  justify-content: center;
+  color: #fff;
+  background: rgba(17, 17, 15, 0.78);
+  font-size: 13px;
+}
+
+.media-info {
+  display: grid !important;
+  min-height: var(--card-info-height) !important;
+  align-content: start;
+  gap: 7px;
+  padding: 0 2px !important;
+  background: transparent !important;
+}
+
+.media-info strong {
+  display: -webkit-box !important;
+  min-height: 2.4em;
+  overflow: hidden;
+  color: var(--cream, #f4f0e6) !important;
+  font-size: 14px !important;
+  font-weight: 760 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em;
+  white-space: normal !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.card-meta {
+  display: flex !important;
+  min-width: 0;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  color: var(--muted, #aaa79f);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.card-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-meta span:last-child {
+  flex: 0 0 auto;
+}
+
+.media-card-add {
+  position: absolute;
+  z-index: 5;
+  right: 10px;
+  bottom: calc(var(--card-info-height) + 18px);
+  left: 10px;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid rgba(244, 240, 230, 0.84);
+  border-radius: 999px;
+  color: #171613;
+  background: rgba(244, 240, 230, 0.96);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  font-size: 11px;
+  font-weight: 850;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.is-discovery:hover .media-card-add,
+.is-discovery:focus-within .media-card-add {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.row-scroll {
+  min-height: auto !important;
+  padding-top: 12px !important;
+  padding-bottom: 10px !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  scroll-snap-type: x proximity !important;
+}
+
+.row-scroll-track {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.row-scroll .media-card-wrapper {
+  scroll-snap-align: start !important;
+}
+
+@media (hover: none) {
+  .media-card-add {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 11px;
+  }
+
+  .media-card-wrapper,
+  .row-scroll .media-card-wrapper {
+    width: 148px !important;
+    min-width: 148px !important;
+    flex-basis: 148px !important;
+  }
+
+  .media-grid .media-card-wrapper,
+  .discover-grid .media-card-wrapper {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .media-poster-shell {
+    border-radius: 12px !important;
+  }
+
+  .media-info strong {
+    font-size: 13px !important;
+  }
+
+  .card-meta {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-poster-shell,
+  .media-poster,
+  .media-card-add {
+    transition: none !important;
+  }
+}
