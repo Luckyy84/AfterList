@@ -22,7 +22,8 @@ const navItems = [
 function ActiveNavBackground() {
   return (
     <motion.span
-      layoutId="activeNavBg"
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1 }}
       style={{
         position: 'absolute',
         inset: 0,
