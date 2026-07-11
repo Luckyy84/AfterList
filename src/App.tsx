@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
@@ -8,22 +7,21 @@ import LegalPage from './pages/LegalPage'
 import DiscoverPage from './pages/DiscoverPage'
 import LibraryPage from './pages/LibraryPage'
 import StatisticsPage from './pages/StatisticsPage'
+import MediaDetailsPage from './pages/MediaDetailsPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
-import MediaDetailsModal from './components/media/MediaDetailsModal'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
 
 function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
-  const [searchOpenedItemId, setSearchOpenedItemId] = useState<string | null>(null)
-  const searchOpenedItem = searchOpenedItemId ? items.find((item) => item.id === searchOpenedItemId) : null
 
-  const handleSearchDetailsRemove = (id: string) => {
-    handleRemoveItem(id)
-    setSearchOpenedItemId((currentId) => (currentId === id ? null : currentId))
+  const openSavedItem = (id: string) => {
+    const item = items.find((candidate) => candidate.id === id)
+    if (item) navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })
   }
 
   return (
@@ -32,7 +30,7 @@ function App() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <AppNav items={items} onCreate={handleAddItem} onOpenExisting={setSearchOpenedItemId} />
+      <AppNav items={items} onCreate={handleAddItem} onOpenExisting={openSavedItem} />
 
       {(syncError || isSyncing) && (
         <div className={`sync-banner${syncError ? ' is-error' : ''}`} role={syncError ? 'alert' : 'status'}>
@@ -45,13 +43,14 @@ function App() {
         <AnimatePresence mode="wait" initial={false}>
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
         <Routes location={location}>
-          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/library" element={<LibraryPage items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
+          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
+          <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
-          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
+          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
+          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />
+          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} />} />
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
@@ -60,15 +59,6 @@ function App() {
         </motion.div>
         </AnimatePresence>
       </main>
-
-      {searchOpenedItem && (
-        <MediaDetailsModal
-          item={searchOpenedItem}
-          onClose={() => setSearchOpenedItemId(null)}
-          onRemove={handleSearchDetailsRemove}
-          onUpdate={handleUpdateItem}
-        />
-      )}
 
       <Footer />
       <Analytics />

@@ -1,25 +1,20 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
-import MediaDetailsModal from '../components/media/MediaDetailsModal'
-import type { MediaItem, MediaStatus, MediaType, MediaUpdate } from '../types/media'
+import type { MediaItem, MediaStatus, MediaType } from '../types/media'
 
 type LibraryPageProps = {
   items: MediaItem[]
   initialType?: MediaType
-  onRemove: (id: string) => void
-  onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
 type SortOption = 'recent' | 'title' | 'rating'
 
-export default function LibraryPage({ items, initialType, onRemove, onUpdate }: LibraryPageProps) {
+export default function LibraryPage({ items, initialType }: LibraryPageProps) {
   const [type, setType] = useState<MediaType | 'All'>(initialType ?? 'All')
   const [status, setStatus] = useState<MediaStatus | 'All'>('All')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [sort, setSort] = useState<SortOption>('recent')
-  const [selected, setSelected] = useState<MediaItem | null>(null)
-  const selectedItem = selected ? items.find((item) => item.id === selected.id) ?? selected : null
 
   const visibleItems = useMemo(() => {
     const filtered = items.filter((item) =>
@@ -34,10 +29,6 @@ export default function LibraryPage({ items, initialType, onRemove, onUpdate }: 
       return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')
     })
   }, [favoritesOnly, items, sort, status, type])
-
-  const updateSelected = (id: string, updates: MediaUpdate) => {
-    onUpdate(id, updates)
-  }
 
   return (
     <>
@@ -74,12 +65,11 @@ export default function LibraryPage({ items, initialType, onRemove, onUpdate }: 
       </div>
 
       {visibleItems.length ? (
-        <motion.div layout className="media-grid"><AnimatePresence mode="popLayout">{visibleItems.map((item) => <MediaCard key={item.id} item={item} onSelect={setSelected} />)}</AnimatePresence></motion.div>
+        <motion.div layout className="media-grid"><AnimatePresence mode="popLayout">{visibleItems.map((item) => <MediaCard key={item.id} item={item} />)}</AnimatePresence></motion.div>
       ) : (
         <div className="empty-state"><h3>No titles match</h3><p>Adjust the filters or use Search to add something new.</p></div>
       )}
 
-      {selectedItem && <MediaDetailsModal item={selectedItem} onClose={() => setSelected(null)} onRemove={(id) => { onRemove(id); setSelected(null) }} onUpdate={updateSelected} />}
     </>
   )
 }

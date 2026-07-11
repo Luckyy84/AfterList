@@ -1,8 +1,6 @@
 import type { CSSProperties } from 'react'
-import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from './MediaCard'
-import MediaDetailsModal from './MediaDetailsModal'
 import type { MediaItem, MediaType, MediaUpdate } from '../../types/media'
 import { softSpring } from '../../motion'
 
@@ -15,15 +13,9 @@ type CategoryPageProps = {
   onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
-function CategoryPage({ title, subtitle, type, items, onRemove, onUpdate }: CategoryPageProps) {
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+function CategoryPage({ title, subtitle, type, items }: CategoryPageProps) {
   const filteredItems = items.filter((item) => item.type === type)
   const hero = filteredItems[0]
-
-  const handleUpdate = (id: string, updates: MediaUpdate) => {
-    onUpdate(id, updates)
-    setSelectedItem((current) => (current && current.id === id ? { ...current, ...updates } : current))
-  }
 
   return (
     <>
@@ -53,7 +45,7 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onUpdate }: Cate
         <motion.div layout className="media-grid">
           <AnimatePresence mode="popLayout">
           {filteredItems.map((item) => (
-            <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
+            <MediaCard key={item.id} item={item} />
           ))}
           </AnimatePresence>
         </motion.div>
@@ -66,17 +58,6 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onUpdate }: Cate
         )}
       </section>
 
-      {selectedItem && (
-        <MediaDetailsModal
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onRemove={(id) => {
-            onRemove(id)
-            setSelectedItem(null)
-          }}
-          onUpdate={handleUpdate}
-        />
-      )}
     </>
   )
 }

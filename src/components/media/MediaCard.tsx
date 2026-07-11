@@ -1,15 +1,16 @@
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
 import type { MediaItem } from '../../types/media'
 import { snappySpring } from '../../motion'
 
 type MediaCardProps = {
   item: MediaItem
-  onSelect: (item: MediaItem) => void
   isSaved?: boolean
   onAdd?: (item: MediaItem) => void
 }
 
-function MediaCard({ item, onSelect, isSaved = true, onAdd }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd }: MediaCardProps) {
+  const navigate = useNavigate()
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
     : null
@@ -33,7 +34,7 @@ function MediaCard({ item, onSelect, isSaved = true, onAdd }: MediaCardProps) {
         className="media-card"
         type="button"
         aria-label={`Open details for ${item.title}`}
-        onClick={() => onSelect(item)}
+        onClick={() => navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })}
       >
         <span className="media-poster-shell" data-title={item.title}>
           <img

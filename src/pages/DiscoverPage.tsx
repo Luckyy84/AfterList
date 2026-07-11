@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
-import MediaDetailsModal from '../components/media/MediaDetailsModal'
-import type { MediaItem, MediaStatus, MediaUpdate } from '../types/media'
+import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { discoverTmdb } from '../services/tmdb'
 import { findMatchingMediaItem } from '../utils/media'
@@ -10,8 +9,6 @@ import { findMatchingMediaItem } from '../utils/media'
 type DiscoverPageProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
-  onRemove: (id: string) => void
-  onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
 function toMediaItem(result: SearchResultItem): MediaItem {
@@ -23,16 +20,14 @@ const genreIds: Record<string, number[]> = {
   fantasy: [14, 10765], horror: [27], documentary: [99],
 }
 
-export default function DiscoverPage({ items, onCreate, onRemove, onUpdate }: DiscoverPageProps) {
+export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
   const [feed, setFeed] = useState<'trending' | 'popular'>('trending')
   const [mediaType, setMediaType] = useState<'all' | 'movie' | 'tv'>('all')
   const [genre, setGenre] = useState('all')
   const [results, setResults] = useState<SearchResultItem[]>([])
-  const [selected, setSelected] = useState<MediaItem | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [requestVersion, setRequestVersion] = useState(0)
-  const selectedItem = selected ? findMatchingMediaItem(items, selected) ?? selected : null
 
   useEffect(() => {
     const controller = new AbortController()
@@ -76,11 +71,10 @@ export default function DiscoverPage({ items, onCreate, onRemove, onUpdate }: Di
         <AnimatePresence mode="popLayout">
         {cards.map(({ result, item }) => {
           const isSaved = Boolean(findMatchingMediaItem(items, result))
-          return <MediaCard key={`${result.source}-${result.externalId}`} item={item} onSelect={setSelected} isSaved={isSaved} onAdd={isSaved ? undefined : add} />
+          return <MediaCard key={`${result.source}-${result.externalId}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : add} />
         })}
         </AnimatePresence>
       </motion.div>
-      {selectedItem && <MediaDetailsModal item={selectedItem} isSaved={Boolean(findMatchingMediaItem(items, selectedItem))} onAdd={add} onClose={() => setSelected(null)} onRemove={(id) => { onRemove(id); setSelected(null) }} onUpdate={onUpdate} />}
     </>
   )
 }

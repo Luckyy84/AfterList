@@ -16,6 +16,7 @@
 @import './search/modal-center.css';
 @import './details/details-preview.css';
 @import './details/details-scroll.css';
+@import './details/details-page.css';
 @import './mobile-fixes.css';
 @import './mobile-layer-fixes.css';
 @import './mobile-performance.css';

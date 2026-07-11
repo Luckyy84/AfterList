@@ -8,7 +8,6 @@ import { useIsMobile } from '../../hooks/useMediaQuery'
 type WatchlistRowProps = {
   title: string
   items: MediaItem[]
-  onSelect: (item: MediaItem) => void
   onAdd?: (item: MediaItem) => void
   isItemSaved?: (item: MediaItem) => boolean
   hideControls?: boolean
@@ -21,7 +20,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export default function WatchlistRow({ title, items, onSelect, onAdd, isItemSaved, hideControls = false }: WatchlistRowProps) {
+export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false }: WatchlistRowProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
@@ -124,7 +123,7 @@ export default function WatchlistRow({ title, items, onSelect, onAdd, isItemSave
           <motion.div className="row-scroll-track" ref={trackRef}>
             {items.map((item, index) => {
               const isSaved = isItemSaved?.(item) ?? !onAdd
-              return <MediaCard key={`${item.id}-${index}`} item={item} onSelect={onSelect} isSaved={isSaved} onAdd={isSaved ? undefined : onAdd} />
+              return <MediaCard key={`${item.id}-${index}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : onAdd} />
             })}
           </motion.div>
         </div>
