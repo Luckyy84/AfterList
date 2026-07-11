@@ -96,7 +96,11 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
                 <div><span className="details-section-label">Progress</span><strong>{totalEpisodes ? `Episode ${currentEpisode} of ${totalEpisodes}` : `Episode ${currentEpisode}`}</strong></div>
                 <div className="episode-stepper" aria-label="Current episode controls">
                   <button type="button" aria-label="Decrease current episode" disabled={currentEpisode <= 0} onClick={() => update({ currentEpisode: currentEpisode - 1 })}>−</button>
-                  <span aria-live="polite">{currentEpisode}<small>{totalEpisodes ? ` / ${totalEpisodes}` : ''}</small></span>
+                  <label><span className="sr-only">Current episode</span><input type="number" min="0" max={totalEpisodes} value={currentEpisode} aria-label="Current episode" onFocus={(event) => event.currentTarget.select()} onChange={(event) => {
+                    if (Number.isNaN(event.currentTarget.valueAsNumber)) return
+                    update({ currentEpisode: Math.max(0, Math.min(event.currentTarget.valueAsNumber, totalEpisodes ?? Infinity)) })
+                  }} /></label>
+                  {totalEpisodes && <small aria-hidden="true">/ {totalEpisodes}</small>}
                   <button type="button" aria-label="Increase current episode" disabled={Boolean(totalEpisodes && currentEpisode >= totalEpisodes)} onClick={() => update({ currentEpisode: currentEpisode + 1 })}>+</button>
                 </div>
               </div>}
@@ -105,7 +109,10 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
                 <div className="rating-scale" aria-label="Choose your rating">{Array.from({ length: 10 }, (_, index) => index + 1).map((rating) => <button type="button" key={rating} className={savedItem?.personalRating === rating ? 'is-active' : ''} aria-label={`Rate ${rating} out of 10`} aria-pressed={savedItem?.personalRating === rating} onClick={() => update({ personalRating: rating })}>{rating}</button>)}</div>
                 {savedItem?.personalRating != null && <button type="button" className="clear-rating" onClick={() => update({ personalRating: null })}>Clear rating</button>}
               </div>
-              <button className="delete-btn details-delete-btn" type="button" onClick={() => { onRemove(savedItem!.id); navigate(-1) }}>Remove from AfterList</button>
+              <div className="details-danger-zone">
+                <div><strong>Remove from AfterList</strong><span>Your tracking data for this title will be deleted.</span></div>
+                <button className="delete-btn details-delete-btn" type="button" onClick={() => { onRemove(savedItem!.id); navigate(-1) }}>Remove title</button>
+              </div>
             </section>
           )}
         </motion.div>

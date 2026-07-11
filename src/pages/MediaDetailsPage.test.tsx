@@ -17,16 +17,26 @@ const item: MediaItem = {
 afterEach(cleanup)
 
 describe('MediaDetailsPage tracking controls', () => {
-  it('updates progress and rating without text inputs', async () => {
+  it('updates progress and rating with direct controls', async () => {
     const onUpdate = vi.fn()
     render(<MemoryRouter initialEntries={['/details/tmdb/tv%3A1']}><Routes><Route path="/details/:source/:externalId" element={<MediaDetailsPage items={[item]} onCreate={vi.fn()} onRemove={vi.fn()} onUpdate={onUpdate} />} /></Routes></MemoryRouter>)
 
-    expect(screen.queryByRole('spinbutton')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Increase current episode' }))
     await userEvent.click(screen.getByRole('button', { name: 'Rate 8 out of 10' }))
 
     expect(onUpdate).toHaveBeenCalledWith(item.id, { currentEpisode: 3 })
     expect(onUpdate).toHaveBeenCalledWith(item.id, { personalRating: 8 })
+  })
+
+  it('accepts a typed episode and clamps it to the known total', async () => {
+    const onUpdate = vi.fn()
+    render(<MemoryRouter initialEntries={['/details/tmdb/tv%3A1']}><Routes><Route path="/details/:source/:externalId" element={<MediaDetailsPage items={[item]} onCreate={vi.fn()} onRemove={vi.fn()} onUpdate={onUpdate} />} /></Routes></MemoryRouter>)
+
+    const input = screen.getByRole('spinbutton', { name: 'Current episode' })
+    await userEvent.clear(input)
+    await userEvent.type(input, '12')
+
+    expect(onUpdate).toHaveBeenLastCalledWith(item.id, { currentEpisode: 3 })
   })
 
   it('stops episode controls at known boundaries', () => {
