@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
@@ -19,8 +18,6 @@ function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
-
-  useEffect(() => window.scrollTo(0, 0), [location.pathname])
 
   const openSavedItem = (id: string) => {
     const item = items.find((candidate) => candidate.id === id)
