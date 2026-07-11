@@ -35,7 +35,7 @@ export default function Footer() {
         <div className="footer-col legal-col">
           <h3>LEGAL</h3>
           <ul>
-            <li><Link to="/privacy">Privacy Policy</Link></li>
+            <li><Link to="/privacy">Privacy &amp; Cookies</Link></li>
             <li><Link to="/terms">Terms of Use</Link></li>
           </ul>
           <p>AfterList uses third-party services to fetch anime, movie, and series info.</p>
