@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
-import type { MediaItem, MediaStatus, MediaType } from '../types/media'
+import type { MediaItem, MediaStatus, MediaType, MediaUpdate } from '../types/media'
 
 type LibraryPageProps = {
   items: MediaItem[]
   initialType?: MediaType
+  onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
 type SortOption = 'recent' | 'title' | 'rating'
 
-export default function LibraryPage({ items, initialType }: LibraryPageProps) {
+export default function LibraryPage({ items, initialType, onUpdate }: LibraryPageProps) {
   const [type, setType] = useState<MediaType | 'All'>(initialType ?? 'All')
   const [status, setStatus] = useState<MediaStatus | 'All'>('All')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -65,7 +66,7 @@ export default function LibraryPage({ items, initialType }: LibraryPageProps) {
       </div>
 
       {visibleItems.length ? (
-        <motion.div layout className="media-grid"><AnimatePresence mode="popLayout">{visibleItems.map((item) => <MediaCard key={item.id} item={item} />)}</AnimatePresence></motion.div>
+        <motion.div layout className="media-grid"><AnimatePresence mode="popLayout">{visibleItems.map((item) => <MediaCard key={item.id} item={item} onUpdate={onUpdate} />)}</AnimatePresence></motion.div>
       ) : (
         <div className="empty-state"><h3>No titles match</h3><p>Adjust the filters or use Search to add something new.</p></div>
       )}

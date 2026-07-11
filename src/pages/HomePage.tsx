@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import WatchlistRow from '../components/media/MediaRow'
-import type { MediaItem, MediaStatus } from '../types/media'
+import type { MediaItem, MediaStatus, MediaUpdate } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { useIsMobile } from '../hooks/useMediaQuery'
 import { discoverTmdb } from '../services/tmdb'
@@ -12,6 +12,7 @@ import { findMatchingMediaItem, getMediaKey } from '../utils/media'
 type HomePageProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
+  onUpdate: (id: string, updates: MediaUpdate) => void
 }
 
 const watchRows: { title: string; status: MediaStatus }[] = [
@@ -52,7 +53,7 @@ function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
   })
 }
 
-function HomePage({ items, onCreate }: HomePageProps) {
+function HomePage({ items, onCreate, onUpdate }: HomePageProps) {
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
@@ -170,9 +171,9 @@ function HomePage({ items, onCreate }: HomePageProps) {
         )}
       </AnimatePresence>
 
-      {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} /></section>}
+      {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} onUpdate={onUpdate} /></section>}
 
-      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onAdd={onCreate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} /></section>}
+      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onAdd={onCreate} onUpdate={onUpdate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} /></section>}
 
       {items.length > 0 && (
         <section className="library-section">
@@ -189,6 +190,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
                 key={row.status}
                 title={row.title}
                 items={items.filter((item) => item.status === row.status)}
+                onUpdate={onUpdate}
               />
             ))}
           </div>

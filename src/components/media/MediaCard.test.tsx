@@ -20,6 +20,14 @@ const item: MediaItem = {
 afterEach(cleanup)
 
 describe('MediaCard', () => {
+  it('updates several episodes through the quick controls', async () => {
+    const onUpdate = vi.fn()
+    render(<MemoryRouter><MediaCard item={{ ...item, currentEpisode: 4, totalEpisodes: 10 }} onUpdate={onUpdate} /></MemoryRouter>)
+
+    await userEvent.click(screen.getByRole('button', { name: `Next episode for ${item.title}` }))
+    expect(onUpdate).toHaveBeenCalledWith(item.id, { currentEpisode: 5 })
+  })
+
   it('opens the dedicated details route', async () => {
     function Path() { return <span>{useLocation().pathname}</span> }
     render(<MemoryRouter><MediaCard item={item} /><Path /></MemoryRouter>)

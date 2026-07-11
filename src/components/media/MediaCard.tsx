@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
-import type { MediaItem } from '../../types/media'
+import type { MediaItem, MediaUpdate } from '../../types/media'
 import { snappySpring } from '../../motion'
 
 type MediaCardProps = {
@@ -8,9 +8,10 @@ type MediaCardProps = {
   isSaved?: boolean
   onAdd?: (item: MediaItem) => void
   animateLayout?: boolean
+  onUpdate?: (id: string, updates: MediaUpdate) => void
 }
 
-function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd, animateLayout = true, onUpdate }: MediaCardProps) {
   const navigate = useNavigate()
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
@@ -65,6 +66,14 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
         <button className="media-card-add" type="button" onClick={() => onAdd(item)}>
           Add to watchlist
         </button>
+      )}
+
+      {isSaved && item.type !== 'Movie' && onUpdate && (
+        <div className="media-card-progress" aria-label={`Episode progress for ${item.title}`}>
+          <button type="button" aria-label={`Previous episode for ${item.title}`} disabled={!item.currentEpisode} onClick={() => onUpdate(item.id, { currentEpisode: (item.currentEpisode ?? 0) - 1 })}>−</button>
+          <span>{item.currentEpisode ?? 0}{item.totalEpisodes ? ` / ${item.totalEpisodes}` : ''}</span>
+          <button type="button" aria-label={`Next episode for ${item.title}`} disabled={item.totalEpisodes != null && (item.currentEpisode ?? 0) >= item.totalEpisodes} onClick={() => onUpdate(item.id, { currentEpisode: (item.currentEpisode ?? 0) + 1 })}>+</button>
+        </div>
       )}
     </motion.article>
   )
