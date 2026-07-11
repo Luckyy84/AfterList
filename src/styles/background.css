@@ -242,7 +242,4 @@ body::after {
     padding-bottom: 6px !important;
   }
 
-  .media-card-wrapper:hover {
-    transform: translateY(-6px) scale(1.025) !important;
-  }
 }

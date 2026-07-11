@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
 import { snappySpring } from '../../motion'
 
@@ -10,7 +10,6 @@ type MediaCardProps = {
 }
 
 function MediaCard({ item, onSelect, isSaved = true, onAdd }: MediaCardProps) {
-  const shouldReduceMotion = useReducedMotion()
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
     : null
@@ -23,11 +22,11 @@ function MediaCard({ item, onSelect, isSaved = true, onAdd }: MediaCardProps) {
     <motion.article
       layout="position"
       className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
-      initial={shouldReduceMotion ? false : { opacity: 0, y: 12, scale: 0.97 }}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.96 }}
-      whileHover={shouldReduceMotion ? undefined : { y: -7, scale: 1.025 }}
-      whileTap={shouldReduceMotion ? undefined : { scale: 0.975 }}
+      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+      whileHover={{ y: -7, scale: 1.025 }}
+      whileTap={{ scale: 0.975 }}
       transition={snappySpring}
     >
       <button
