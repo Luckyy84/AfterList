@@ -96,10 +96,10 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
                 <div><span className="details-section-label">Progress</span><strong>{totalEpisodes ? `Episode ${currentEpisode} of ${totalEpisodes}` : `Episode ${currentEpisode}`}</strong></div>
                 <div className="episode-stepper" aria-label="Current episode controls">
                   <button type="button" aria-label="Decrease current episode" disabled={currentEpisode <= 0} onClick={() => update({ currentEpisode: currentEpisode - 1 })}>−</button>
-                  <label><span className="sr-only">Current episode</span><input type="number" min="0" max={totalEpisodes} value={currentEpisode} aria-label="Current episode" onFocus={(event) => event.currentTarget.select()} onChange={(event) => {
+                  <input type="number" min="0" max={totalEpisodes} value={currentEpisode} aria-label="Current episode" onFocus={(event) => event.currentTarget.select()} onChange={(event) => {
                     if (Number.isNaN(event.currentTarget.valueAsNumber)) return
                     update({ currentEpisode: Math.max(0, Math.min(event.currentTarget.valueAsNumber, totalEpisodes ?? Infinity)) })
-                  }} /></label>
+                  }} />
                   {totalEpisodes && <small aria-hidden="true">/ {totalEpisodes}</small>}
                   <button type="button" aria-label="Increase current episode" disabled={Boolean(totalEpisodes && currentEpisode >= totalEpisodes)} onClick={() => update({ currentEpisode: currentEpisode + 1 })}>+</button>
                 </div>

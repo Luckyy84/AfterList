@@ -46,12 +46,11 @@
 .details-tracking .status-choice-group button.is-active::after { transform: scaleX(1); }
 .tracking-row, .rating-row { display: grid; grid-template-columns: minmax(130px, 1fr) auto; align-items: center; gap: 18px; }
 .tracking-row strong, .rating-row strong { display: block; margin-top: 6px; color: rgba(255,255,255,.88); font-size: 15px; }
-.episode-stepper { display: grid; grid-template-columns: 44px minmax(48px, auto) auto 44px; align-items: center; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: border-color .2s ease, box-shadow .2s ease; }
+.episode-stepper { display: grid; grid-template-columns: 44px minmax(40px, 1fr) auto 44px; align-items: center; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; transition: border-color .2s ease, box-shadow .2s ease; }
 .episode-stepper button { border: 0; color: #fff; background: transparent; font-size: 20px; transition: color .18s ease, background-color .18s ease; }
 .episode-stepper button:last-child { grid-column: 4; }
 .episode-stepper button:disabled { color: rgba(255,255,255,.2); cursor: not-allowed; }
-.episode-stepper label { min-width: 0; }
-.episode-stepper input { width: 100%; min-height: 44px; border: 0; outline: 0; padding: 0 2px; color: #fff; background: transparent; text-align: right; font: inherit; font-size: 16px; font-weight: 850; appearance: textfield; }
+.episode-stepper input { width: 100%; min-width: 0; min-height: 44px; border: 0; outline: 0; padding: 0 2px; color: #fff; background: transparent; text-align: center; font: inherit; font-size: 16px; font-weight: 850; appearance: textfield; }
 .episode-stepper input::-webkit-inner-spin-button { appearance: none; }
 .episode-stepper small { padding-right: 8px; color: rgba(255,255,255,.42); font-size: 12px; white-space: nowrap; }
 .rating-scale { display: grid; grid-template-columns: repeat(10, minmax(30px, 1fr)); gap: 3px; }
