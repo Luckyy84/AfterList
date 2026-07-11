@@ -47,6 +47,7 @@ type DetailsResponse = {
     runtimeLabel?: string
     seasonsLabel?: string
     episodesLabel?: string
+    totalEpisodes?: number
     status?: string
     tagline?: string
     homepage?: string
@@ -136,6 +137,7 @@ function mapTvDetails(data: TmdbTvDetails, id: number): DetailsResponse {
       runtimeLabel: formatRuntime(data.episode_run_time?.find((runtime) => runtime > 0)),
       seasonsLabel: formatCount(data.number_of_seasons, 'season', 'seasons'),
       episodesLabel: formatCount(data.number_of_episodes, 'episode', 'episodes'),
+      totalEpisodes: data.number_of_episodes,
       status: data.status ?? (data.in_production ? 'In Production' : undefined),
       tagline: data.tagline?.trim() || undefined,
       homepage: data.homepage?.trim() || undefined,

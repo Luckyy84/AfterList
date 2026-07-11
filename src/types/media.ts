@@ -9,6 +9,7 @@ export type MediaDetails = {
   runtimeLabel?: string
   seasonsLabel?: string
   episodesLabel?: string
+  totalEpisodes?: number
   status?: string
   tagline?: string
   homepage?: string

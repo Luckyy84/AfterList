@@ -79,7 +79,7 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
           )}
 
           {!isSaved ? (
-            <button className="primary-action details-add" type="button" onClick={() => onCreate(item)}>Add to watchlist</button>
+            <button className="primary-action details-add" type="button" onClick={() => onCreate({ ...item, totalEpisodes: details?.totalEpisodes })}>Add to watchlist</button>
           ) : (
             <section className="details-tracking" aria-label="Watchlist tracking">
               <fieldset className="status-choice-group">
@@ -87,8 +87,8 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
                 {statuses.map((status) => <button type="button" key={status} className={savedItem?.status === status ? 'is-active' : ''} aria-pressed={savedItem?.status === status} onClick={() => update({ status })}>{status}</button>)}
               </fieldset>
               {item.type !== 'Movie' && <div className="tracking-fields">
-                <label>Current episode<input type="number" min="0" max={savedItem?.totalEpisodes || undefined} value={savedItem?.currentEpisode ?? 0} onChange={(event) => update({ currentEpisode: Number(event.target.value) })} /></label>
-                <label>Total episodes<input type="number" min="1" value={savedItem?.totalEpisodes ?? ''} placeholder="Unknown" onChange={(event) => update({ totalEpisodes: event.target.value ? Number(event.target.value) : undefined })} /></label>
+                <label>Current episode<input type="number" min="0" max={savedItem?.totalEpisodes ?? details?.totalEpisodes} value={savedItem?.currentEpisode ?? 0} onChange={(event) => update({ currentEpisode: Number(event.target.value) })} /></label>
+                <label>Total episodes<input type="number" min="1" value={savedItem?.totalEpisodes ?? details?.totalEpisodes ?? ''} placeholder="Unknown" onChange={(event) => update({ totalEpisodes: event.target.value ? Number(event.target.value) : undefined })} /></label>
               </div>}
               <div className="tracking-fields">
                 <label>My rating<input type="number" min="1" max="10" value={savedItem?.personalRating ?? ''} placeholder="1–10" onChange={(event) => update({ personalRating: event.target.value ? Number(event.target.value) : null })} /></label>
