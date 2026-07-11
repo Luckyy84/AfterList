@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from './MediaCard'
 import MediaDetailsModal from './MediaDetailsModal'
 import type { MediaItem, MediaType, MediaUpdate } from '../../types/media'
+import { softSpring } from '../../motion'
 
 type CategoryPageProps = {
   title: string
@@ -31,7 +32,7 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onUpdate }: Cate
         style={{ '--hero-image': `url(${hero?.backdrop ?? ''})` } as CSSProperties}
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={softSpring}
       >
         <div className="hero-content">
           <p className="eyebrow">AfterList category</p>
@@ -50,9 +51,11 @@ function CategoryPage({ title, subtitle, type, items, onRemove, onUpdate }: Cate
         </div>
 
         <motion.div layout className="media-grid">
+          <AnimatePresence mode="popLayout">
           {filteredItems.map((item) => (
             <MediaCard key={item.id} item={item} onSelect={setSelectedItem} />
           ))}
+          </AnimatePresence>
         </motion.div>
 
         {filteredItems.length === 0 && (

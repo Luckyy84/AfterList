@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
 import MediaDetailsModal from '../components/media/MediaDetailsModal'
 import type { MediaItem, MediaStatus, MediaUpdate } from '../types/media'
@@ -71,12 +72,14 @@ export default function DiscoverPage({ items, onCreate, onRemove, onUpdate }: Di
       {isLoading && <div className="empty-state" aria-live="polite"><h3>Finding what’s trending…</h3><p>Loading public TMDB discovery results.</p></div>}
       {error && <div className="empty-state error-state"><h3>Discovery is unavailable</h3><p>{error}</p><button className="secondary-action" type="button" onClick={() => { setIsLoading(true); setError(''); setRequestVersion((version) => version + 1) }}>Try again</button></div>}
       {!isLoading && !error && !cards.length && <div className="empty-state"><h3>No titles found</h3><p>Try another media filter or use Search.</p></div>}
-      <div className="media-grid discover-grid">
+      <motion.div layout className="media-grid discover-grid">
+        <AnimatePresence mode="popLayout">
         {cards.map(({ result, item }) => {
           const isSaved = Boolean(findMatchingMediaItem(items, result))
           return <MediaCard key={`${result.source}-${result.externalId}`} item={item} onSelect={setSelected} isSaved={isSaved} onAdd={isSaved ? undefined : add} />
         })}
-      </div>
+        </AnimatePresence>
+      </motion.div>
       {selectedItem && <MediaDetailsModal item={selectedItem} isSaved={Boolean(findMatchingMediaItem(items, selectedItem))} onAdd={add} onClose={() => setSelected(null)} onRemove={(id) => { onRemove(id); setSelected(null) }} onUpdate={onUpdate} />}
     </>
   )

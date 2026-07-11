@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'motion/react'
 import type { MediaItem } from '../../types/media'
+import { snappySpring } from '../../motion'
 
 type MediaCardProps = {
   item: MediaItem
@@ -20,9 +21,14 @@ function MediaCard({ item, onSelect, isSaved = true, onAdd }: MediaCardProps) {
 
   return (
     <motion.article
+      layout="position"
       className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
-      whileHover={shouldReduceMotion ? undefined : { y: -3 }}
-      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 12, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={shouldReduceMotion ? undefined : { opacity: 0, y: 8, scale: 0.96 }}
+      whileHover={shouldReduceMotion ? undefined : { y: -7, scale: 1.025 }}
+      whileTap={shouldReduceMotion ? undefined : { scale: 0.975 }}
+      transition={snappySpring}
     >
       <button
         className="media-card"

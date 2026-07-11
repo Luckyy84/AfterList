@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
@@ -12,8 +13,10 @@ import Footer from './components/layout/Footer'
 import MediaDetailsModal from './components/media/MediaDetailsModal'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
+import { pageMotion, softSpring } from './motion'
 
 function App() {
+  const location = useLocation()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
   const [searchOpenedItemId, setSearchOpenedItemId] = useState<string | null>(null)
   const searchOpenedItem = searchOpenedItemId ? items.find((item) => item.id === searchOpenedItemId) : null
@@ -24,6 +27,7 @@ function App() {
   }
 
   return (
+    <MotionConfig reducedMotion="user" transition={softSpring}>
     <div className="app">
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -38,7 +42,9 @@ function App() {
       )}
 
       <main id="main-content" className="app-content">
-        <Routes>
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
+        <Routes location={location}>
           <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/library" element={<LibraryPage items={items} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
@@ -51,6 +57,8 @@ function App() {
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
           <Route path="/terms" element={<LegalPage type="terms" />} />
         </Routes>
+        </motion.div>
+        </AnimatePresence>
       </main>
 
       {searchOpenedItem && (
@@ -65,6 +73,7 @@ function App() {
       <Footer />
       <Analytics />
     </div>
+    </MotionConfig>
   )
 }
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
 import MediaDetailsModal from '../components/media/MediaDetailsModal'
 import type { MediaItem, MediaStatus, MediaType, MediaUpdate } from '../types/media'
@@ -73,7 +74,7 @@ export default function LibraryPage({ items, initialType, onRemove, onUpdate }: 
       </div>
 
       {visibleItems.length ? (
-        <div className="media-grid">{visibleItems.map((item) => <MediaCard key={item.id} item={item} onSelect={setSelected} />)}</div>
+        <motion.div layout className="media-grid"><AnimatePresence mode="popLayout">{visibleItems.map((item) => <MediaCard key={item.id} item={item} onSelect={setSelected} />)}</AnimatePresence></motion.div>
       ) : (
         <div className="empty-state"><h3>No titles match</h3><p>Adjust the filters or use Search to add something new.</p></div>
       )}
