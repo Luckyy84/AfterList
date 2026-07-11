@@ -42,14 +42,14 @@ function App() {
       <main id="main-content" className="app-content">
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
         <Routes location={location}>
-          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/library" element={<LibraryPage items={items} onUpdate={handleUpdateItem} />} />
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
+          <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
+          <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
-          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} onUpdate={handleUpdateItem} />} />
-          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} onUpdate={handleUpdateItem} />} />
-          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} onUpdate={handleUpdateItem} />} />
+          <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
+          <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />
+          <Route path="/series" element={<LibraryPage initialType="TV Series" items={items} />} />
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />

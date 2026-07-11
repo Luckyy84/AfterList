@@ -219,42 +219,6 @@
   transform: translateY(0);
 }
 
-.media-card-progress {
-  position: absolute;
-  z-index: 5;
-  right: 10px;
-  bottom: calc(var(--card-info-height) + 18px);
-  left: 10px;
-  display: grid;
-  grid-template-columns: 36px 1fr 36px;
-  align-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(244, 240, 230, 0.3);
-  border-radius: 999px;
-  color: #f4f0e6;
-  background: rgba(10, 10, 9, 0.88);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.48);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(5px);
-  transition: opacity 0.16s ease, transform 0.16s ease;
-  backdrop-filter: blur(14px);
-}
-
-.media-card-progress button {
-  min-height: 38px;
-  border: 0;
-  color: inherit;
-  background: transparent;
-  font-size: 18px;
-}
-
-.media-card-progress button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
-.media-card-progress button:disabled { opacity: 0.28; }
-.media-card-progress span { font-size: 11px; font-weight: 850; text-align: center; }
-.is-saved:hover .media-card-progress,
-.is-saved:focus-within .media-card-progress { opacity: 1; pointer-events: auto; transform: none; }
-
 .row-scroll {
   min-height: auto !important;
   padding-top: 12px !important;
@@ -274,8 +238,7 @@
 }
 
 @media (hover: none) {
-  .media-card-add,
-  .media-card-progress {
+  .media-card-add {
     opacity: 1;
     pointer-events: auto;
     transform: none;

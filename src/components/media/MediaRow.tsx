@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import MediaCard from './MediaCard'
-import type { MediaItem, MediaUpdate } from '../../types/media'
+import type { MediaItem } from '../../types/media'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 type WatchlistRowProps = {
@@ -11,7 +11,6 @@ type WatchlistRowProps = {
   onAdd?: (item: MediaItem) => void
   isItemSaved?: (item: MediaItem) => boolean
   hideControls?: boolean
-  onUpdate?: (id: string, updates: MediaUpdate) => void
 }
 
 const SLIDE_EASE = [0.22, 1, 0.36, 1] as const
@@ -21,7 +20,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false, onUpdate }: WatchlistRowProps) {
+export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false }: WatchlistRowProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
@@ -124,7 +123,7 @@ export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideCon
           <motion.div className="row-scroll-track" ref={trackRef}>
             {items.map((item, index) => {
               const isSaved = isItemSaved?.(item) ?? !onAdd
-              return <MediaCard key={`${item.id}-${index}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : onAdd} onUpdate={isSaved ? onUpdate : undefined} />
+              return <MediaCard key={`${item.id}-${index}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : onAdd} />
             })}
           </motion.div>
         </div>
