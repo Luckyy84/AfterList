@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
@@ -67,14 +66,12 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
       {isLoading && <div className="empty-state" aria-live="polite"><h3>Finding what’s trending…</h3><p>Loading public TMDB discovery results.</p></div>}
       {error && <div className="empty-state error-state"><h3>Discovery is unavailable</h3><p>{error}</p><button className="secondary-action" type="button" onClick={() => { setIsLoading(true); setError(''); setRequestVersion((version) => version + 1) }}>Try again</button></div>}
       {!isLoading && !error && !cards.length && <div className="empty-state"><h3>No titles found</h3><p>Try another media filter or use Search.</p></div>}
-      <motion.div layout className="media-grid discover-grid">
-        <AnimatePresence mode="popLayout">
+      <div className="media-grid discover-grid">
         {cards.map(({ result, item }) => {
           const isSaved = Boolean(findMatchingMediaItem(items, result))
-          return <MediaCard key={`${result.source}-${result.externalId}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : add} />
+          return <MediaCard key={`${result.source}-${result.externalId}`} item={item} isSaved={isSaved} onAdd={isSaved ? undefined : add} animateLayout={false} />
         })}
-        </AnimatePresence>
-      </motion.div>
+      </div>
     </>
   )
 }

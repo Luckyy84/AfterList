@@ -7,9 +7,10 @@ type MediaCardProps = {
   item: MediaItem
   isSaved?: boolean
   onAdd?: (item: MediaItem) => void
+  animateLayout?: boolean
 }
 
-function MediaCard({ item, isSaved = true, onAdd }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaCardProps) {
   const navigate = useNavigate()
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
@@ -21,7 +22,7 @@ function MediaCard({ item, isSaved = true, onAdd }: MediaCardProps) {
 
   return (
     <motion.article
-      layout="position"
+      layout={animateLayout ? 'position' : false}
       className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -42,6 +43,7 @@ function MediaCard({ item, isSaved = true, onAdd }: MediaCardProps) {
             src={item.poster}
             alt=""
             loading="lazy"
+            decoding="async"
             onError={(event) => {
               event.currentTarget.style.display = 'none'
             }}

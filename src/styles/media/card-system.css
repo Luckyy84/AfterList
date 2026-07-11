@@ -20,6 +20,8 @@
   width: auto;
   min-width: 0;
   flex: initial;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
 }
 
 .media-card {
