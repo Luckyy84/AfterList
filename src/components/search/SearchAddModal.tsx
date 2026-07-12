@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
+import CustomSelect from '../ui/CustomSelect'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
@@ -319,17 +320,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
                 <label className="status-editor create-status-editor">
                   <span>Status</span>
-                  <select
-                    value={selectedStatus}
-                    aria-label={`Choose status for ${selectedResult.title}`}
-                    onChange={(event) => setSelectedStatus(event.target.value as MediaStatus)}
-                  >
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect ariaLabel={`Choose status for ${selectedResult.title}`} value={selectedStatus} options={statusOptions.map((status) => ({ value: status, label: status }))} onChange={(value) => setSelectedStatus(value as MediaStatus)} />
                 </label>
 
                 <button className="create-item-btn" type="button" onClick={handleCreate}>
