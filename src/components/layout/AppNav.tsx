@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
 import SearchAddModal from '../search/SearchAddModal'
+import ThemeToggle from '../ui/ThemeToggle'
 import type { MediaItem } from '../../types/media'
 import { useAuth } from '../../context/AuthContext'
 import type { User } from '@supabase/supabase-js'
@@ -27,7 +28,7 @@ function ActiveNavBackground() {
       style={{
         position: 'absolute',
         inset: 0,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--nav-active)',
         borderRadius: '999px',
         zIndex: 1,
       }}
@@ -132,8 +133,10 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
             )}
           </NavLink>
         )}
+
       </div>
 
+      <ThemeToggle />
       <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
     </nav>
   )

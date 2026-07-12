@@ -25,7 +25,7 @@ function App() {
   }
 
   return (
-    <MotionConfig reducedMotion="never" transition={softSpring}>
+    <MotionConfig reducedMotion="user" transition={softSpring}>
     <div className="app">
       <a className="skip-link" href="#main-content">
         Skip to content
