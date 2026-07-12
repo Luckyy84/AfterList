@@ -2,7 +2,11 @@
 .custom-select-trigger { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 0 13px; color: var(--cream); background: #11110f; text-align: left; transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
 .custom-select-chevron { color: var(--muted); font-size: 18px; line-height: 1; transform: translateY(-2px); transition: transform .2s ease; }
 .custom-select-chevron.is-open { transform: translateY(2px) rotate(180deg); }
-.custom-select-menu { position: absolute; top: calc(100% + 7px); right: 0; left: 0; z-index: 80; max-height: min(280px, 45vh); overflow-y: auto; list-style: none; margin: 0; border: 1px solid var(--line-strong); border-radius: 14px; padding: 6px; background: #121210; box-shadow: 0 22px 60px rgba(0,0,0,.58); transform-origin: top; }
+.custom-select-menu { position: absolute; top: calc(100% + 7px); right: 0; left: 0; z-index: 80; max-height: min(280px, 45vh); overflow-y: auto; list-style: none; margin: 0; border: 1px solid var(--line-strong); border-radius: 14px; padding: 6px; background: #121210; box-shadow: 0 22px 60px rgba(0,0,0,.58); scrollbar-color: rgba(244,240,230,.28) transparent; scrollbar-width: thin; transform-origin: top; }
+.custom-select-menu::-webkit-scrollbar { width: 7px; }
+.custom-select-menu::-webkit-scrollbar-track { background: transparent; }
+.custom-select-menu::-webkit-scrollbar-thumb { border: 2px solid #121210; border-radius: 999px; background: rgba(244,240,230,.28); }
+.custom-select-menu::-webkit-scrollbar-button { display: none; }
 .custom-select-menu li { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 9px; padding: 0 10px; color: var(--muted); cursor: pointer; transition: color .14s ease, background-color .14s ease, transform .14s ease; }
 .custom-select-menu li.is-active { color: var(--cream); background: rgba(244,240,230,.08); transform: translateX(2px); }
 .custom-select-menu li.is-selected { color: var(--cream); }
