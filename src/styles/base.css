@@ -120,6 +120,9 @@ h3,
 }
 
 .nav .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 0 0 0 10px;
   color: #fff;
   background: transparent;
@@ -127,6 +130,12 @@ h3,
   font-size: 24px;
   font-weight: 900;
   letter-spacing: -0.06em;
+}
+
+.nav .brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
 }
 
 .nav a,
