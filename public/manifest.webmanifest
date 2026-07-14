@@ -1,0 +1,17 @@
+{
+  "name": "AfterList",
+  "short_name": "AfterList",
+  "description": "Track anime, movies, and TV series.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050608",
+  "theme_color": "#050608",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
