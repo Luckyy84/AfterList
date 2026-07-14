@@ -81,6 +81,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
   return (
     <nav className="nav" aria-label="Primary navigation">
       <NavLink className="brand" to="/" end>
+        <img src="/favicon-32.png" alt="" />
         AfterList
       </NavLink>
 
