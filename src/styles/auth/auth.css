@@ -294,6 +294,8 @@
   transition: 0.18s ease;
 }
 
+.nav .nav-action { padding: 0; }
+
 .nav-action:hover,
 .nav-action[aria-expanded='true'],
 .nav-action.active {
