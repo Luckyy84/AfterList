@@ -1,6 +1,7 @@
 :root { --nav-active: #fff; color-scheme: dark; }
 
 .theme-toggle { position: relative; z-index: 3; grid-column: 3; grid-row: 1; width: 40px; min-width: 40px; min-height: 40px; display: inline-grid; place-items: center; justify-self: end; margin-right: 122px; border: 1px solid var(--line); border-radius: 50%; color: var(--cream); background: transparent; font-size: 17px; transition: border-color .18s ease, background-color .18s ease, opacity .18s ease, transform .18s ease; }
+.nav-links .nav-icon-button { width: 40px; padding: 0; }
 .nav:has(.nav-search-shell.expanded) .theme-toggle { opacity: 0; pointer-events: none; }
 
 @media (hover: hover) {
@@ -41,12 +42,13 @@ html[data-theme='light'] .app::before { opacity: .32 !important; }
 html[data-theme='light'] .nav { border-color: var(--line); background: rgba(250,247,240,.92); box-shadow: 0 18px 45px rgba(72,60,43,.14); }
 html[data-theme='light'] .nav .brand,
 html[data-theme='light'] .nav-links a,
-html[data-theme='light'] .nav-user-pill { color: var(--text); }
+html[data-theme='light'] .nav-icon-button { color: var(--text); }
 html[data-theme='light'] .nav-links a.active,
 html[data-theme='light'] .nav-links a.active span:first-child { color: #fff; }
 html[data-theme='light'] .nav-links a:hover,
-html[data-theme='light'] .nav-user-pill:hover,
-html[data-theme='light'] .nav-user-pill[aria-expanded='true'] { border-color: var(--line-strong); color: var(--text); background: rgba(43,38,31,.06); }
+html[data-theme='light'] .nav-icon-button:hover,
+html[data-theme='light'] .nav-icon-button[aria-expanded='true'],
+html[data-theme='light'] .nav-icon-button.active { border-color: var(--line-strong); color: var(--text); background: rgba(43,38,31,.06); }
 html[data-theme='light'] .nav-search-button,
 html[data-theme='light'] .primary-action,
 html[data-theme='light'] .quick-add,

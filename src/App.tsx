@@ -7,6 +7,7 @@ import LegalPage from './pages/LegalPage'
 import DiscoverPage from './pages/DiscoverPage'
 import LibraryPage from './pages/LibraryPage'
 import StatisticsPage from './pages/StatisticsPage'
+import SettingsPage from './pages/SettingsPage'
 import MediaDetailsPage from './pages/MediaDetailsPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
@@ -46,6 +47,7 @@ function App() {
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
           <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />

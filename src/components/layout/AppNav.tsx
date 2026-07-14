@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
 import SearchAddModal from '../search/SearchAddModal'
-import ThemeToggle from '../ui/ThemeToggle'
 import type { MediaItem } from '../../types/media'
 import { useAuth } from '../../context/AuthContext'
 import type { User } from '@supabase/supabase-js'
@@ -101,14 +100,17 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
         {user ? (
           <div className="nav-auth-menu" ref={accountMenuRef}>
             <button
-              className="nav-user-pill"
+              className="nav-icon-button"
               type="button"
+              aria-label="Open account menu"
               aria-expanded={isAccountOpen}
               aria-haspopup="menu"
+              title="Account"
               onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
             >
-              <span>{displayName}</span>
-              <span className="nav-user-chevron" aria-hidden="true">v</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" />
+              </svg>
             </button>
 
             {isAccountOpen && (
@@ -125,19 +127,21 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
             )}
           </div>
         ) : (
-          <NavLink to="/login" style={{ position: 'relative' }}>
-            {({ isActive }) => (
-              <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{isLoading ? 'Account' : 'Sign in'}</span>
-                {isActive && <ActiveNavBackground />}
-              </>
-            )}
+          <NavLink className="nav-icon-button" to="/login" aria-label={isLoading ? 'Account' : 'Sign in'} title={isLoading ? 'Account' : 'Sign in'}>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" />
+            </svg>
           </NavLink>
         )}
 
+        <NavLink className="nav-icon-button" to="/settings" aria-label="Settings" title="Settings">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1.4 1.6H9.4A1.7 1.7 0 0 0 8 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 13.6V9.4A1.7 1.7 0 0 0 4.6 8a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10.4 3h4.2A1.7 1.7 0 0 0 16 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1.4v4.2a1.7 1.7 0 0 0-1.6 1.4Z" />
+          </svg>
+        </NavLink>
       </div>
 
-      <ThemeToggle />
       <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
     </nav>
   )
