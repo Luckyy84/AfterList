@@ -80,23 +80,29 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
 
   return (
     <nav className="nav" aria-label="Primary navigation">
-      <NavLink className="brand" to="/" end>
-        <img src="/favicon-32.png" alt="" />
-        AfterList
-      </NavLink>
+      <div className="nav-primary">
+        <NavLink className="brand" to="/" end>
+          <img src="/favicon-32.png" alt="" />
+          AfterList
+        </NavLink>
 
-      <div className="nav-links">
-        {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
-            {({ isActive }) => (
-              <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
-                {isActive && <ActiveNavBackground />}
-              </>
-            )}
-          </NavLink>
-        ))}
+        <div className="nav-links">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
+              {({ isActive }) => (
+                <>
+                  <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
+                  {isActive && <ActiveNavBackground />}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
 
+        <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
+      </div>
+
+      <div className="nav-secondary" aria-label="Account and settings">
         {user ? (
           <div className="nav-auth-menu" ref={accountMenuRef}>
             <button
@@ -141,8 +147,6 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
           </svg>
         </NavLink>
       </div>
-
-      <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
     </nav>
   )
 }
