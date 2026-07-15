@@ -822,6 +822,15 @@ h3,
 .settings-card h2 { margin: 0 0 6px; color: var(--text); font-size: 18px; }
 .settings-card p { margin: 0; color: var(--muted); }
 .settings-card .theme-toggle { position: static; flex: 0 0 auto; margin: 0; }
+.settings-card > .custom-select { width: min(220px, 100%); }
+.settings-card-stacked { align-items: stretch; flex-direction: column; }
+.settings-controls { display: grid; gap: 10px; }
+.settings-control { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); padding-top: 10px; color: var(--text); font-weight: 700; }
+.settings-control input { width: 20px; height: 20px; accent-color: var(--cream); }
+
+html[data-reduced-motion='true'] *,
+html[data-reduced-motion='true'] *::before,
+html[data-reduced-motion='true'] *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 
 @media (max-width: 520px) {
   .settings-card { align-items: flex-start; flex-direction: column; }

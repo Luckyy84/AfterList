@@ -6,6 +6,7 @@ import type { MediaItem, MediaStatus } from '../../types/media'
 import CustomSelect from '../ui/CustomSelect'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
+import { loadDefaultStatus } from '../../services/preferences'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
@@ -97,7 +98,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
+  const [selectedStatus, setSelectedStatus] = useState<MediaStatus>(loadDefaultStatus)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const detailModalRef = useRef<HTMLElement | null>(null)
@@ -188,7 +189,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     setIsSearching(false)
     setSearchError(null)
     setSelectedResult(null)
-    setSelectedStatus('Planned')
+    setSelectedStatus(loadDefaultStatus())
     setHighlightedIndex(-1)
   }
 
@@ -224,7 +225,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     }
 
     setSelectedResult(result)
-    setSelectedStatus('Planned')
+    setSelectedStatus(loadDefaultStatus())
   }
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {

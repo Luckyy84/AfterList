@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
@@ -14,10 +15,12 @@ import Footer from './components/layout/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
+import { loadReducedMotion, saveReducedMotion } from './services/preferences'
 
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [reducedMotion, setReducedMotion] = useState(loadReducedMotion)
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
   const openSavedItem = (id: string) => {
@@ -25,8 +28,13 @@ function App() {
     if (item) navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })
   }
 
+  useEffect(() => {
+    document.documentElement.dataset.reducedMotion = String(reducedMotion)
+    saveReducedMotion(reducedMotion)
+  }, [reducedMotion])
+
   return (
-    <MotionConfig reducedMotion="user" transition={softSpring}>
+    <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'} transition={softSpring}>
     <div className="app">
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -47,7 +55,7 @@ function App() {
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<SettingsPage items={items} reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion} />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
           <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />
