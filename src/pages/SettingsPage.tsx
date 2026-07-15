@@ -12,9 +12,11 @@ type SettingsPageProps = {
   items: MediaItem[]
   reducedMotion: boolean
   onReducedMotionChange: (reduced: boolean) => void
+  stickyHeader: boolean
+  onStickyHeaderChange: (sticky: boolean) => void
 }
 
-export default function SettingsPage({ items, onReducedMotionChange, reducedMotion }: SettingsPageProps) {
+export default function SettingsPage({ items, onReducedMotionChange, onStickyHeaderChange, reducedMotion, stickyHeader }: SettingsPageProps) {
   const { signOut, user } = useAuth()
   const [defaultStatus, setDefaultStatus] = useState(loadDefaultStatus)
 
@@ -47,6 +49,7 @@ export default function SettingsPage({ items, onReducedMotionChange, reducedMoti
           <div className="settings-controls">
             <div className="settings-control"><span>Theme</span><ThemeToggle /></div>
             <label className="settings-control"><span>Reduce motion</span><input type="checkbox" checked={reducedMotion} onChange={(event) => onReducedMotionChange(event.target.checked)} /></label>
+            <label className="settings-control"><span>Keep top bar visible</span><input type="checkbox" checked={stickyHeader} onChange={(event) => onStickyHeaderChange(event.target.checked)} /></label>
           </div>
         </section>
         <section className="settings-card">

@@ -2,6 +2,7 @@ import type { MediaStatus } from '../types/media'
 
 const DEFAULT_STATUS_KEY = 'afterlist-default-status'
 const REDUCED_MOTION_KEY = 'afterlist-reduced-motion'
+const STICKY_HEADER_KEY = 'afterlist-sticky-header'
 const statuses: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 
 export function loadDefaultStatus(): MediaStatus {
@@ -19,4 +20,12 @@ export function loadReducedMotion() {
 
 export function saveReducedMotion(reduced: boolean) {
   localStorage.setItem(REDUCED_MOTION_KEY, String(reduced))
+}
+
+export function loadStickyHeader() {
+  return localStorage.getItem(STICKY_HEADER_KEY) !== 'false'
+}
+
+export function saveStickyHeader(sticky: boolean) {
+  localStorage.setItem(STICKY_HEADER_KEY, String(sticky))
 }

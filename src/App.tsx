@@ -15,12 +15,13 @@ import Footer from './components/layout/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
-import { loadReducedMotion, saveReducedMotion } from './services/preferences'
+import { loadReducedMotion, loadStickyHeader, saveReducedMotion, saveStickyHeader } from './services/preferences'
 
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const [reducedMotion, setReducedMotion] = useState(loadReducedMotion)
+  const [stickyHeader, setStickyHeader] = useState(loadStickyHeader)
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
   const openSavedItem = (id: string) => {
@@ -32,6 +33,11 @@ function App() {
     document.documentElement.dataset.reducedMotion = String(reducedMotion)
     saveReducedMotion(reducedMotion)
   }, [reducedMotion])
+
+  useEffect(() => {
+    document.documentElement.dataset.stickyHeader = String(stickyHeader)
+    saveStickyHeader(stickyHeader)
+  }, [stickyHeader])
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'} transition={softSpring}>
@@ -55,7 +61,7 @@ function App() {
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
-          <Route path="/settings" element={<SettingsPage items={items} reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion} />} />
+          <Route path="/settings" element={<SettingsPage items={items} reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion} stickyHeader={stickyHeader} onStickyHeaderChange={setStickyHeader} />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
           <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />

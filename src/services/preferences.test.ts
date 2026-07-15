@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { loadDefaultStatus, loadReducedMotion, saveDefaultStatus, saveReducedMotion } from './preferences'
+import { loadDefaultStatus, loadReducedMotion, loadStickyHeader, saveDefaultStatus, saveReducedMotion, saveStickyHeader } from './preferences'
 
 afterEach(() => localStorage.clear())
 
@@ -11,5 +11,8 @@ describe('preferences', () => {
     saveReducedMotion(true)
     expect(loadDefaultStatus()).toBe('Watching')
     expect(loadReducedMotion()).toBe(true)
+    expect(loadStickyHeader()).toBe(true)
+    saveStickyHeader(false)
+    expect(loadStickyHeader()).toBe(false)
   })
 })

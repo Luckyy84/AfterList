@@ -133,6 +133,8 @@ body, .nav, .library-toolbar, .stat-card, .empty-state, .legal-page, .auth-copy,
   html[data-theme='light'] .nav { background: linear-gradient(145deg, rgba(255,253,248,.98), rgba(242,236,226,.98)) !important; box-shadow: 0 18px 40px rgba(72,60,43,.16) !important; }
 }
 
+html[data-sticky-header='false'] .nav { position: static; }
+
 .nav {
   grid-template-columns: minmax(0, 3fr) minmax(170px, 1fr);
   width: min(1280px, calc(100% - 28px));
