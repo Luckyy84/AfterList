@@ -1,7 +1,25 @@
-import type { MediaItem, MediaSource, MediaType, MediaUpdate } from '../types/media'
+import type { MediaItem, MediaSource, MediaStatus, MediaType, MediaUpdate } from '../types/media'
+import type { SearchResultItem } from '../types/search'
 
 export function getStatusLabel(status: string) {
   return status.toUpperCase()
+}
+
+export function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
+  return {
+    id: `${result.source}-${result.externalId}`,
+    externalId: result.externalId,
+    source: result.source,
+    title: result.title,
+    type: result.type,
+    status,
+    poster: result.poster,
+    backdrop: result.backdrop,
+    progress: status === 'Watched' ? 'Watched' : result.year,
+    rating: result.rating,
+    description: result.description,
+    year: result.year,
+  }
 }
 
 type MediaComparable = {

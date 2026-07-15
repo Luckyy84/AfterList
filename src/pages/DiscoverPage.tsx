@@ -4,15 +4,12 @@ import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { discoverTmdb } from '../services/tmdb'
-import { findMatchingMediaItem } from '../utils/media'
+import { loadDefaultStatus } from '../services/preferences'
+import { createMediaItem, findMatchingMediaItem } from '../utils/media'
 
 type DiscoverPageProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
-}
-
-function toMediaItem(result: SearchResultItem): MediaItem {
-  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
 }
 
 const genreIds: Record<string, number[]> = {
@@ -41,9 +38,9 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
 
   const cards = useMemo(() => results
     .filter((result) => genre === 'all' || result.genreIds?.some((id) => genreIds[genre].includes(id)))
-    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? toMediaItem(result) })), [genre, items, results])
+    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? createMediaItem(result, loadDefaultStatus()) })), [genre, items, results])
 
-  const add = (item: MediaItem, status: MediaStatus = 'Planned') => {
+  const add = (item: MediaItem, status: MediaStatus = item.status) => {
     onCreate({ ...item, status, progress: status === 'Watched' ? 'Watched' : item.progress })
   }
 

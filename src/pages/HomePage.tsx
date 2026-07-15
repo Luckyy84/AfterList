@@ -7,7 +7,8 @@ import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { useIsMobile } from '../hooks/useMediaQuery'
 import { discoverTmdb } from '../services/tmdb'
-import { findMatchingMediaItem, getMediaKey } from '../utils/media'
+import { loadDefaultStatus } from '../services/preferences'
+import { createMediaItem, findMatchingMediaItem, getMediaKey } from '../utils/media'
 
 type HomePageProps = {
   items: MediaItem[]
@@ -24,10 +25,6 @@ const watchRows: { title: string; status: MediaStatus }[] = [
 const HERO_ROTATION_MS = 30_000
 const HERO_PREVIEW_LIMIT = 5
 const heroEase = [0.22, 1, 0.36, 1] as const
-
-function toMediaItem(result: SearchResultItem): MediaItem {
-  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
-}
 
 function getNextHeroIndex(currentIndex: number, itemCount: number) {
   if (itemCount <= 1) return 0
@@ -93,7 +90,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
           results = await discoverTmdb({ feed: 'trending', mediaType: 'all', signal: controller.signal })
         } catch { /* The watchlist remains usable when discovery is offline. */ }
       }
-      if (!controller.signal.aborted) setDiscoveryItems(results.map(toMediaItem).filter((result) => !savedKeys.has(getMediaKey(result))).slice(0, 12))
+      if (!controller.signal.aborted) setDiscoveryItems(results.map((result) => createMediaItem(result, loadDefaultStatus())).filter((result) => !savedKeys.has(getMediaKey(result))).slice(0, 12))
     }
 
     void loadDiscovery()

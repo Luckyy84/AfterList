@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MediaItem } from '../types/media'
-import { applyMediaUpdate, mergeWatchlists } from './media'
+import { applyMediaUpdate, createMediaItem, mergeWatchlists } from './media'
 
 const item: MediaItem = {
   id: 'local', externalId: 'tv:1', source: 'tmdb', title: 'Show', type: 'TV Series',
@@ -9,6 +9,12 @@ const item: MediaItem = {
 }
 
 describe('watchlist tracking', () => {
+  it('creates discovered titles with the requested default status', () => {
+    const result = { externalId: 'movie:2', source: 'tmdb' as const, title: 'Film', type: 'Movie' as const, poster: '', backdrop: '', year: '2026', rating: '8', description: '' }
+    expect(createMediaItem(result, 'Watching')).toMatchObject({ status: 'Watching', progress: '2026' })
+    expect(createMediaItem(result, 'Watched')).toMatchObject({ status: 'Watched', progress: 'Watched' })
+  })
+
   it('clamps progress and keeps completion status in sync', () => {
     expect(applyMediaUpdate(item, { currentEpisode: 99 }, 'now')).toMatchObject({ currentEpisode: 10, status: 'Watched' })
     expect(applyMediaUpdate(item, { currentEpisode: 4 }, 'now')).toMatchObject({ currentEpisode: 4, status: 'Watching' })

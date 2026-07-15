@@ -4,7 +4,7 @@ import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/r
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import CustomSelect from '../ui/CustomSelect'
-import { findMatchingMediaItem } from '../../utils/media'
+import { createMediaItem, findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { loadDefaultStatus } from '../../services/preferences'
 import { useIsMobile } from '../../hooks/useMediaQuery'
@@ -53,27 +53,6 @@ type SearchAddModalProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
   onOpenExisting: (id: string) => void
-}
-
-function createId(result: SearchResultItem) {
-  return `${result.source}-${result.externalId}`
-}
-
-function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
-  return {
-    id: createId(result),
-    externalId: result.externalId,
-    source: result.source,
-    title: result.title,
-    type: result.type,
-    status,
-    poster: result.poster,
-    backdrop: result.backdrop,
-    progress: status === 'Watched' ? 'Watched' : result.year,
-    rating: result.rating,
-    description: result.description,
-    year: result.year,
-  }
 }
 
 function mergeUniqueResults(results: SearchResultItem[]) {
