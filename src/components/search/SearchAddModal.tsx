@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
-import { findMatchingMediaItem } from '../../utils/media'
+import CustomSelect from '../ui/CustomSelect'
+import { createMediaItem, findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
+import { loadDefaultStatus } from '../../services/preferences'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
@@ -53,27 +55,6 @@ type SearchAddModalProps = {
   onOpenExisting: (id: string) => void
 }
 
-function createId(result: SearchResultItem) {
-  return `${result.source}-${result.externalId}`
-}
-
-function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
-  return {
-    id: createId(result),
-    externalId: result.externalId,
-    source: result.source,
-    title: result.title,
-    type: result.type,
-    status,
-    poster: result.poster,
-    backdrop: result.backdrop,
-    progress: status === 'Watched' ? 'Watched' : result.year,
-    rating: result.rating,
-    description: result.description,
-    year: result.year,
-  }
-}
-
 function mergeUniqueResults(results: SearchResultItem[]) {
   const seen = new Set<string>()
 
@@ -96,7 +77,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
+  const [selectedStatus, setSelectedStatus] = useState<MediaStatus>(loadDefaultStatus)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const detailModalRef = useRef<HTMLElement | null>(null)
@@ -187,7 +168,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     setIsSearching(false)
     setSearchError(null)
     setSelectedResult(null)
-    setSelectedStatus('Planned')
+    setSelectedStatus(loadDefaultStatus())
     setHighlightedIndex(-1)
   }
 
@@ -223,7 +204,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     }
 
     setSelectedResult(result)
-    setSelectedStatus('Planned')
+    setSelectedStatus(loadDefaultStatus())
   }
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -319,17 +300,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
                 <label className="status-editor create-status-editor">
                   <span>Status</span>
-                  <select
-                    value={selectedStatus}
-                    aria-label={`Choose status for ${selectedResult.title}`}
-                    onChange={(event) => setSelectedStatus(event.target.value as MediaStatus)}
-                  >
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect ariaLabel={`Choose status for ${selectedResult.title}`} value={selectedStatus} options={statusOptions.map((status) => ({ value: status, label: status }))} onChange={(value) => setSelectedStatus(value as MediaStatus)} />
                 </label>
 
                 <button className="create-item-btn" type="button" onClick={handleCreate}>

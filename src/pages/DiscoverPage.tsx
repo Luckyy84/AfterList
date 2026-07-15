@@ -1,23 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import MediaCard from '../components/media/MediaCard'
+import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { discoverTmdb } from '../services/tmdb'
-import { findMatchingMediaItem } from '../utils/media'
+import { loadDefaultStatus } from '../services/preferences'
+import { createMediaItem, findMatchingMediaItem } from '../utils/media'
 
 type DiscoverPageProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
 }
 
-function toMediaItem(result: SearchResultItem): MediaItem {
-  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
-}
-
 const genreIds: Record<string, number[]> = {
   action: [28, 10759], animation: [16], comedy: [35], drama: [18],
   fantasy: [14, 10765], horror: [27], documentary: [99],
 }
+const genreOptions = ['all', 'action', 'animation', 'comedy', 'drama', 'fantasy', 'horror', 'documentary'].map((value) => ({ value, label: value === 'all' ? 'All genres' : value[0].toUpperCase() + value.slice(1) }))
 
 export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
   const [feed, setFeed] = useState<'trending' | 'popular'>('trending')
@@ -39,9 +38,9 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
 
   const cards = useMemo(() => results
     .filter((result) => genre === 'all' || result.genreIds?.some((id) => genreIds[genre].includes(id)))
-    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? toMediaItem(result) })), [genre, items, results])
+    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? createMediaItem(result, loadDefaultStatus()) })), [genre, items, results])
 
-  const add = (item: MediaItem, status: MediaStatus = 'Planned') => {
+  const add = (item: MediaItem, status: MediaStatus = item.status) => {
     onCreate({ ...item, status, progress: status === 'Watched' ? 'Watched' : item.progress })
   }
 
@@ -59,9 +58,7 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
         {(['all', 'movie', 'tv'] as const).map((value) => <button key={value} className={mediaType === value ? 'is-active' : ''} aria-pressed={mediaType === value} onClick={() => { if (value === mediaType) return; setIsLoading(true); setError(''); setMediaType(value) }}>{value === 'all' ? 'All media' : value === 'movie' ? 'Movies' : 'TV & anime'}</button>)}
       </div>
       <label className="genre-filter">Genre
-        <select value={genre} onChange={(event) => setGenre(event.target.value)}>
-          <option value="all">All genres</option><option value="action">Action</option><option value="animation">Animation</option><option value="comedy">Comedy</option><option value="drama">Drama</option><option value="fantasy">Fantasy</option><option value="horror">Horror</option><option value="documentary">Documentary</option>
-        </select>
+        <CustomSelect ariaLabel="Genre" value={genre} options={genreOptions} onChange={setGenre} />
       </label>
       {isLoading && <div className="empty-state" aria-live="polite"><h3>Finding what’s trending…</h3><p>Loading public TMDB discovery results.</p></div>}
       {error && <div className="empty-state error-state"><h3>Discovery is unavailable</h3><p>{error}</p><button className="secondary-action" type="button" onClick={() => { setIsLoading(true); setError(''); setRequestVersion((version) => version + 1) }}>Try again</button></div>}

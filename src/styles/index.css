@@ -4,6 +4,7 @@
 @import './auth/auth.css';
 @import './media/hover.css';
 @import './background.css';
+@import './custom-select.css';
 @import './media/edge-fade.css';
 @import './details/status-editor.css';
 @import './search/search-add.css';
@@ -22,3 +23,4 @@
 @import './mobile-performance.css';
 @import './cinematic.css';
 @import './media/card-system.css';
+@import './theme.css';
