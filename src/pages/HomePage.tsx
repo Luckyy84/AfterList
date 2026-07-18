@@ -16,19 +16,11 @@ type HomePageProps = {
 
 const watchStatuses: MediaStatus[] = ['Watching', 'Watched', 'Planned', 'Dropped']
 
-const HERO_ROTATION_MS = 30_000
 const HERO_PREVIEW_LIMIT = 5
 const heroEase = [0.22, 1, 0.36, 1] as const
 
 function toMediaItem(result: SearchResultItem): MediaItem {
   return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
-}
-
-function getNextHeroIndex(currentIndex: number, itemCount: number) {
-  if (itemCount <= 1) return 0
-
-  const offset = Math.floor(Math.random() * (itemCount - 1)) + 1
-  return (currentIndex + offset) % itemCount
 }
 
 function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
@@ -58,21 +50,13 @@ function HomePage({ items, onCreate }: HomePageProps) {
   const recommendationExternalId = recommendationSeed?.externalId
   const recommendationMediaType = recommendationSeed?.type === 'Movie' ? 'movie' : 'tv'
   const savedMediaKeys = items.map(getMediaKey).filter(Boolean).sort().join('|')
-  const safeHeroIndex = items.length ? heroIndex % items.length : 0
-  const hero = items[safeHeroIndex]
-  const heroPreviewItems = getHeroPreviewItems(items, safeHeroIndex)
-  const continueWatching = items.filter((item) => item.status === 'Watching')
+  const continueWatching = items
+    .filter((item) => item.status === 'Watching')
+    .toSorted((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))
+  const safeHeroIndex = continueWatching.length ? heroIndex % continueWatching.length : 0
+  const hero = continueWatching[safeHeroIndex]
+  const heroPreviewItems = getHeroPreviewItems(continueWatching, safeHeroIndex)
   const selectedWatchItems = items.filter((item) => item.status === selectedWatchStatus)
-
-  useEffect(() => {
-    if (items.length <= 1) return undefined
-
-    const intervalId = window.setInterval(() => {
-      setHeroIndex((currentIndex) => getNextHeroIndex(currentIndex, items.length))
-    }, HERO_ROTATION_MS)
-
-    return () => window.clearInterval(intervalId)
-  }, [items.length])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -128,13 +112,15 @@ function HomePage({ items, onCreate }: HomePageProps) {
             </div>
 
             {heroPreviewItems.length > 1 && (
-              <div className="hero-preview-rail" aria-label="Upcoming hero previews">
+              <div className="hero-preview-rail" role="tablist" aria-label="Featured titles">
                 {heroPreviewItems.map(({ item, index, isActive }, position) => (
                   <motion.button
                     key={`${item.id}-${index}-${position}`}
                     type="button"
+                    role="tab"
                     className={`hero-preview-thumb${isActive ? ' is-active' : ''}`}
                     aria-label={`Show ${item.title} in hero`}
+                    aria-selected={isActive}
                     onClick={() => setHeroIndex(index)}
                     whileHover={shouldSimplifyMotion ? undefined : { y: -3, scale: isActive ? 1.02 : 1.06 }}
                     whileTap={shouldSimplifyMotion ? undefined : { scale: 0.96 }}
@@ -167,7 +153,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
         )}
       </AnimatePresence>
 
-      {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} /></section>}
+      {continueWatching.length > 0 && <section className="library-section home-continue-section"><WatchlistRow title="Continue watching" items={continueWatching} cardVariant="landscape" /></section>}
 
       {items.length > 0 && (
         <section className="library-section home-watchlist-section">
@@ -196,7 +182,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
           </div>
 
           {selectedWatchItems.length > 0
-            ? <WatchlistRow title={selectedWatchStatus} items={selectedWatchItems} hideHeading />
+            ? <WatchlistRow title={selectedWatchStatus} items={selectedWatchItems} hideHeading cardVariant="landscape" />
             : <div className="watchlist-tab-empty" role="tabpanel">No {selectedWatchStatus.toLowerCase()} titles yet.</div>}
         </section>
       )}

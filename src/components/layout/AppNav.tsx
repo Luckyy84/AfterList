@@ -53,9 +53,14 @@ function SettingsIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.08-1l2-1.55-2-3.45-2.46 1A7 7 0 0 0 14.7 6L14.35 3h-4.7L9.3 6A7 7 0 0 0 7.54 7L5.08 6l-2 3.45 2 1.55a7 7 0 0 0 0 2l-2 1.55 2 3.45 2.46-1a7 7 0 0 0 1.76 1l.35 3h4.7l.35-3a7 7 0 0 0 1.76-1l2.46 1 2-3.45-2-1.55c.05-.33.08-.66.08-1Z" /></svg>
 }
 
+function MenuIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 16h14" /></svg>
+}
+
 export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps) {
   const { isLoading, signOut, user } = useAuth()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
+  const [isNavOpen, setIsNavOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement | null>(null)
   const displayName = getDisplayName(user)
 
@@ -94,9 +99,13 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
           AfterList
         </NavLink>
 
-        <div className="nav-links">
+        <button className="nav-menu-button" type="button" aria-label="Toggle navigation" aria-expanded={isNavOpen} onClick={() => setIsNavOpen((isOpen) => !isOpen)}>
+          <MenuIcon />
+        </button>
+
+        <div className={`nav-links${isNavOpen ? ' is-open' : ''}`}>
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
+            <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }} onClick={() => setIsNavOpen(false)}>
               {({ isActive }) => (
                 <>
                   <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>

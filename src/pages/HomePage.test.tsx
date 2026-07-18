@@ -24,6 +24,13 @@ const baseItem: MediaItem = {
 afterEach(cleanup)
 
 describe('HomePage watchlist tabs', () => {
+  it('uses only in-progress titles in the featured hero', () => {
+    const watchedItem = { ...baseItem, id: 'watched', externalId: 'movie:2', title: 'Watched title', type: 'Movie' as const, status: 'Watched' as const }
+    const { container } = render(<MemoryRouter><HomePage items={[watchedItem, baseItem]} onCreate={vi.fn()} /></MemoryRouter>)
+
+    expect(container.querySelector('.hero-title')?.textContent).toBe('Watching title')
+  })
+
   it('shows only the selected status rail', async () => {
     const watchedItem = { ...baseItem, id: 'watched', externalId: 'movie:2', title: 'Watched title', type: 'Movie' as const, status: 'Watched' as const }
     render(<MemoryRouter><HomePage items={[baseItem, watchedItem]} onCreate={vi.fn()} /></MemoryRouter>)

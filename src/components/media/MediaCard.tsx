@@ -9,9 +9,10 @@ type MediaCardProps = {
   isSaved?: boolean
   onAdd?: (item: MediaItem) => void
   animateLayout?: boolean
+  variant?: 'poster' | 'landscape'
 }
 
-function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd, animateLayout = true, variant = 'poster' }: MediaCardProps) {
   const navigate = useNavigate()
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
@@ -27,7 +28,7 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
   return (
     <motion.article
       layout={animateLayout ? 'position' : false}
-      className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
+      className={`media-card-wrapper is-${variant} ${isSaved ? 'is-saved' : 'is-discovery'}`}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -44,8 +45,8 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
         <span className="media-poster-shell" data-title={item.title}>
           <img
             className="media-poster"
-            src={item.poster}
-            alt=""
+            src={variant === 'landscape' ? item.backdrop || item.poster : item.poster}
+            alt={`${item.title} ${variant === 'landscape' ? 'backdrop' : 'poster'}`}
             loading="lazy"
             decoding="async"
             onError={(event) => {
