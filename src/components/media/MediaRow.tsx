@@ -11,6 +11,7 @@ type WatchlistRowProps = {
   onAdd?: (item: MediaItem) => void
   isItemSaved?: (item: MediaItem) => boolean
   hideControls?: boolean
+  hideHeading?: boolean
 }
 
 const SLIDE_EASE = [0.22, 1, 0.36, 1] as const
@@ -20,7 +21,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false }: WatchlistRowProps) {
+export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideControls = false, hideHeading = false }: WatchlistRowProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
@@ -102,10 +103,7 @@ export default function WatchlistRow({ title, items, onAdd, isItemSaved, hideCon
       viewport={shouldSimplifyMotion ? undefined : { once: true, margin: '-80px' }}
       transition={shouldSimplifyMotion ? { duration: 0 } : { duration: isMobile ? 0.36 : 0.5, ease: SLIDE_EASE }}
     >
-      <div className="row-head">
-        <h2>{title}</h2>
-        <span>{items.length} items</span>
-      </div>
+      {!hideHeading && <div className="row-head"><h2>{title}</h2><span>{items.length} items</span></div>}
 
       <div className={`row-scroll-shell${showScrollControls ? ' has-scroll-controls' : ''}`}>
         {showScrollControls && (

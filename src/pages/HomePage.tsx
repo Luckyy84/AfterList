@@ -14,12 +14,7 @@ type HomePageProps = {
   onCreate: (item: MediaItem) => void
 }
 
-const watchRows: { title: string; status: MediaStatus }[] = [
-  { title: 'Watching', status: 'Watching' },
-  { title: 'Watched', status: 'Watched' },
-  { title: 'Planned', status: 'Planned' },
-  { title: 'Dropped', status: 'Dropped' },
-]
+const watchStatuses: MediaStatus[] = ['Watching', 'Watched', 'Planned', 'Dropped']
 
 const HERO_ROTATION_MS = 30_000
 const HERO_PREVIEW_LIMIT = 5
@@ -58,6 +53,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
   const shouldSimplifyMotion = shouldReduceMotion
   const [heroIndex, setHeroIndex] = useState(0)
   const [discoveryItems, setDiscoveryItems] = useState<MediaItem[]>([])
+  const [selectedWatchStatus, setSelectedWatchStatus] = useState<MediaStatus>('Watching')
   const recommendationSeed = items.find((item) => item.externalId)
   const recommendationExternalId = recommendationSeed?.externalId
   const recommendationMediaType = recommendationSeed?.type === 'Movie' ? 'movie' : 'tv'
@@ -66,6 +62,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
   const hero = items[safeHeroIndex]
   const heroPreviewItems = getHeroPreviewItems(items, safeHeroIndex)
   const continueWatching = items.filter((item) => item.status === 'Watching')
+  const selectedWatchItems = items.filter((item) => item.status === selectedWatchStatus)
 
   useEffect(() => {
     if (items.length <= 1) return undefined
@@ -159,7 +156,7 @@ function HomePage({ items, onCreate }: HomePageProps) {
           >
             <div className="hero-content empty-home-content">
               <p className="eyebrow">Free to explore · no account required</p>
-              <h1>Find it. Save it. Watch it.</h1>
+              <h1>Find it.<br />Save it.<br />Watch it.</h1>
               <p className="hero-description">
                 Browse what is trending, then build a personal watchlist that stays in this browser. Sign in only when you want cloud sync.
               </p>
@@ -172,28 +169,39 @@ function HomePage({ items, onCreate }: HomePageProps) {
 
       {continueWatching.length > 0 && <section className="library-section"><WatchlistRow title="Continue watching" items={continueWatching} /></section>}
 
-      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onAdd={onCreate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} /></section>}
-
       {items.length > 0 && (
-        <section className="library-section">
-          <div className="section-head library-head">
-            <div>
-              <p className="eyebrow">Library</p>
-              <h2>Your watchlist</h2>
-            </div>
+        <section className="library-section home-watchlist-section">
+          <div className="section-head library-head compact-section-head">
+            <h2>Your watchlist</h2>
+            <Link className="watchlist-library-link" to="/library">View full library <span aria-hidden="true">→</span></Link>
           </div>
 
-          <div className="watchlist-stack">
-            {watchRows.map((row) => (
-              <WatchlistRow
-                key={row.status}
-                title={row.title}
-                items={items.filter((item) => item.status === row.status)}
-              />
-            ))}
+          <div className="watchlist-status-tabs" role="tablist" aria-label="Choose watchlist status">
+            {watchStatuses.map((status) => {
+              const count = items.filter((item) => item.status === status).length
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  role="tab"
+                  aria-label={`${status} ${count}`}
+                  aria-selected={selectedWatchStatus === status}
+                  className={selectedWatchStatus === status ? 'is-active' : ''}
+                  onClick={() => setSelectedWatchStatus(status)}
+                >
+                  <span>{status}</span><strong>{count}</strong>
+                </button>
+              )
+            })}
           </div>
+
+          {selectedWatchItems.length > 0
+            ? <WatchlistRow title={selectedWatchStatus} items={selectedWatchItems} hideHeading />
+            : <div className="watchlist-tab-empty" role="tabpanel">No {selectedWatchStatus.toLowerCase()} titles yet.</div>}
         </section>
       )}
+
+      {discoveryItems.length > 0 && <section className="library-section"><WatchlistRow title={items.length ? 'Because it matches your list' : 'Trending now'} items={discoveryItems} onAdd={onCreate} isItemSaved={(item) => Boolean(findMatchingMediaItem(items, item))} /></section>}
 
     </>
   )

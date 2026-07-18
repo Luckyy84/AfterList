@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { motion } from 'motion/react'
 import SearchAddModal from '../search/SearchAddModal'
 import type { MediaItem } from '../../types/media'
@@ -45,6 +45,14 @@ function getDisplayName(user: User | null) {
   return typeof name === 'string' && name.trim() ? name.trim() : 'Account'
 }
 
+function AccountIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.25" /><path d="M6.5 19c.55-3.35 2.38-5 5.5-5s4.95 1.65 5.5 5" /></svg>
+}
+
+function SettingsIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 0 0-.08-1l2-1.55-2-3.45-2.46 1A7 7 0 0 0 14.7 6L14.35 3h-4.7L9.3 6A7 7 0 0 0 7.54 7L5.08 6l-2 3.45 2 1.55a7 7 0 0 0 0 2l-2 1.55 2 3.45 2.46-1a7 7 0 0 0 1.76 1l.35 3h4.7l.35-3a7 7 0 0 0 1.76-1l2.46 1 2-3.45-2-1.55c.05-.33.08-.66.08-1Z" /></svg>
+}
+
 export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps) {
   const { isLoading, signOut, user } = useAuth()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
@@ -80,62 +88,55 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
 
   return (
     <nav className="nav" aria-label="Primary navigation">
-      <NavLink className="brand" to="/" end>
-        <img src="/favicon-32.png" alt="" />
-        AfterList
-      </NavLink>
+      <div className="nav-main">
+        <NavLink className="brand" to="/" end>
+          <img src="/favicon-32.png" alt="" />
+          AfterList
+        </NavLink>
 
-      <div className="nav-links">
-        {navItems.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
-            {({ isActive }) => (
-              <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
-                {isActive && <ActiveNavBackground />}
-              </>
-            )}
-          </NavLink>
-        ))}
+        <div className="nav-links">
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end} style={{ position: 'relative' }}>
+              {({ isActive }) => (
+                <>
+                  <span style={{ position: 'relative', zIndex: 2 }}>{item.label}</span>
+                  {isActive && <ActiveNavBackground />}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
 
-        {user ? (
-          <div className="nav-auth-menu" ref={accountMenuRef}>
-            <button
-              className="nav-user-pill"
-              type="button"
-              aria-expanded={isAccountOpen}
-              aria-haspopup="menu"
-              onClick={() => setIsAccountOpen((isOpen) => !isOpen)}
-            >
-              <span>{displayName}</span>
-              <span className="nav-user-chevron" aria-hidden="true">v</span>
-            </button>
-
-            {isAccountOpen && (
-              <div className="nav-account-dropdown glass-panel" role="menu">
-                <div className="nav-account-details">
-                  <span>{displayName}</span>
-                  {user.email && <small>{user.email}</small>}
-                </div>
-
-                <button className="nav-auth-action" type="button" role="menuitem" onClick={() => void handleSignOut()}>
-                  Sign out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <NavLink to="/login" style={{ position: 'relative' }}>
-            {({ isActive }) => (
-              <>
-                <span style={{ position: 'relative', zIndex: 2 }}>{isLoading ? 'Account' : 'Sign in'}</span>
-                {isActive && <ActiveNavBackground />}
-              </>
-            )}
-          </NavLink>
-        )}
+        <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
       </div>
 
-      <SearchAddModal items={items} onCreate={onCreate} onOpenExisting={onOpenExisting} />
+      <div className="nav-tools" ref={accountMenuRef}>
+        {user ? (
+          <button className="nav-icon-button" type="button" aria-label={`Open account menu for ${displayName}`} aria-expanded={isAccountOpen} onClick={() => setIsAccountOpen((isOpen) => !isOpen)}>
+            <AccountIcon />
+          </button>
+        ) : (
+          <NavLink className="nav-icon-button" to="/login" aria-label={isLoading ? 'Account' : 'Sign in'}>
+            <AccountIcon />
+          </NavLink>
+        )}
+        <button className="nav-icon-button" type="button" aria-label="Open preferences" aria-expanded={isAccountOpen} onClick={() => setIsAccountOpen((isOpen) => !isOpen)}>
+          <SettingsIcon />
+        </button>
+
+        {isAccountOpen && (
+          <div className="nav-account-dropdown glass-panel" role="menu">
+            <div className="nav-account-details">
+              <span>{displayName}</span>
+              {user?.email && <small>{user.email}</small>}
+            </div>
+            {!user && <Link role="menuitem" to="/login" onClick={() => setIsAccountOpen(false)}>Sign in for cloud sync</Link>}
+            <Link role="menuitem" to="/privacy" onClick={() => setIsAccountOpen(false)}>Privacy</Link>
+            <Link role="menuitem" to="/terms" onClick={() => setIsAccountOpen(false)}>Terms</Link>
+            {user && <button className="nav-auth-action" type="button" role="menuitem" onClick={() => void handleSignOut()}>Sign out</button>}
+          </div>
+        )}
+      </div>
     </nav>
   )
 }

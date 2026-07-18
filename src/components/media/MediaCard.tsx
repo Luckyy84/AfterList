@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import type { MediaItem } from '../../types/media'
@@ -19,6 +20,9 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
   const rating = isSaved && item.personalRating != null
     ? `My rating ${item.personalRating}/10`
     : item.rating !== 'N/A' ? `TMDB ${item.rating}` : null
+  const progressPercent = item.totalEpisodes
+    ? Math.min(100, Math.round(((item.currentEpisode ?? 0) / item.totalEpisodes) * 100))
+    : 0
 
   return (
     <motion.article
@@ -49,6 +53,7 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
             }}
           />
           {isSaved && <span className={`card-status ${item.status}`}>{item.status}</span>}
+          {isSaved && progressPercent > 0 && <span className="media-progress" style={{ '--media-progress': `${progressPercent}%` } as CSSProperties} aria-hidden="true" />}
           {isSaved && item.isFavorite && <span className="card-favorite" aria-label="Favorite">♥</span>}
         </span>
 
