@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
+import { Link, useNavigate } from 'react-router-dom'
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
-import CustomSelect from '../ui/CustomSelect'
 
-const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
 
 const springTransition = {
@@ -87,7 +85,8 @@ function mergeUniqueResults(results: SearchResultItem[]) {
   })
 }
 
-function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps) {
+function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
+  const navigate = useNavigate()
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
@@ -96,19 +95,13 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
   const [apiResults, setApiResults] = useState<SearchResultItem[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [selectedResult, setSelectedResult] = useState<SearchResultItem | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<MediaStatus>('Planned')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const detailModalRef = useRef<HTMLElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
-  const compactTransition = shouldReduceMotion ? reducedTransition : { duration: 0.14, ease: modalEase }
   const sharedTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileSpringTransition : springTransition
   const itemTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileItemTransition : fastSpringTransition
   const panelTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobilePanelTransition : { duration: 0.2, ease: modalEase }
-  const detailModalRoot = typeof document === 'undefined' ? null : document.body
-
   const results = useMemo(() => {
     if (!normalizedQuery || searchError) return []
     return mergeUniqueResults(apiResults).slice(0, 8)
@@ -151,44 +144,12 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
     return () => window.clearTimeout(focusTimer)
   }, [isExpanded, shouldReduceMotion, isMobile])
 
-  useEffect(() => {
-    if (!selectedResult) return
-    const previousOverflow = document.body.style.overflow
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    document.body.style.overflow = 'hidden'
-    queueMicrotask(() => detailModalRef.current?.querySelector<HTMLElement>('.modal-close')?.focus())
-
-    const trapFocus = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab' || !detailModalRef.current) return
-      const controls = [...detailModalRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])')]
-      if (!controls.length) return
-      const first = controls[0]
-      const last = controls[controls.length - 1]
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', trapFocus)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', trapFocus)
-      previousFocus?.focus()
-    }
-  }, [selectedResult])
-
   const closeSearch = () => {
     setIsExpanded(false)
     setQuery('')
     setApiResults([])
     setIsSearching(false)
     setSearchError(null)
-    setSelectedResult(null)
-    setSelectedStatus('Planned')
     setHighlightedIndex(-1)
   }
 
@@ -197,34 +158,23 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      if (selectedResult) setSelectedResult(null)
-      else closeSearch()
+      closeSearch()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isExpanded, selectedResult])
+  }, [isExpanded])
 
   const openSearch = () => {
     setIsExpanded(true)
     setHighlightedIndex(results.length > 0 ? 0 : -1)
   }
 
-  const openExistingItem = (item: MediaItem) => {
+  const openResult = (result: SearchResultItem) => {
     closeSearch()
-    onOpenExisting(item.id)
-  }
-
-  const handleSelectResult = (result: SearchResultItem) => {
-    const existingItem = findMatchingMediaItem(items, result)
-
-    if (existingItem) {
-      openExistingItem(existingItem)
-      return
-    }
-
-    setSelectedResult(result)
-    setSelectedStatus('Planned')
+    navigate(`/details/${result.source}/${encodeURIComponent(result.externalId)}`, {
+      state: { item: createMediaItem(result, 'Planned') },
+    })
   }
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -242,97 +192,9 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
     if (event.key === 'Enter') {
       event.preventDefault()
-      handleSelectResult(results[Math.max(highlightedIndex, 0)])
+      openResult(results[Math.max(highlightedIndex, 0)])
     }
   }
-
-  const handleCreate = () => {
-    if (!selectedResult) return
-
-    const existingItem = findMatchingMediaItem(items, selectedResult)
-
-    if (existingItem) {
-      openExistingItem(existingItem)
-      return
-    }
-
-    onCreate(createMediaItem(selectedResult, selectedStatus))
-    closeSearch()
-  }
-
-  const detailPreview = (
-    <AnimatePresence initial={false}>
-      {selectedResult && (
-        <motion.div
-          className="modal-backdrop search-result-backdrop"
-          onClick={() => setSelectedResult(null)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={shouldReduceMotion ? reducedTransition : { duration: 0.18, ease: modalEase }}
-        >
-          <motion.section
-            ref={detailModalRef}
-            className="search-result-detail-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Add ${selectedResult.title}`}
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.985 }}
-            transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.24, ease: modalEase }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button className="modal-close" type="button" aria-label="Close preview" onClick={() => setSelectedResult(null)}>
-              x
-            </button>
-
-            <motion.img
-              className="search-detail-backdrop"
-              src={selectedResult.backdrop}
-              alt=""
-              initial={shouldReduceMotion ? false : { scale: 1.04, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.28 : 0.34, ease: modalEase }}
-            />
-            <div className="search-detail-body">
-              <motion.img
-                className="search-detail-poster"
-                src={selectedResult.poster}
-                alt={selectedResult.title}
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.22 : 0.26, ease: modalEase }}
-              />
-              <motion.div
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={shouldReduceMotion ? compactTransition : { duration: isMobile ? 0.2 : 0.24, ease: modalEase, delay: 0.04 }}
-              >
-                <p className="eyebrow">Preview result</p>
-                <h3>{selectedResult.title}</h3>
-                <div className="hero-meta search-detail-meta">
-                  <span>{selectedResult.type}</span>
-                  <span>{selectedResult.year}</span>
-                  <span>Rating {selectedResult.rating}</span>
-                </div>
-                <p>{selectedResult.description}</p>
-
-                <label className="status-editor create-status-editor">
-                  <span>Status</span>
-                  <CustomSelect ariaLabel={`Choose status for ${selectedResult.title}`} value={selectedStatus} options={statusOptions.map((status) => ({ value: status, label: status }))} onChange={(value) => setSelectedStatus(value as MediaStatus)} />
-                </label>
-
-                <button className="create-item-btn" type="button" onClick={handleCreate}>
-                  Add to watchlist
-                </button>
-              </motion.div>
-            </div>
-          </motion.section>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
 
   const searchContent = (
     <>
@@ -371,7 +233,6 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 onKeyDown={handleInputKeyDown}
                 onChange={(event) => {
                   setQuery(event.target.value)
-                  setSelectedResult(null)
                 }}
               />
               <button className="nav-search-clear" type="button" aria-label="Close search" onClick={closeSearch}>
@@ -443,14 +304,11 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                 const existingItem = findMatchingMediaItem(items, result)
 
                 return (
-                  <motion.button
+                  <motion.div
                     layout={!shouldSimplifyMotion}
                     key={`${result.source}-${result.externalId}`}
                     className={`nav-search-result${index === 0 ? ' is-top-result' : ''}${isSelected ? ' is-selected' : ''}${existingItem ? ' is-existing' : ''}`}
-                    type="button"
-                    onFocus={() => setHighlightedIndex(index)}
                     onMouseEnter={() => setHighlightedIndex(index)}
-                    onClick={() => handleSelectResult(result)}
                     initial={shouldReduceMotion ? false : { opacity: 0, y: 6, scale: 0.992 }}
                     animate={{ opacity: 1, y: 0, scale: isSelected ? 1.01 : 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.992 }}
@@ -458,22 +316,39 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
                     transition={itemTransition}
                   >
-                    <img src={result.poster} alt="" loading="lazy" />
-                    <span>
-                      <strong>{result.title}</strong>
-                      <small>
-                        {result.type} / {result.year} / Rating {result.rating} / TMDB
-                        {existingItem ? ` / Saved as ${existingItem.status}` : ''}
-                      </small>
-                    </span>
-                  </motion.button>
+                    <Link
+                      className="nav-search-result-link"
+                      to={`/details/${result.source}/${encodeURIComponent(result.externalId)}`}
+                      state={{ item: createMediaItem(result, 'Planned') }}
+                      onFocus={() => setHighlightedIndex(index)}
+                      onClick={closeSearch}
+                    >
+                      <img src={result.poster} alt="" loading="lazy" />
+                      <span>
+                        <strong>{result.title}</strong>
+                        <small>
+                          {result.type} / {result.year} / Rating {result.rating} / TMDB
+                          {existingItem ? ` / Saved as ${existingItem.status}` : ''}
+                        </small>
+                      </span>
+                    </Link>
+                    <button
+                      className="nav-search-add"
+                      type="button"
+                      aria-label={existingItem ? `${result.title} is already in your watchlist` : `Add ${result.title} to watchlist`}
+                      disabled={Boolean(existingItem)}
+                      onFocus={() => setHighlightedIndex(index)}
+                      onClick={() => onCreate(createMediaItem(result, 'Planned'))}
+                    >
+                      <span aria-hidden="true">{existingItem ? '✓' : '+'}</span>
+                    </button>
+                  </motion.div>
                 )
               })}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      {detailModalRoot ? createPortal(detailPreview, detailModalRoot) : detailPreview}
     </>
   )
 
