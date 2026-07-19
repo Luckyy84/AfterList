@@ -9,7 +9,7 @@
   --text-disabled: #6f6960;
   --line: #262320;
   --line-strong: #3a342d;
-  --accent: #6d28d9;
+  --accent: #ff4d00;
   --watching-bg: #22301a;
   --watching-text: #d9edc9;
   --watched-bg: #1a2430;
@@ -376,8 +376,8 @@ a { color: inherit; }
   text-align: center;
 }
 
-.hero-actions .primary-action { color: var(--cream); background: var(--accent); }
-.hero-actions .primary-action:hover { background: #7c3aed; }
+.hero-actions .primary-action { color: #17120f; background: var(--accent); }
+.hero-actions .primary-action:hover { background: #ff6a2b; }
 .hero-actions .secondary-action { border: 1px solid #4a443c; color: var(--cream); background: rgba(18, 16, 14, .72); }
 .hero-actions .secondary-action:hover { border-color: var(--cream); }
 
