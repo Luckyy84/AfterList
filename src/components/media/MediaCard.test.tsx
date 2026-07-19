@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
@@ -46,5 +46,15 @@ describe('MediaCard', () => {
 
     expect(screen.getByText('Planned')).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'Add to watchlist' })).toBeNull()
+  })
+
+  it('replaces failed artwork without exposing a broken image', () => {
+    render(<MemoryRouter><MediaCard item={item} /></MemoryRouter>)
+    const image = screen.getByAltText('House of the Dragon poster')
+
+    fireEvent.error(image)
+
+    expect(screen.queryByAltText('House of the Dragon poster')).toBeNull()
+    expect(screen.getByText('HO')).not.toBeNull()
   })
 })

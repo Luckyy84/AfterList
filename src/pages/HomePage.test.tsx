@@ -31,6 +31,15 @@ describe('HomePage watchlist tabs', () => {
     expect(container.querySelector('.hero-title')?.textContent).toBe('Watching title')
   })
 
+  it('features a saved title instead of showing an empty hero when none are Watching', () => {
+    const plannedItem = { ...baseItem, id: 'planned', title: 'Planned title', status: 'Planned' as const }
+    render(<MemoryRouter><HomePage items={[plannedItem]} onCreate={vi.fn()} /></MemoryRouter>)
+
+    expect(screen.getByRole('heading', { name: 'Choose your next story.' })).not.toBeNull()
+    expect(screen.getByText('Planned title')).not.toBeNull()
+    expect(screen.getByRole('link', { name: 'Choose something from your list' })).not.toBeNull()
+  })
+
   it('shows only the selected status rail', async () => {
     const watchedItem = { ...baseItem, id: 'watched', externalId: 'movie:2', title: 'Watched title', type: 'Movie' as const, status: 'Watched' as const }
     render(<MemoryRouter><HomePage items={[baseItem, watchedItem]} onCreate={vi.fn()} /></MemoryRouter>)

@@ -7,11 +7,6 @@ export default function Footer() {
         <div className="footer-col brand-col">
           <h2 className="logo">AfterList</h2>
           <p>Your personal tracker for anime, movies, and TV series.</p>
-          <div className="social-icons">
-            <a href="https://github.com/Luckyy84/AfterList" target="_blank" rel="noreferrer" aria-label="AfterList source on GitHub">
-              GitHub
-            </a>
-          </div>
         </div>
 
         <div className="footer-col">
@@ -38,11 +33,11 @@ export default function Footer() {
             <li><Link to="/privacy">Privacy &amp; Cookies</Link></li>
             <li><Link to="/terms">Terms of Use</Link></li>
           </ul>
-          <p>AfterList uses third-party services to fetch anime, movie, and series info.</p>
-          <p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
         </div>
 
         <div className="footer-col meta-col">
+          <p>AfterList uses third-party services to fetch anime, movie, and series info.</p>
+          <p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
           <div className="copyright">
             <span>&copy; 2026 AfterList</span>
             <span className="dot">/</span>

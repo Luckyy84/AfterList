@@ -13,10 +13,12 @@ import Footer from './components/layout/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
+import { useAuth } from './context/AuthContext'
 
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { isLoading: isAuthLoading, user } = useAuth()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
   const openSavedItem = (id: string) => {
@@ -25,7 +27,7 @@ function App() {
   }
 
   return (
-    <MotionConfig reducedMotion="never" transition={softSpring}>
+    <MotionConfig reducedMotion="user" transition={softSpring}>
     <div className="app">
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -42,7 +44,7 @@ function App() {
       <main id="main-content" className="app-content">
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
         <Routes location={location}>
-          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} isLoading={isAuthLoading || (isSyncing && items.length === 0)} isSignedIn={Boolean(user)} />} />
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
