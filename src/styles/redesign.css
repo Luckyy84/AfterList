@@ -551,10 +551,11 @@ a { color: inherit; }
 
 .media-card-add {
   position: static;
+  width: 100%;
   min-height: 44px;
-  margin-top: 8px;
+  margin-top: -1px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: 0 0 16px 16px;
   color: var(--text-secondary);
   background: var(--surface-low);
   box-shadow: none;
@@ -564,6 +565,7 @@ a { color: inherit; }
   pointer-events: auto;
   transform: none;
 }
+.is-discovery .media-card { border-radius: 16px 16px 0 0 !important; }
 .media-card-add:hover { border-color: var(--cream); color: var(--cream); }
 
 .watchlist-library-link { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: 13px; font-weight: 700; text-decoration: none; }
