@@ -8,15 +8,18 @@ import DiscoverPage from './pages/DiscoverPage'
 import LibraryPage from './pages/LibraryPage'
 import StatisticsPage from './pages/StatisticsPage'
 import MediaDetailsPage from './pages/MediaDetailsPage'
+import SettingsPage from './pages/SettingsPage'
 import AppNav from './components/layout/AppNav'
 import Footer from './components/layout/Footer'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
+import { useAuth } from './context/AuthContext'
 
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { isLoading: isAuthLoading, user } = useAuth()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
   const openSavedItem = (id: string) => {
@@ -25,7 +28,7 @@ function App() {
   }
 
   return (
-    <MotionConfig reducedMotion="never" transition={softSpring}>
+    <MotionConfig reducedMotion="user" transition={softSpring}>
     <div className="app">
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -42,10 +45,11 @@ function App() {
       <main id="main-content" className="app-content">
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
         <Routes location={location}>
-          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} />} />
+          <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} isLoading={isAuthLoading || (isSyncing && items.length === 0)} isSignedIn={Boolean(user)} />} />
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
           <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />

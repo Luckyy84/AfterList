@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import MediaCard from '../components/media/MediaCard'
+import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { discoverTmdb } from '../services/tmdb'
@@ -18,6 +19,7 @@ const genreIds: Record<string, number[]> = {
   action: [28, 10759], animation: [16], comedy: [35], drama: [18],
   fantasy: [14, 10765], horror: [27], documentary: [99],
 }
+const genreOptions = ['all', 'action', 'animation', 'comedy', 'drama', 'fantasy', 'horror', 'documentary'].map((value) => ({ value, label: value === 'all' ? 'All genres' : value[0].toUpperCase() + value.slice(1) }))
 
 export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
   const [feed, setFeed] = useState<'trending' | 'popular'>('trending')
@@ -59,9 +61,7 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
         {(['all', 'movie', 'tv'] as const).map((value) => <button key={value} className={mediaType === value ? 'is-active' : ''} aria-pressed={mediaType === value} onClick={() => { if (value === mediaType) return; setIsLoading(true); setError(''); setMediaType(value) }}>{value === 'all' ? 'All media' : value === 'movie' ? 'Movies' : 'TV & anime'}</button>)}
       </div>
       <label className="genre-filter">Genre
-        <select value={genre} onChange={(event) => setGenre(event.target.value)}>
-          <option value="all">All genres</option><option value="action">Action</option><option value="animation">Animation</option><option value="comedy">Comedy</option><option value="drama">Drama</option><option value="fantasy">Fantasy</option><option value="horror">Horror</option><option value="documentary">Documentary</option>
-        </select>
+        <CustomSelect ariaLabel="Genre" value={genre} options={genreOptions} onChange={setGenre} />
       </label>
       {isLoading && <div className="empty-state" aria-live="polite"><h3>Finding what’s trending…</h3><p>Loading public TMDB discovery results.</p></div>}
       {error && <div className="empty-state error-state"><h3>Discovery is unavailable</h3><p>{error}</p><button className="secondary-action" type="button" onClick={() => { setIsLoading(true); setError(''); setRequestVersion((version) => version + 1) }}>Try again</button></div>}

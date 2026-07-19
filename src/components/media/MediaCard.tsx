@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router-dom'
 import type { MediaItem } from '../../types/media'
@@ -8,10 +10,13 @@ type MediaCardProps = {
   isSaved?: boolean
   onAdd?: (item: MediaItem) => void
   animateLayout?: boolean
+  variant?: 'poster' | 'landscape'
 }
 
-function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaCardProps) {
+function MediaCard({ item, isSaved = true, onAdd, animateLayout = true, variant = 'poster' }: MediaCardProps) {
   const navigate = useNavigate()
+  const imageSource = variant === 'landscape' ? item.backdrop || item.poster : item.poster
+  const [failedSource, setFailedSource] = useState('')
   const progress = item.type !== 'Movie' && item.totalEpisodes
     ? `${item.currentEpisode ?? 0}/${item.totalEpisodes} episodes`
     : null
@@ -19,11 +24,14 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
   const rating = isSaved && item.personalRating != null
     ? `My rating ${item.personalRating}/10`
     : item.rating !== 'N/A' ? `TMDB ${item.rating}` : null
+  const progressPercent = item.totalEpisodes
+    ? Math.min(100, Math.round(((item.currentEpisode ?? 0) / item.totalEpisodes) * 100))
+    : 0
 
   return (
     <motion.article
       layout={animateLayout ? 'position' : false}
-      className={`media-card-wrapper ${isSaved ? 'is-saved' : 'is-discovery'}`}
+      className={`media-card-wrapper is-${variant} ${isSaved ? 'is-saved' : 'is-discovery'}`}
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -38,17 +46,16 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true }: MediaC
         onClick={() => navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })}
       >
         <span className="media-poster-shell" data-title={item.title}>
-          <img
+          {imageSource && failedSource !== imageSource ? <img
             className="media-poster"
-            src={item.poster}
-            alt=""
+            src={imageSource}
+            alt={`${item.title} ${variant === 'landscape' ? 'backdrop' : 'poster'}`}
             loading="lazy"
             decoding="async"
-            onError={(event) => {
-              event.currentTarget.style.display = 'none'
-            }}
-          />
+            onError={() => setFailedSource(imageSource)}
+          /> : <span className="media-artwork-fallback" aria-hidden="true">{item.title.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()}</span>}
           {isSaved && <span className={`card-status ${item.status}`}>{item.status}</span>}
+          {isSaved && progressPercent > 0 && <span className="media-progress" style={{ '--media-progress': `${progressPercent}%` } as CSSProperties} aria-hidden="true" />}
           {isSaved && item.isFavorite && <span className="card-favorite" aria-label="Favorite">♥</span>}
         </span>
 

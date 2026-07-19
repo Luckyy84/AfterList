@@ -6,6 +6,7 @@ import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
 import { searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import CustomSelect from '../ui/CustomSelect'
 
 const statusOptions: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -319,17 +320,7 @@ function SearchAddModal({ items, onCreate, onOpenExisting }: SearchAddModalProps
 
                 <label className="status-editor create-status-editor">
                   <span>Status</span>
-                  <select
-                    value={selectedStatus}
-                    aria-label={`Choose status for ${selectedResult.title}`}
-                    onChange={(event) => setSelectedStatus(event.target.value as MediaStatus)}
-                  >
-                    {statusOptions.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect ariaLabel={`Choose status for ${selectedResult.title}`} value={selectedStatus} options={statusOptions.map((status) => ({ value: status, label: status }))} onChange={(value) => setSelectedStatus(value as MediaStatus)} />
                 </label>
 
                 <button className="create-item-btn" type="button" onClick={handleCreate}>
