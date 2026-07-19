@@ -132,7 +132,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
         ) : (
           <NavLink className="nav-icon-button" to="/login" aria-label={isLoading ? 'Account' : 'Sign in'}><Icon name="account" /></NavLink>
         )}
-        <button className="nav-icon-button" type="button" aria-label="Open preferences" aria-expanded={isAccountOpen} onClick={() => setIsAccountOpen((isOpen) => !isOpen)}><Icon name="settings" /></button>
+        <NavLink className="nav-icon-button" to="/settings" aria-label="Settings"><Icon name="settings" /></NavLink>
 
         {isAccountOpen && (
           <div className="nav-account-dropdown glass-panel" role="menu">
@@ -156,7 +156,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
           {user
             ? <button type="button" onClick={openAccount}><Icon name="account" /><span>Profile</span><small>{displayName}<br />Signed in</small></button>
             : <Link to="/login" onClick={closeNav}><Icon name="account" /><span>Sign in</span></Link>}
-          <button type="button" onClick={openAccount}><Icon name="settings" /><span>Settings</span></button>
+          <Link to="/settings" onClick={closeNav}><Icon name="settings" /><span>Settings</span></Link>
           {user && <button type="button" onClick={() => void handleSignOut()}><Icon name="signout" /><span>Sign out</span></button>}
         </div>
       )}
