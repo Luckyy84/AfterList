@@ -98,6 +98,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const searchShellRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const normalizedQuery = query.trim().toLowerCase()
@@ -187,6 +188,17 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isExpanded])
 
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && !searchShellRef.current?.contains(event.target)) closeSearch()
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => document.removeEventListener('pointerdown', handlePointerDown)
+  }, [isExpanded])
+
   const openSearch = () => {
     setIsExpanded(true)
     setIsLoadingTrending(trendingResults.length === 0)
@@ -221,7 +233,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
 
   const searchContent = (
     <>
-      <div className={`nav-search-shell${isExpanded ? ' expanded' : ''}`}>
+      <div ref={searchShellRef} className={`nav-search-shell${isExpanded ? ' expanded' : ''}`}>
         <AnimatePresence mode="wait" initial={false}>
           {!isExpanded ? (
             <motion.button

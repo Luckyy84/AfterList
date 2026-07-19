@@ -25,6 +25,23 @@ afterEach(() => {
 })
 
 describe('SearchAddModal results', () => {
+  it('closes when the user clicks outside the search shell', async () => {
+    vi.mocked(discoverTmdb).mockResolvedValue([result])
+
+    render(
+      <MemoryRouter>
+        <SearchAddModal items={[]} onCreate={vi.fn()} onOpenExisting={vi.fn()} />
+        <button type="button">Outside</button>
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    expect(screen.getByRole('textbox', { name: 'Search movies, TV series, and anime' })).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Outside' }))
+    expect(screen.queryByRole('textbox', { name: 'Search movies, TV series, and anime' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Search' })).not.toBeNull()
+  })
+
   it('shows trending titles before a search is entered', async () => {
     vi.mocked(discoverTmdb).mockResolvedValue([result])
 
