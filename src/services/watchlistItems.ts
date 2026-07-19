@@ -18,6 +18,7 @@ export type WatchlistItemRow = {
   year: string | null
   current_episode: number
   total_episodes: number | null
+  runtime_minutes: number | null
   personal_rating: number | null
   is_favorite: boolean
   created_at: string
@@ -50,6 +51,7 @@ export function mapWatchlistRowToMediaItem(row: WatchlistItemRow): MediaItem {
     year: row.year ?? undefined,
     currentEpisode: row.current_episode,
     totalEpisodes: row.total_episodes ?? undefined,
+    runtimeMinutes: row.runtime_minutes ?? undefined,
     personalRating: row.personal_rating,
     isFavorite: row.is_favorite,
     updatedAt: row.updated_at,
@@ -76,6 +78,7 @@ function mapMediaItemToInsertPayload(item: MediaItem, userId: string): Watchlist
     year: item.year ?? null,
     current_episode: item.currentEpisode ?? 0,
     total_episodes: item.totalEpisodes ?? null,
+    runtime_minutes: item.runtimeMinutes ?? null,
     personal_rating: item.personalRating ?? null,
     is_favorite: item.isFavorite ?? false,
   }
@@ -132,6 +135,7 @@ export async function updateCloudWatchlistItem(id: string, updates: MediaUpdate,
       status: updated.status,
       current_episode: updated.currentEpisode ?? 0,
       total_episodes: updated.totalEpisodes ?? null,
+      runtime_minutes: updated.runtimeMinutes ?? null,
       personal_rating: updated.personalRating ?? null,
       is_favorite: updated.isFavorite ?? false,
       updated_at: updated.updatedAt,

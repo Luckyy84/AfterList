@@ -81,7 +81,7 @@ export default function MediaDetailsPage({ items, onCreate, onRemove, onUpdate }
           )}
 
           {!isSaved ? (
-            <button className="primary-action details-add" type="button" onClick={() => onCreate({ ...item, totalEpisodes: details?.totalEpisodes })}>Add to watchlist</button>
+            <button className="primary-action details-add" type="button" onClick={() => onCreate({ ...item, totalEpisodes: details?.totalEpisodes, runtimeMinutes: details?.runtimeMinutes })}>Add to watchlist</button>
           ) : (
             <section className="details-tracking" aria-label="Watchlist tracking">
               <div className="tracking-heading">

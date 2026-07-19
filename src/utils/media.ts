@@ -58,6 +58,10 @@ export function getMediaKey(item: Pick<MediaItem, 'source' | 'externalId'>) {
 export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = new Date().toISOString()): MediaItem {
   const updated = { ...item, ...updates, updatedAt: now }
 
+  updated.runtimeMinutes = Number.isFinite(updated.runtimeMinutes) && updated.runtimeMinutes! > 0
+    ? Math.round(updated.runtimeMinutes!)
+    : undefined
+
   updated.personalRating = updated.personalRating == null || !Number.isFinite(updated.personalRating)
     ? null
     : Math.min(10, Math.max(1, Math.round(updated.personalRating)))

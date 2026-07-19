@@ -48,7 +48,7 @@ function App() {
           <Route path="/" element={<HomePage items={items} onCreate={handleAddItem} isLoading={isAuthLoading || (isSyncing && items.length === 0)} isSignedIn={Boolean(user)} />} />
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
-          <Route path="/statistics" element={<StatisticsPage items={items} />} />
+          <Route path="/statistics" element={<StatisticsPage items={items} onUpdate={handleUpdateItem} />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />

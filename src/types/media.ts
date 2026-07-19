@@ -7,6 +7,7 @@ export type MediaSource = 'tmdb' | 'anilist'
 export type MediaDetails = {
   genres: string[]
   runtimeLabel?: string
+  runtimeMinutes?: number
   seasonsLabel?: string
   episodesLabel?: string
   totalEpisodes?: number
@@ -34,11 +35,12 @@ export type MediaItem = {
   externalId?: string
   currentEpisode?: number
   totalEpisodes?: number
+  runtimeMinutes?: number
   personalRating?: number | null
   isFavorite?: boolean
   updatedAt?: string
 }
 
 export type MediaUpdate = Partial<
-  Pick<MediaItem, 'status' | 'currentEpisode' | 'totalEpisodes' | 'personalRating' | 'isFavorite'>
+  Pick<MediaItem, 'status' | 'currentEpisode' | 'totalEpisodes' | 'runtimeMinutes' | 'personalRating' | 'isFavorite'>
 >
