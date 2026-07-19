@@ -194,6 +194,14 @@ a { color: inherit; }
 }
 .nav-search-shell.expanded .nav-search-results-popover::before { display: none; }
 .nav-search-empty { border-color: var(--line); border-radius: 10px; background: #181512; }
+.nav-search-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 8px 10px;
+}
+.nav-search-section-head strong { color: var(--cream); font-size: 14px; }
+.nav-search-section-head span { color: var(--muted); font-size: 11px; }
 .nav-search-result,
 .nav-search-result.is-top-result {
   grid-template-columns: minmax(0, 1fr) 42px;

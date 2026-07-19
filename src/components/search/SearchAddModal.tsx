@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import type { SearchResultItem } from '../../types/search'
 import type { MediaItem, MediaStatus } from '../../types/media'
 import { findMatchingMediaItem } from '../../utils/media'
-import { searchTmdb } from '../../services/tmdb'
+import { discoverTmdb, searchTmdb } from '../../services/tmdb'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -93,6 +93,8 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [query, setQuery] = useState('')
   const [apiResults, setApiResults] = useState<SearchResultItem[]>([])
+  const [trendingResults, setTrendingResults] = useState<SearchResultItem[]>([])
+  const [isLoadingTrending, setIsLoadingTrending] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
@@ -102,10 +104,29 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
   const sharedTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileSpringTransition : springTransition
   const itemTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobileItemTransition : fastSpringTransition
   const panelTransition = shouldReduceMotion ? reducedTransition : isMobile ? mobilePanelTransition : { duration: 0.2, ease: modalEase }
-  const results = useMemo(() => {
+  const searchResults = useMemo(() => {
     if (!normalizedQuery || searchError) return []
     return mergeUniqueResults(apiResults).slice(0, 8)
   }, [apiResults, normalizedQuery, searchError])
+  const results = normalizedQuery ? searchResults : trendingResults
+
+  useEffect(() => {
+    if (!isExpanded || normalizedQuery || trendingResults.length) return
+
+    const controller = new AbortController()
+    discoverTmdb({ feed: 'trending', mediaType: 'all', signal: controller.signal })
+      .then((items) => {
+        const trending = mergeUniqueResults(items).slice(0, 6)
+        setTrendingResults(trending)
+        setHighlightedIndex(trending.length ? 0 : -1)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingTrending(false)
+      })
+
+    return () => controller.abort()
+  }, [isExpanded, normalizedQuery, trendingResults.length])
 
   useEffect(() => {
     if (!isExpanded || !normalizedQuery) return
@@ -118,6 +139,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
       try {
         const tmdbResults = await searchTmdb(query, { signal: controller.signal })
         setApiResults(tmdbResults)
+        setHighlightedIndex(tmdbResults.length ? 0 : -1)
       } catch (error) {
         if (controller.signal.aborted) return
 
@@ -167,7 +189,8 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
 
   const openSearch = () => {
     setIsExpanded(true)
-    setHighlightedIndex(results.length > 0 ? 0 : -1)
+    setIsLoadingTrending(trendingResults.length === 0)
+    setHighlightedIndex(trendingResults.length > 0 ? 0 : -1)
   }
 
   const openResult = (result: SearchResultItem) => {
@@ -233,6 +256,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                 onKeyDown={handleInputKeyDown}
                 onChange={(event) => {
                   setQuery(event.target.value)
+                  setHighlightedIndex(-1)
                 }}
               />
               <button className="nav-search-clear" type="button" aria-label="Close search" onClick={closeSearch}>
@@ -251,7 +275,26 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
               exit={{ opacity: 0, y: -4, scale: 0.988 }}
               transition={panelTransition}
             >
-              {!normalizedQuery && (
+              {!normalizedQuery && isLoadingTrending && (
+                <motion.div
+                  className="nav-search-empty"
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={panelTransition}
+                >
+                  <strong>Loading what&rsquo;s trending</strong>
+                  <span>Finding popular movies, TV series, and anime...</span>
+                </motion.div>
+              )}
+
+              {!normalizedQuery && !isLoadingTrending && results.length > 0 && (
+                <div className="nav-search-section-head">
+                  <strong>Trending now</strong>
+                  <span>Popular this week</span>
+                </div>
+              )}
+
+              {!normalizedQuery && !isLoadingTrending && results.length === 0 && (
                 <motion.div
                   className="nav-search-empty"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
@@ -259,7 +302,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Movies, TV series, and anime results come from TMDB through AfterList's API proxy.</span>
+                  <span>Search movies, TV series, and anime from TMDB.</span>
                 </motion.div>
               )}
 

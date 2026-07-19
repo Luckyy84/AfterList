@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import SearchAddModal from './SearchAddModal'
-import { searchTmdb } from '../../services/tmdb'
+import { discoverTmdb, searchTmdb } from '../../services/tmdb'
 
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
@@ -12,7 +12,7 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => true,
 }))
 vi.mock('../../hooks/useMediaQuery', () => ({ useIsMobile: () => false }))
-vi.mock('../../services/tmdb', () => ({ searchTmdb: vi.fn() }))
+vi.mock('../../services/tmdb', () => ({ discoverTmdb: vi.fn(), searchTmdb: vi.fn() }))
 
 const result = {
   externalId: 'movie:1', source: 'tmdb' as const, title: 'Obsession', type: 'Movie' as const,
@@ -25,7 +25,23 @@ afterEach(() => {
 })
 
 describe('SearchAddModal results', () => {
+  it('shows trending titles before a search is entered', async () => {
+    vi.mocked(discoverTmdb).mockResolvedValue([result])
+
+    render(
+      <MemoryRouter>
+        <SearchAddModal items={[]} onCreate={vi.fn()} onOpenExisting={vi.fn()} />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await waitFor(() => expect(screen.getByText('Trending now')).not.toBeNull())
+    expect(screen.getByRole('link', { name: /Obsession/ })).not.toBeNull()
+    expect(discoverTmdb).toHaveBeenCalledWith(expect.objectContaining({ feed: 'trending', mediaType: 'all' }))
+  })
+
   it('opens details from the card and adds separately from the plus button', async () => {
+    vi.mocked(discoverTmdb).mockResolvedValue([])
     vi.mocked(searchTmdb).mockResolvedValue([result])
     const onCreate = vi.fn()
     function Path() { return <output>{useLocation().pathname}</output> }
