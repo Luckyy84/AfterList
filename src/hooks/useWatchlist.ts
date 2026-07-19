@@ -9,6 +9,7 @@ import {
   updateCloudWatchlistItem,
 } from '../services/watchlistItems'
 import { supabase } from '../services/supabase'
+import { canFetchTmdbDetails, fetchTmdbDetails } from '../services/tmdb'
 import { applyMediaUpdate, areSameMediaEntry, dedupeMediaItems, getMediaKey } from '../utils/media'
 
 type LegacyMediaSource = MediaSource | 'demo' | 'mock-api'
@@ -156,8 +157,20 @@ export function useWatchlist() {
     if (alreadyExists) return
 
     const optimisticItem = applyMediaUpdate(item, {})
+    const detailsPromise = !optimisticItem.runtimeMinutes && canFetchTmdbDetails(optimisticItem)
+      ? fetchTmdbDetails(optimisticItem).catch(() => null)
+      : null
+
     if (!user || !supabase) {
       setItems((prevItems) => prevItems.some((existingItem) => areSameMediaEntry(existingItem, optimisticItem)) ? prevItems : [optimisticItem, ...prevItems])
+      if (detailsPromise) {
+        void detailsPromise.then((details) => {
+          if (!details?.runtimeMinutes && !details?.totalEpisodes) return
+          setItems((prevItems) => prevItems.map((existingItem) => areSameMediaEntry(existingItem, optimisticItem)
+            ? applyMediaUpdate(existingItem, { runtimeMinutes: details.runtimeMinutes, totalEpisodes: details.totalEpisodes })
+            : existingItem))
+        })
+      }
       return
     }
 
@@ -170,7 +183,11 @@ export function useWatchlist() {
 
     await enqueueByKey(updateQueuesRef.current, key, async () => {
       try {
-        const createdItem = await createCloudWatchlistItem(optimisticItem, user.id)
+        const details = await detailsPromise
+        const itemToCreate = details?.runtimeMinutes || details?.totalEpisodes
+          ? applyMediaUpdate(optimisticItem, { runtimeMinutes: details.runtimeMinutes, totalEpisodes: details.totalEpisodes })
+          : optimisticItem
+        const createdItem = await createCloudWatchlistItem(itemToCreate, user.id)
         setItems((prevItems) => prevItems.map((existingItem) => areSameMediaEntry(existingItem, createdItem) ? createdItem : existingItem))
       } catch (error) {
         const cloudItem = (await fetchCloudWatchlist(user.id).catch(() => []))

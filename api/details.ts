@@ -38,6 +38,7 @@ type TmdbTvDetails = {
   production_countries?: TmdbProductionCountry[]
   status?: string
   tagline?: string | null
+  last_episode_to_air?: { runtime?: number | null } | null
   vote_count?: number
 }
 
@@ -45,6 +46,7 @@ type DetailsResponse = {
   details: {
     genres: string[]
     runtimeLabel?: string
+    runtimeMinutes?: number
     seasonsLabel?: string
     episodesLabel?: string
     totalEpisodes?: number
@@ -115,10 +117,13 @@ function getCountryNames(countries?: TmdbProductionCountry[]) {
 }
 
 function mapMovieDetails(data: TmdbMovieDetails, id: number): DetailsResponse {
+  const runtimeMinutes = data.runtime && data.runtime > 0 ? data.runtime : undefined
+
   return {
     details: {
       genres: (data.genres ?? []).map((genre) => genre.name).filter(Boolean).slice(0, 5),
-      runtimeLabel: formatRuntime(data.runtime),
+      runtimeLabel: formatRuntime(runtimeMinutes),
+      runtimeMinutes,
       status: data.status,
       tagline: data.tagline?.trim() || undefined,
       homepage: data.homepage?.trim() || undefined,
@@ -131,10 +136,14 @@ function mapMovieDetails(data: TmdbMovieDetails, id: number): DetailsResponse {
 }
 
 function mapTvDetails(data: TmdbTvDetails, id: number): DetailsResponse {
+  const runtimeMinutes = data.episode_run_time?.find((runtime) => runtime > 0)
+    ?? (data.last_episode_to_air?.runtime && data.last_episode_to_air.runtime > 0 ? data.last_episode_to_air.runtime : undefined)
+
   return {
     details: {
       genres: (data.genres ?? []).map((genre) => genre.name).filter(Boolean).slice(0, 5),
-      runtimeLabel: formatRuntime(data.episode_run_time?.find((runtime) => runtime > 0)),
+      runtimeLabel: formatRuntime(runtimeMinutes),
+      runtimeMinutes,
       seasonsLabel: formatCount(data.number_of_seasons, 'season', 'seasons'),
       episodesLabel: formatCount(data.number_of_episodes, 'episode', 'episodes'),
       totalEpisodes: data.number_of_episodes,

@@ -106,7 +106,7 @@ body::after,
 .row-scroll-shell::before { background: linear-gradient(90deg, var(--bg), transparent); }
 .row-scroll-shell::after { background: linear-gradient(270deg, var(--bg), transparent); }
 
-.library-toolbar, .stat-card, .empty-state, .auth-copy, .auth-panel, .legal-page, .site-footer {
+.library-toolbar, .empty-state, .auth-copy, .auth-panel, .legal-page, .site-footer {
   border-color: var(--line);
   border-radius: 12px;
   background: var(--surface);
@@ -115,7 +115,6 @@ body::after,
 
 .library-toolbar select, .tracking-fields input, .genre-filter select { border-radius: 7px; }
 .choice-row button.is-active, .status-choice-group button.is-active { border-color: var(--accent); color: #140d0a; background: var(--accent); }
-.stat-card strong { color: var(--accent); }
 .details-result-modal, .details-modal { border-radius: 12px; background: var(--surface); }
 .modal-close { border-radius: 8px; }
 .site-footer { margin-top: 112px; }
