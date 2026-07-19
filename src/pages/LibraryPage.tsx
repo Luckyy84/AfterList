@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
+import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus, MediaType } from '../types/media'
 
 type LibraryPageProps = {
@@ -9,6 +10,10 @@ type LibraryPageProps = {
 }
 
 type SortOption = 'recent' | 'title' | 'rating'
+
+const typeOptions = ['All', 'Anime', 'Movie', 'TV Series'].map((value) => ({ value, label: value }))
+const statusOptions = ['All', 'Planned', 'Watching', 'Watched', 'Dropped'].map((value) => ({ value, label: value }))
+const sortOptions = [{ value: 'recent', label: 'Recently updated' }, { value: 'title', label: 'Title' }, { value: 'rating', label: 'My rating' }]
 
 export default function LibraryPage({ items, initialType }: LibraryPageProps) {
   const [type, setType] = useState<MediaType | 'All'>(initialType ?? 'All')
@@ -40,19 +45,13 @@ export default function LibraryPage({ items, initialType }: LibraryPageProps) {
 
       <section className="library-toolbar" aria-label="Library filters">
         <label>Media type
-          <select value={type} onChange={(event) => setType(event.target.value as MediaType | 'All')}>
-            <option>All</option><option>Anime</option><option>Movie</option><option>TV Series</option>
-          </select>
+          <CustomSelect ariaLabel="Media type" value={type} options={typeOptions} onChange={(value) => setType(value as MediaType | 'All')} />
         </label>
         <label>Status
-          <select value={status} onChange={(event) => setStatus(event.target.value as MediaStatus | 'All')}>
-            <option>All</option><option>Planned</option><option>Watching</option><option>Watched</option><option>Dropped</option>
-          </select>
+          <CustomSelect ariaLabel="Status" value={status} options={statusOptions} onChange={(value) => setStatus(value as MediaStatus | 'All')} />
         </label>
         <label>Sort by
-          <select value={sort} onChange={(event) => setSort(event.target.value as SortOption)}>
-            <option value="recent">Recently updated</option><option value="title">Title</option><option value="rating">My rating</option>
-          </select>
+          <CustomSelect ariaLabel="Sort by" value={sort} options={sortOptions} onChange={(value) => setSort(value as SortOption)} />
         </label>
         <label className="toggle-filter">
           <input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} /> Favorites

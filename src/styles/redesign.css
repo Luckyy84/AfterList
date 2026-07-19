@@ -541,6 +541,9 @@ a { color: inherit; }
 .custom-select-menu li.is-active { color: var(--cream); background: #211b17; }
 .custom-select-menu li.is-selected { color: var(--cream); }
 .custom-select-menu li.is-selected span:last-child { color: var(--accent); }
+.library-toolbar .custom-select { width: 100%; }
+.status-editor::after { display: none; }
+.status-editor .custom-select span { color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: 0; text-transform: none; }
 
 .media-card-wrapper {
   --card-info-height: 74px;
