@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>AfterList</title></head>
+<body>
+<div id="AfterListConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content"><div class="content-primary">
+    <form id="AfterListConfigForm">
+      <div class="sectionTitleContainer"><h2 class="sectionTitle">AfterList sync</h2></div>
+      <div class="inputContainer"><input id="ApiUrl" is="emby-input" type="url" required label="AfterList URL" /><div class="fieldDescription">For example: https://afterlist.example.com</div></div>
+      <div class="inputContainer"><input id="ApiToken" is="emby-input" type="password" required label="Integration token" /><div class="fieldDescription">Stored in plaintext on this Jellyfin server. Use a revocable watchlist-only token.</div></div>
+      <div class="inputContainer"><input id="JellyfinUserId" is="emby-input" type="text" required label="Jellyfin user ID" /></div>
+      <div class="inputContainer"><input id="ReconciliationHours" is="emby-input" type="number" min="1" max="168" required label="Reconciliation interval (hours)" /></div>
+      <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+    </form>
+  </div></div>
+  <script type="text/javascript">
+    const afterListPluginId = '4ab88325-e76c-44ed-9d84-a83746ad1266';
+    document.querySelector('#AfterListConfigPage').addEventListener('pageshow', function () {
+      Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(afterListPluginId).then(function (config) {
+        document.querySelector('#ApiUrl').value = config.ApiUrl || '';
+        document.querySelector('#ApiToken').value = config.ApiToken || '';
+        document.querySelector('#JellyfinUserId').value = config.JellyfinUserId || '';
+        document.querySelector('#ReconciliationHours').value = config.ReconciliationHours || 6;
+        Dashboard.hideLoadingMsg();
+      });
+    });
+    document.querySelector('#AfterListConfigForm').addEventListener('submit', function (event) {
+      Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(afterListPluginId).then(function (config) {
+        config.ApiUrl = document.querySelector('#ApiUrl').value.trim().replace(/\/$/, '');
+        config.ApiToken = document.querySelector('#ApiToken').value.trim();
+        config.JellyfinUserId = document.querySelector('#JellyfinUserId').value.trim();
+        config.ReconciliationHours = Number(document.querySelector('#ReconciliationHours').value) || 6;
+        ApiClient.updatePluginConfiguration(afterListPluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+      });
+      event.preventDefault();
+      return false;
+    });
+  </script>
+</div>
+</body>
+</html>

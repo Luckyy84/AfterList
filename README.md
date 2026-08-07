@@ -159,6 +159,19 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 
 These are the client-side values from the Supabase project settings/connect dialog. Do **not** use a Supabase secret/service role key in the frontend.
 
+## Integration API and Jellyfin
+
+Apply the latest Supabase migration, then add these server-only Vercel variables:
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SECRET_KEY=your_supabase_secret_key
+```
+
+Signed-in users can create and revoke `watchlist:read` and `watchlist:write` tokens under **Settings → Integrations**. The token is shown only once. Personal clients can read with `GET /api/v1/watchlist` and idempotently update a title with `PUT /api/v1/watchlist`; older `updatedAt` values cannot overwrite newer progress.
+
+The development Jellyfin plugin is in `Jellyfin.Plugin.AfterList`. It targets Jellyfin 10.11.x, sends playback-stop and relevant user-data changes immediately, and reconciles watched/in-progress/favourite items periodically. It does not import the entire Jellyfin library.
+
 For Vercel, add the same variables to **Preview** and **Production**:
 
 ```env

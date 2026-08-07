@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
@@ -9,10 +9,26 @@ function getDisplayName(email?: string, metadata?: Record<string, unknown>) {
 }
 
 export default function SettingsPage() {
-  const { isLoading, signOut, user } = useAuth()
+  const { isLoading, session, signOut, user } = useAuth()
   const navigate = useNavigate()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const [tokens, setTokens] = useState<Array<{ id: string; name: string; created_at: string; last_used_at: string | null }>>([])
+  const [tokenName, setTokenName] = useState('Jellyfin')
+  const [newToken, setNewToken] = useState('')
+  const [tokenError, setTokenError] = useState('')
+  const [isTokenBusy, setIsTokenBusy] = useState(false)
   const displayName = getDisplayName(user?.email, user?.user_metadata)
+
+  useEffect(() => {
+    if (!session?.access_token) return
+    fetch('/api/v1/tokens', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then(async (response) => {
+        const body = await response.json() as { tokens?: typeof tokens; error?: string }
+        if (!response.ok) throw new Error(body.error)
+        setTokens(body.tokens ?? [])
+      })
+      .catch(() => setTokenError('Could not load integration tokens.'))
+  }, [session?.access_token])
 
   const handleSignOut = async () => {
     setIsSigningOut(true)
@@ -21,6 +37,46 @@ export default function SettingsPage() {
       navigate('/')
     } finally {
       setIsSigningOut(false)
+    }
+  }
+
+  const createToken = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!session?.access_token) return
+    setIsTokenBusy(true)
+    setTokenError('')
+    try {
+      const response = await fetch('/api/v1/tokens', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: tokenName }),
+      })
+      const body = await response.json() as { token?: string; integration?: (typeof tokens)[number]; error?: string }
+      if (!response.ok || !body.token || !body.integration) throw new Error(body.error)
+      setNewToken(body.token)
+      setTokens((current) => [body.integration!, ...current])
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : 'Could not create integration token.')
+    } finally {
+      setIsTokenBusy(false)
+    }
+  }
+
+  const revokeToken = async (id: string) => {
+    if (!session?.access_token) return
+    setIsTokenBusy(true)
+    setTokenError('')
+    try {
+      const response = await fetch(`/api/v1/tokens?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!response.ok) throw new Error('Could not revoke integration token.')
+      setTokens((current) => current.filter((token) => token.id !== id))
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : 'Could not revoke integration token.')
+    } finally {
+      setIsTokenBusy(false)
     }
   }
 
@@ -42,6 +98,17 @@ export default function SettingsPage() {
             </div>
           ) : <Link className="settings-action" to="/login">Sign in for cloud sync</Link>}
         </section>
+
+        {user && <section className="settings-panel settings-integrations">
+          <div><h2>Integrations</h2><p>Create a revocable watchlist token for Jellyfin or another personal client.</p></div>
+          <form className="settings-token-form" onSubmit={(event) => void createToken(event)}>
+            <label htmlFor="token-name">Token name</label>
+            <div><input id="token-name" value={tokenName} maxLength={80} onChange={(event) => setTokenName(event.target.value)} required /><button type="submit" disabled={isTokenBusy}>Create</button></div>
+          </form>
+          {newToken && <div className="settings-new-token" role="status"><strong>Copy this token now—it is shown once.</strong><code>{newToken}</code><button type="button" onClick={() => void navigator.clipboard.writeText(newToken)}>Copy token</button></div>}
+          {tokens.length > 0 && <ul className="settings-token-list">{tokens.map((token) => <li key={token.id}><span><strong>{token.name}</strong><small>{token.last_used_at ? `Last used ${new Date(token.last_used_at).toLocaleDateString()}` : 'Never used'}</small></span><button type="button" disabled={isTokenBusy} onClick={() => void revokeToken(token.id)}>Revoke</button></li>)}</ul>}
+          {tokenError && <p className="settings-token-error" role="alert">{tokenError}</p>}
+        </section>}
 
         <section className="settings-panel">
           <div><h2>Watchlist storage</h2><p>Your saved titles stay available without changing how you use the app.</p></div>

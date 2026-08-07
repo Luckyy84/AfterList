@@ -1,0 +1,13 @@
+---
+name: "AfterList"
+guid: "4ab88325-e76c-44ed-9d84-a83746ad1266"
+version: "0.1.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+overview: "Sync watched, in-progress, and favourite titles to AfterList"
+description: "Sends playback-stop and user-data changes to AfterList and periodically reconciles missed updates."
+category: "General"
+owner: "Luckyy84"
+artifacts:
+  - "Jellyfin.Plugin.AfterList.dll"
+changelog: "Initial development build"
