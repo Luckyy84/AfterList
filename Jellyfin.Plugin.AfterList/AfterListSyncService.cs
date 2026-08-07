@@ -122,7 +122,8 @@ public sealed class AfterListSyncService : BackgroundService
     {
         try
         {
-            var media = item is Episode episode ? episode.Series : item;
+            var playedEpisode = item as Episode;
+            var media = playedEpisode?.Series ?? item;
             if (media is not Movie && media is not Series) return;
             if (!media.TryGetProviderId(MetadataProvider.Tmdb, out var tmdbId)) return;
 
@@ -142,7 +143,9 @@ public sealed class AfterListSyncService : BackgroundService
                 status,
                 year = media.ProductionYear?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 currentEpisode = media is Series ? watchedEpisodes : 0,
-                totalEpisodes,
+                totalEpisodes = media is Series ? (int?)null : totalEpisodes,
+                seasonNumber = playedEpisode?.ParentIndexNumber,
+                episodeNumber = playedEpisode?.IndexNumber,
                 runtimeMinutes = media.RunTimeTicks is long ticks ? Math.Max(1, (int)TimeSpan.FromTicks(ticks).TotalMinutes) : (int?)null,
                 personalRating = data?.Rating is double rating ? Math.Clamp((int)Math.Round(rating), 1, 10) : (int?)null,
                 isFavorite = data?.IsFavorite == true,

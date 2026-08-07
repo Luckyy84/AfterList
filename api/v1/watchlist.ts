@@ -2,12 +2,30 @@ import { adminClient, authenticateIntegration, hashToken, json } from '../_lib/a
 
 type IncomingItem = Record<string, unknown>
 
+type TmdbSeason = {
+  episode_count?: number
+  season_number?: number
+}
+
+type TmdbTvDetails = {
+  number_of_episodes?: number
+  seasons?: TmdbSeason[]
+}
+
 function text(value: unknown, max: number) {
   return typeof value === 'string' && value.trim() && value.length <= max ? value.trim() : null
 }
 
 function integer(value: unknown, minimum: number, maximum: number) {
   return Number.isInteger(value) && Number(value) >= minimum && Number(value) <= maximum ? Number(value) : null
+}
+
+export function cumulativeEpisode(seasons: TmdbSeason[], seasonNumber: number, episodeNumber: number) {
+  const currentSeason = seasons.find((season) => season.season_number === seasonNumber)
+  if (!currentSeason?.episode_count || episodeNumber > currentSeason.episode_count) return null
+  return seasons
+    .filter((season) => Number(season.season_number) > 0 && Number(season.season_number) < seasonNumber)
+    .reduce((total, season) => total + (season.episode_count ?? 0), episodeNumber)
 }
 
 function normalizeItem(input: IncomingItem) {
@@ -20,10 +38,13 @@ function normalizeItem(input: IncomingItem) {
   const updatedDate = updatedAt ? new Date(updatedAt) : null
   const currentEpisode = input.currentEpisode === undefined ? 0 : integer(input.currentEpisode, 0, 1_000_000)
   const totalEpisodes = input.totalEpisodes == null ? null : integer(input.totalEpisodes, 1, 1_000_000)
+  const seasonNumber = input.seasonNumber == null ? null : integer(input.seasonNumber, 1, 10_000)
+  const episodeNumber = input.episodeNumber == null ? null : integer(input.episodeNumber, 1, 1_000_000)
 
   if (!source || !externalId || !/^(movie|tv):[1-9]\d*$/.test(externalId) || !title || !type || !status
     || !updatedDate || Number.isNaN(updatedDate.getTime()) || currentEpisode === null
-    || (totalEpisodes !== null && currentEpisode > totalEpisodes)) return null
+    || (totalEpisodes !== null && currentEpisode > totalEpisodes)
+    || ((seasonNumber === null) !== (episodeNumber === null))) return null
   if ((externalId.startsWith('movie:')) !== (type === 'Movie')) return null
 
   return {
@@ -44,6 +65,34 @@ function normalizeItem(input: IncomingItem) {
     personal_rating: input.personalRating == null ? null : integer(input.personalRating, 1, 10),
     is_favorite: input.isFavorite === true,
     updated_at: updatedDate.toISOString(),
+    season_number: seasonNumber,
+    episode_number: episodeNumber,
+  }
+}
+
+async function enrichEpisodeProgress(item: NonNullable<ReturnType<typeof normalizeItem>>) {
+  if (item.season_number === null || item.episode_number === null || !item.external_id.startsWith('tv:')) return item
+  const apiKey = process.env.TMDB_API_KEY?.trim()
+  const accessToken = process.env.TMDB_ACCESS_TOKEN?.trim()
+  if (!apiKey && !accessToken) return item
+
+  const params = new URLSearchParams({ language: 'en-US' })
+  if (!accessToken && apiKey) params.set('api_key', apiKey)
+  const response = await fetch(`https://api.themoviedb.org/3/tv/${item.external_id.slice(3)}?${params}`, {
+    headers: { accept: 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+  })
+  if (!response.ok) return item
+
+  const details = await response.json() as TmdbTvDetails
+  const currentEpisode = cumulativeEpisode(details.seasons ?? [], item.season_number, item.episode_number)
+  if (currentEpisode === null) return item
+  const totalEpisodes = integer(details.number_of_episodes, 1, 1_000_000) ?? item.total_episodes
+  return {
+    ...item,
+    current_episode: currentEpisode,
+    total_episodes: totalEpisodes,
+    status: totalEpisodes && currentEpisode >= totalEpisodes ? 'Watched' : 'Watching',
+    progress: totalEpisodes ? `${currentEpisode}/${totalEpisodes} episodes` : `${currentEpisode} episodes`,
   }
 }
 
@@ -63,9 +112,10 @@ export async function PUT(request: Request) {
   const body = await request.json().catch(() => null) as IncomingItem | null
   const item = body ? normalizeItem(body) : null
   if (!item) return json({ error: 'Invalid watchlist item.' }, 400)
+  const enrichedItem = await enrichEpisodeProgress(item)
   const { data, error } = await adminClient().rpc('upsert_watchlist_from_api', {
     p_token_hash: hashToken(integration.rawToken),
-    p_item: item,
+    p_item: enrichedItem,
   })
   return error ? json({ error: 'Could not update watchlist.' }, 500) : json(data)
 }
