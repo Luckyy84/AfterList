@@ -1,4 +1,5 @@
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 
 type TmdbMediaKind = 'movie' | 'tv'
 
@@ -13,10 +14,12 @@ type TmdbProductionCountry = {
 }
 
 type TmdbMovieDetails = {
+  backdrop_path?: string | null
   genres?: TmdbGenre[]
   homepage?: string | null
   imdb_id?: string | null
   original_language?: string
+  poster_path?: string | null
   production_countries?: TmdbProductionCountry[]
   release_date?: string
   runtime?: number | null
@@ -26,6 +29,7 @@ type TmdbMovieDetails = {
 }
 
 type TmdbTvDetails = {
+  backdrop_path?: string | null
   episode_run_time?: number[]
   first_air_date?: string
   genres?: TmdbGenre[]
@@ -35,6 +39,7 @@ type TmdbTvDetails = {
   number_of_seasons?: number
   origin_country?: string[]
   original_language?: string
+  poster_path?: string | null
   production_countries?: TmdbProductionCountry[]
   status?: string
   tagline?: string | null
@@ -45,6 +50,8 @@ type TmdbTvDetails = {
 type DetailsResponse = {
   details: {
     genres: string[]
+    poster?: string
+    backdrop?: string
     runtimeLabel?: string
     runtimeMinutes?: number
     seasonsLabel?: string
@@ -116,12 +123,18 @@ function getCountryNames(countries?: TmdbProductionCountry[]) {
     .slice(0, 3)
 }
 
+function imageUrl(path: string | null | undefined, size: 'w500' | 'w1280') {
+  return path ? `${TMDB_IMAGE_BASE_URL}/${size}${path}` : undefined
+}
+
 function mapMovieDetails(data: TmdbMovieDetails, id: number): DetailsResponse {
   const runtimeMinutes = data.runtime && data.runtime > 0 ? data.runtime : undefined
 
   return {
     details: {
       genres: (data.genres ?? []).map((genre) => genre.name).filter(Boolean).slice(0, 5),
+      poster: imageUrl(data.poster_path, 'w500'),
+      backdrop: imageUrl(data.backdrop_path, 'w1280'),
       runtimeLabel: formatRuntime(runtimeMinutes),
       runtimeMinutes,
       status: data.status,
@@ -142,6 +155,8 @@ function mapTvDetails(data: TmdbTvDetails, id: number): DetailsResponse {
   return {
     details: {
       genres: (data.genres ?? []).map((genre) => genre.name).filter(Boolean).slice(0, 5),
+      poster: imageUrl(data.poster_path, 'w500'),
+      backdrop: imageUrl(data.backdrop_path, 'w1280'),
       runtimeLabel: formatRuntime(runtimeMinutes),
       runtimeMinutes,
       seasonsLabel: formatCount(data.number_of_seasons, 'season', 'seasons'),

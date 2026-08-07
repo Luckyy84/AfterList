@@ -22,15 +22,22 @@ describe('watchlist tracking', () => {
 
   it('refreshes changed metadata without reducing watched progress', () => {
     expect(getMetadataUpdates(
-      { ...item, currentEpisode: 72, totalEpisodes: 2, runtimeMinutes: 20 },
-      { genres: [], countries: [], totalEpisodes: 24, runtimeMinutes: 25 },
-    )).toEqual({ totalEpisodes: 72, runtimeMinutes: 25 })
+      { ...item, currentEpisode: 72, totalEpisodes: 2, runtimeMinutes: 20, poster: 'old-poster', backdrop: 'old-backdrop' },
+      { genres: [], countries: [], totalEpisodes: 24, runtimeMinutes: 25, poster: 'new-poster', backdrop: 'new-backdrop' },
+    )).toEqual({ totalEpisodes: 72, runtimeMinutes: 25, poster: 'new-poster', backdrop: 'new-backdrop' })
   })
 
   it('does not produce an update when metadata is unchanged', () => {
     expect(getMetadataUpdates(
       { ...item, currentEpisode: 5, totalEpisodes: 10, runtimeMinutes: 25 },
       { genres: [], countries: [], totalEpisodes: 10, runtimeMinutes: 25 },
+    )).toBeNull()
+  })
+
+  it('keeps existing artwork when TMDB has no image', () => {
+    expect(getMetadataUpdates(
+      { ...item, poster: 'existing-poster', backdrop: 'existing-backdrop' },
+      { genres: [], countries: [] },
     )).toBeNull()
   })
 

@@ -132,6 +132,8 @@ export async function updateCloudWatchlistItem(id: string, updates: MediaUpdate,
   const { data, error } = await client
     .from('watchlist_items')
     .update({
+      poster: updated.poster,
+      backdrop: updated.backdrop,
       status: updated.status,
       current_episode: updated.currentEpisode ?? 0,
       total_episodes: updated.totalEpisodes ?? null,

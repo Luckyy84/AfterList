@@ -7,17 +7,24 @@ afterEach(() => {
 })
 
 describe('TMDB details proxy', () => {
-  it('returns movie runtime minutes', async () => {
+  it('returns movie runtime and current artwork URLs', async () => {
     vi.stubEnv('TMDB_API_KEY', 'test-key')
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
       runtime: 121,
+      poster_path: '/poster.jpg',
+      backdrop_path: '/backdrop.jpg',
       genres: [],
     }), { status: 200 })))
 
     const response = await GET(new Request('http://localhost/api/details?externalId=movie:11'))
-    const body = await response.json() as { details: { runtimeMinutes?: number; runtimeLabel?: string } }
+    const body = await response.json() as { details: { runtimeMinutes?: number; runtimeLabel?: string; poster?: string; backdrop?: string } }
 
-    expect(body.details).toMatchObject({ runtimeMinutes: 121, runtimeLabel: '2h 1m' })
+    expect(body.details).toMatchObject({
+      runtimeMinutes: 121,
+      runtimeLabel: '2h 1m',
+      poster: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+      backdrop: 'https://image.tmdb.org/t/p/w1280/backdrop.jpg',
+    })
   })
 
   it('returns TV episode runtime and episode total for tracking', async () => {

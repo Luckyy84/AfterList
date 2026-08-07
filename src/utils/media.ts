@@ -90,6 +90,9 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
 export function getMetadataUpdates(item: MediaItem, details: MediaDetails): MediaUpdate | null {
   const updates: MediaUpdate = {}
 
+  if (details.poster && details.poster !== item.poster) updates.poster = details.poster
+  if (details.backdrop && details.backdrop !== item.backdrop) updates.backdrop = details.backdrop
+
   if (details.runtimeMinutes && details.runtimeMinutes !== item.runtimeMinutes) {
     updates.runtimeMinutes = details.runtimeMinutes
   }
