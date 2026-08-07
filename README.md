@@ -166,9 +166,12 @@ Apply the latest Supabase migration, then add these server-only Vercel variables
 ```env
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_SECRET_KEY=your_supabase_secret_key
+CRON_SECRET=a_long_random_secret
 ```
 
 Signed-in users can create and revoke `watchlist:read` and `watchlist:write` tokens under **Settings → Integrations**. The token is shown only once. Personal clients can read with `GET /api/v1/watchlist` and idempotently update a title with `PUT /api/v1/watchlist`; older `updatedAt` values cannot overwrite newer progress.
+
+Vercel Cron refreshes TMDB episode totals, runtimes, posters, and backdrops for signed-in users every day at 02:00 Europe/Berlin. Two UTC schedules cover daylight-saving changes; the protected endpoint skips whichever invocation is outside the Berlin 02:00 hour. Generate `CRON_SECRET` as a long random value and configure it only in Vercel Production alongside the Supabase and TMDB server variables.
 
 The development Jellyfin plugin is in `Jellyfin.Plugin.AfterList`. It targets Jellyfin 10.11.x, sends playback-stop and relevant user-data changes immediately, and reconciles watched/in-progress/favourite items periodically. It does not import the entire Jellyfin library.
 
