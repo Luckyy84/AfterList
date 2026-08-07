@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MediaItem } from '../types/media'
-import { applyMediaUpdate, mergeWatchlists } from './media'
+import { applyMediaUpdate, getMetadataUpdates, mergeWatchlists } from './media'
 
 const item: MediaItem = {
   id: 'local', externalId: 'tv:1', source: 'tmdb', title: 'Show', type: 'TV Series',
@@ -18,6 +18,20 @@ describe('watchlist tracking', () => {
   it('ignores episode tracking for movies', () => {
     expect(applyMediaUpdate({ ...item, type: 'Movie' }, { currentEpisode: 2, totalEpisodes: 3, personalRating: 99 }, 'now'))
       .toMatchObject({ currentEpisode: undefined, totalEpisodes: undefined, personalRating: 10 })
+  })
+
+  it('refreshes changed metadata without reducing watched progress', () => {
+    expect(getMetadataUpdates(
+      { ...item, currentEpisode: 72, totalEpisodes: 2, runtimeMinutes: 20 },
+      { genres: [], countries: [], totalEpisodes: 24, runtimeMinutes: 25 },
+    )).toEqual({ totalEpisodes: 72, runtimeMinutes: 25 })
+  })
+
+  it('does not produce an update when metadata is unchanged', () => {
+    expect(getMetadataUpdates(
+      { ...item, currentEpisode: 5, totalEpisodes: 10, runtimeMinutes: 25 },
+      { genres: [], countries: [], totalEpisodes: 10, runtimeMinutes: 25 },
+    )).toBeNull()
   })
 
   it('uses newest records but prefers cloud for unknown local recency', () => {

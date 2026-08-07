@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { MediaItem, MediaSource, MediaStatus, MediaUpdate } from '../types/media'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -10,7 +10,7 @@ import {
 } from '../services/watchlistItems'
 import { supabase } from '../services/supabase'
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../services/tmdb'
-import { applyMediaUpdate, areSameMediaEntry, dedupeMediaItems, getMediaKey } from '../utils/media'
+import { applyMediaUpdate, areSameMediaEntry, dedupeMediaItems, getMediaKey, getMetadataUpdates } from '../utils/media'
 
 type LegacyMediaSource = MediaSource | 'demo' | 'mock-api'
 
@@ -21,6 +21,7 @@ type LegacyMediaItem = Omit<MediaItem, 'status' | 'source'> & {
 
 const LOCAL_STORAGE_KEY = 'afterlist_items'
 const UNKNOWN_RECENCY_KEY = 'afterlist_items_unknown_recency'
+const METADATA_REFRESH_CONCURRENCY = 3
 const apiSources = new Set<MediaSource>(['tmdb', 'anilist'])
 
 export function enqueueByKey<T>(queues: Map<string, Promise<unknown>>, key: string, task: () => Promise<T>) {
@@ -86,8 +87,10 @@ export function useWatchlist() {
   const [syncError, setSyncError] = useState<string | null>(null)
   const loadRequestRef = useRef(0)
   const [syncAttempt, setSyncAttempt] = useState(0)
+  const [loadedOwner, setLoadedOwner] = useState<string | null>(null)
   const updateQueuesRef = useRef(new Map<string, Promise<unknown>>())
   const updateVersionsRef = useRef(new Map<string, number>())
+  const refreshedMetadataKeysRef = useRef(new Set<string>())
   const isCloudMode = Boolean(user && supabase)
 
   useEffect(() => {
@@ -101,6 +104,7 @@ export function useWatchlist() {
         setItems(savedItems)
         setIsSyncing(false)
         setSyncError(null)
+        setLoadedOwner('guest')
       })
       return () => { isCancelled = true }
     }
@@ -127,6 +131,7 @@ export function useWatchlist() {
       .then((syncedItems) => {
         if (isCancelled || loadRequestRef.current !== requestId) return
         setItems(dedupeMediaItems(syncedItems))
+        setLoadedOwner(user.id)
         localStorage.removeItem(LOCAL_STORAGE_KEY)
         localStorage.removeItem(UNKNOWN_RECENCY_KEY)
       })
@@ -157,6 +162,7 @@ export function useWatchlist() {
     if (alreadyExists) return
 
     const optimisticItem = applyMediaUpdate(item, {})
+    refreshedMetadataKeysRef.current.add(getMediaKey(optimisticItem))
     const detailsPromise = !optimisticItem.runtimeMinutes && canFetchTmdbDetails(optimisticItem)
       ? fetchTmdbDetails(optimisticItem).catch(() => null)
       : null
@@ -281,6 +287,49 @@ export function useWatchlist() {
   }
 
   const handleUpdateStatus = (id: string, status: MediaStatus) => handleUpdateItem(id, { status })
+
+  const refreshSavedMetadata = useEffectEvent(async (signal: AbortSignal) => {
+    const candidates = items.filter((item) => {
+      const key = getMediaKey(item)
+      return key && canFetchTmdbDetails(item) && !refreshedMetadataKeysRef.current.has(key)
+    })
+    let cursor = 0
+
+    const refreshNext = async () => {
+      while (!signal.aborted) {
+        const item = candidates[cursor]
+        cursor += 1
+        if (!item) return
+
+        const key = getMediaKey(item)
+        refreshedMetadataKeysRef.current.add(key)
+
+        try {
+          const details = await fetchTmdbDetails(item, { signal })
+          if (!details || signal.aborted) continue
+          const updates = getMetadataUpdates(item, details)
+          if (updates) await handleUpdateItem(item.id, updates)
+        } catch {
+          if (signal.aborted) refreshedMetadataKeysRef.current.delete(key)
+        }
+      }
+    }
+
+    await Promise.all(Array.from(
+      { length: Math.min(METADATA_REFRESH_CONCURRENCY, candidates.length) },
+      refreshNext,
+    ))
+  })
+
+  const currentOwner = user?.id ?? 'guest'
+  const itemIdentityKey = items.map((item) => getMediaKey(item) || item.id).join('|')
+  useEffect(() => {
+    if (isAuthLoading || loadedOwner !== currentOwner) return undefined
+
+    const controller = new AbortController()
+    void refreshSavedMetadata(controller.signal)
+    return () => controller.abort()
+  }, [currentOwner, isAuthLoading, itemIdentityKey, loadedOwner])
 
   return {
     items,

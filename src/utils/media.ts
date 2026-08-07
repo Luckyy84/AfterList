@@ -1,4 +1,4 @@
-import type { MediaItem, MediaSource, MediaType, MediaUpdate } from '../types/media'
+import type { MediaDetails, MediaItem, MediaSource, MediaType, MediaUpdate } from '../types/media'
 
 export function getStatusLabel(status: string) {
   return status.toUpperCase()
@@ -85,6 +85,21 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
   }
 
   return updated
+}
+
+export function getMetadataUpdates(item: MediaItem, details: MediaDetails): MediaUpdate | null {
+  const updates: MediaUpdate = {}
+
+  if (details.runtimeMinutes && details.runtimeMinutes !== item.runtimeMinutes) {
+    updates.runtimeMinutes = details.runtimeMinutes
+  }
+
+  if (item.type !== 'Movie' && details.totalEpisodes) {
+    const safeTotalEpisodes = Math.max(details.totalEpisodes, item.currentEpisode ?? 0)
+    if (safeTotalEpisodes !== item.totalEpisodes) updates.totalEpisodes = safeTotalEpisodes
+  }
+
+  return Object.keys(updates).length ? updates : null
 }
 
 export function mergeWatchlists(
