@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { MotionConfig, motion } from 'motion/react'
 import { Analytics } from '@vercel/analytics/react'
 import HomePage from './pages/HomePage'
@@ -15,11 +15,13 @@ import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
 import { useAuth } from './context/AuthContext'
+import { usePreferences } from './context/PreferencesContext'
 
 function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isLoading: isAuthLoading, user } = useAuth()
+  const { preferences } = usePreferences()
   const { items, handleAddItem, handleRemoveItem, handleUpdateItem, isSyncing, retrySync, syncError } = useWatchlist()
 
   const openSavedItem = (id: string) => {
@@ -28,8 +30,8 @@ function App() {
   }
 
   return (
-    <MotionConfig reducedMotion="user" transition={softSpring}>
-    <div className="app">
+    <MotionConfig reducedMotion={preferences.motion === 'system' ? 'user' : preferences.motion === 'reduced' ? 'always' : 'never'} transition={softSpring}>
+    <div className={`app density-${preferences.cardDensity}`} data-motion={preferences.motion}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -49,7 +51,9 @@ function App() {
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={handleAddItem} />} />
           <Route path="/library" element={<LibraryPage items={items} />} />
           <Route path="/statistics" element={<StatisticsPage items={items} onUpdate={handleUpdateItem} />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
+          <Route path="/settings/:section" element={<SettingsPage />} />
+          <Route path="/settings/*" element={<Navigate to="/settings/account" replace />} />
           <Route path="/details/:source/:externalId" element={<MediaDetailsPage items={items} onCreate={handleAddItem} onRemove={handleRemoveItem} onUpdate={handleUpdateItem} />} />
           <Route path="/anime" element={<LibraryPage initialType="Anime" items={items} />} />
           <Route path="/movies" element={<LibraryPage initialType="Movie" items={items} />} />

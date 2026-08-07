@@ -3,23 +3,23 @@ import { AnimatePresence, motion } from 'motion/react'
 import MediaCard from '../components/media/MediaCard'
 import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus, MediaType } from '../types/media'
+import { usePreferences, type LibrarySort } from '../context/PreferencesContext'
 
 type LibraryPageProps = {
   items: MediaItem[]
   initialType?: MediaType
 }
 
-type SortOption = 'recent' | 'title' | 'rating'
-
 const typeOptions = ['All', 'Anime', 'Movie', 'TV Series'].map((value) => ({ value, label: value }))
 const statusOptions = ['All', 'Planned', 'Watching', 'Watched', 'Dropped'].map((value) => ({ value, label: value }))
 const sortOptions = [{ value: 'recent', label: 'Recently updated' }, { value: 'title', label: 'Title' }, { value: 'rating', label: 'My rating' }]
 
 export default function LibraryPage({ items, initialType }: LibraryPageProps) {
+  const { preferences } = usePreferences()
   const [type, setType] = useState<MediaType | 'All'>(initialType ?? 'All')
-  const [status, setStatus] = useState<MediaStatus | 'All'>('All')
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
-  const [sort, setSort] = useState<SortOption>('recent')
+  const [status, setStatus] = useState<MediaStatus | 'All'>(preferences.libraryStatus)
+  const [favoritesOnly, setFavoritesOnly] = useState(preferences.favoritesOnly)
+  const [sort, setSort] = useState<LibrarySort>(preferences.librarySort)
 
   const visibleItems = useMemo(() => {
     const filtered = items.filter((item) =>
@@ -51,7 +51,7 @@ export default function LibraryPage({ items, initialType }: LibraryPageProps) {
           <CustomSelect ariaLabel="Status" value={status} options={statusOptions} onChange={(value) => setStatus(value as MediaStatus | 'All')} />
         </label>
         <label>Sort by
-          <CustomSelect ariaLabel="Sort by" value={sort} options={sortOptions} onChange={(value) => setSort(value as SortOption)} />
+          <CustomSelect ariaLabel="Sort by" value={sort} options={sortOptions} onChange={(value) => setSort(value as LibrarySort)} />
         </label>
         <label className="toggle-filter">
           <input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} /> Favorites
