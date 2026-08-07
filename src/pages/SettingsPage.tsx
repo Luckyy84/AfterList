@@ -23,8 +23,8 @@ export default function SettingsPage() {
     if (!session?.access_token) return
     fetch('/api/v1/tokens', { headers: { Authorization: `Bearer ${session.access_token}` } })
       .then(async (response) => {
-        const body = await response.json() as { tokens?: typeof tokens; error?: string }
-        if (!response.ok) throw new Error(body.error)
+        if (!response.ok) throw new Error(`Server returned ${response.status}.`)
+        const body = await response.json() as { tokens?: typeof tokens }
         setTokens(body.tokens ?? [])
       })
       .catch(() => setTokenError('Could not load integration tokens.'))
@@ -51,8 +51,9 @@ export default function SettingsPage() {
         headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: tokenName }),
       })
-      const body = await response.json() as { token?: string; integration?: (typeof tokens)[number]; error?: string }
-      if (!response.ok || !body.token || !body.integration) throw new Error(body.error)
+      if (!response.ok) throw new Error(`Server returned ${response.status}. Check the API deployment and server variables.`)
+      const body = await response.json() as { token?: string; integration?: (typeof tokens)[number] }
+      if (!body.token || !body.integration) throw new Error('The API returned an invalid response.')
       setNewToken(body.token)
       setTokens((current) => [body.integration!, ...current])
     } catch (error) {

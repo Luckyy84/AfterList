@@ -1,4 +1,4 @@
-import { adminClient, authenticateIntegration, hashToken, json } from '../../_lib/afterlistApi.js'
+import { adminClient, authenticateIntegration, hashToken, json } from '../_lib/afterlistApi.js'
 
 type IncomingItem = Record<string, unknown>
 

@@ -1,4 +1,4 @@
-import { adminClient, authenticateUser, generateToken, hashToken, json } from '../../_lib/afterlistApi.js'
+import { adminClient, authenticateUser, generateToken, hashToken, json } from '../_lib/afterlistApi.js'
 
 export async function GET(request: Request) {
   const user = await authenticateUser(request)

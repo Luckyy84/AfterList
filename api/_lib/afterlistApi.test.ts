@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { generateToken, hashToken } from './afterlistApi'
 
 describe('integration tokens', () => {
+  it('loads both Vercel API routes with their shared helper', async () => {
+    expect((await import('../v1/tokens')).POST).toBeTypeOf('function')
+    expect((await import('../v1/watchlist')).PUT).toBeTypeOf('function')
+  })
+
   it('generates high-entropy tokens and stores a stable SHA-256 hash', () => {
     const first = generateToken()
     const second = generateToken()
