@@ -9,6 +9,19 @@ export function getWatchedEpisodeCount(item: MediaItem) {
   return item.currentEpisode ?? 0
 }
 
+function getCompletedRewatchCount(item: MediaItem) {
+  return Number.isFinite(item.rewatchCount) ? Math.max(0, Math.floor(item.rewatchCount ?? 0)) : 0
+}
+
+export function getWatchTimeUnits(item: MediaItem) {
+  const rewatchCount = getCompletedRewatchCount(item)
+  if (item.type === 'Movie') return item.status === 'Watched' ? 1 + rewatchCount : 0
+
+  const watchedEpisodes = getWatchedEpisodeCount(item)
+  const episodesPerRewatch = item.totalEpisodes ?? watchedEpisodes
+  return watchedEpisodes + rewatchCount * episodesPerRewatch
+}
+
 export function calculateStatistics(items: MediaItem[]) {
   const statusCounts = Object.fromEntries(statuses.map((status) => [status, 0])) as Record<MediaStatus, number>
   const typeCounts = Object.fromEntries(mediaTypes.map((type) => [type, 0])) as Record<MediaType, number>
@@ -27,11 +40,9 @@ export function calculateStatistics(items: MediaItem[]) {
       ratingCount += 1
     }
 
-    episodesWatched += item.currentEpisode ?? 0
+    if (item.type !== 'Movie') episodesWatched += getWatchTimeUnits(item)
     if (item.runtimeMinutes) {
-      watchMinutes += item.type === 'Movie'
-        ? (item.status === 'Watched' ? item.runtimeMinutes : 0)
-        : getWatchedEpisodeCount(item) * item.runtimeMinutes
+      watchMinutes += getWatchTimeUnits(item) * item.runtimeMinutes
     }
   }
 

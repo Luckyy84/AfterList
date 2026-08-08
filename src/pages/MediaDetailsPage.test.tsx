@@ -50,6 +50,16 @@ describe('MediaDetailsPage', () => {
     expect(onUpdate).toHaveBeenCalledWith(item.id, { personalRating: 8 })
   })
 
+  it('updates completed rewatches with reliable stepper controls', async () => {
+    vi.mocked(fetchMedia).mockReturnValue(new Promise(() => undefined))
+    const onUpdate = vi.fn()
+    render(<MemoryRouter initialEntries={['/tv/1/test-show']}><Routes><Route path="/tv/:id/:slug" element={<MediaDetailsPage routeKind="tv" items={[{ ...item, rewatchCount: 0 }]} onCreate={vi.fn()} onRemove={vi.fn()} onUpdate={onUpdate} />} /></Routes></MemoryRouter>)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Increase rewatch count' }))
+    expect(onUpdate).toHaveBeenCalledWith(item.id, { rewatchCount: 1 })
+    expect(screen.getByRole('button', { name: 'Decrease rewatch count' }).hasAttribute('disabled')).toBe(true)
+  })
+
   it('accepts a typed episode and clamps it to the known total', async () => {
     vi.mocked(fetchMedia).mockReturnValue(new Promise(() => undefined))
     const onUpdate = vi.fn()

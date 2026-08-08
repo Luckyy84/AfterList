@@ -116,7 +116,8 @@
 .tracking-date-hint { max-width: 660px; margin: -8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .tracking-history-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .tracking-history-grid label,
-.date-field { position: relative; display: grid; gap: 7px; }
+.date-field,
+.rewatch-count-field { position: relative; display: grid; gap: 7px; }
 .tracking-history-grid input,
 .private-notes textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; padding: 12px 14px; color: var(--cream); background: linear-gradient(180deg, rgba(255,255,255,.025), transparent 55%), #12100e; box-shadow: inset 0 1px rgba(255,255,255,.025); color-scheme: dark; font: inherit; }
 .tracking-history-grid input { min-height: 48px; accent-color: var(--accent); }
@@ -128,6 +129,10 @@
 .rewatch-toggle span { color: var(--accent); font-size: 20px; line-height: 1; }
 .rewatch-toggle strong { font-size: 12px; font-weight: 780; }
 .rewatch-toggle.is-active { border-color: var(--accent); color: var(--cream); background: rgba(255,77,0,.11); box-shadow: inset 0 -2px var(--accent); }
+.rewatch-count-stepper { min-height: 48px; display: grid; grid-template-columns: 46px 1fr 46px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 12px; background: linear-gradient(180deg, rgba(255,255,255,.025), transparent), #12100e; }
+.rewatch-count-stepper button { border: 0; color: var(--accent); background: transparent; font-size: 20px; }
+.rewatch-count-stepper button:disabled { color: #514a43; cursor: not-allowed; }
+.rewatch-count-stepper output { display: grid; place-items: center; border-inline: 1px solid var(--line); color: var(--cream); font-size: 14px; font-weight: 850; font-variant-numeric: tabular-nums; }
 .private-notes { display: grid; gap: 8px; }
 .private-notes textarea { min-height: 132px; resize: vertical; line-height: 1.6; }
 .private-notes textarea::placeholder { color: #716a61; }
@@ -213,6 +218,7 @@
   .date-calendar-head button:hover,
   .date-calendar-grid button:not(:disabled):hover { border-color: var(--accent); color: var(--cream); background: rgba(255,77,0,.1); }
   .rewatch-toggle:hover { border-color: var(--accent); color: var(--cream); transform: translateY(-1px); }
+  .rewatch-count-stepper button:not(:disabled):hover { color: #17120f; background: var(--accent); }
   .episode-stepper:hover,
   .episode-stepper:focus-within { border-color: var(--accent); }
   .episode-stepper button:not(:disabled):hover { color: #17120f; background: var(--accent); }

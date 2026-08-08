@@ -225,7 +225,14 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
               <div className="tracking-history-grid">
                 <DateField label="Started" max={savedItem.completedAt ?? undefined} value={savedItem.startedAt} onChange={(startedAt) => update({ startedAt })} />
                 <DateField label="Completed" min={savedItem.startedAt ?? undefined} value={savedItem.completedAt} onChange={(completedAt) => update({ completedAt })} />
-                <label><span className="details-section-label">Rewatch count</span><input type="number" aria-label="Rewatch count" min="0" max="999" value={savedItem.rewatchCount ?? 0} onChange={(event) => { if (!Number.isNaN(event.currentTarget.valueAsNumber)) update({ rewatchCount: event.currentTarget.valueAsNumber }) }} /></label>
+                <div className="rewatch-count-field">
+                  <span className="details-section-label">Completed rewatches</span>
+                  <div className="rewatch-count-stepper" aria-label="Completed rewatch count">
+                    <button type="button" aria-label="Decrease rewatch count" disabled={(savedItem.rewatchCount ?? 0) <= 0} onClick={() => update({ rewatchCount: Math.max(0, (savedItem.rewatchCount ?? 0) - 1) })}>−</button>
+                    <output aria-live="polite">{savedItem.rewatchCount ?? 0}</output>
+                    <button type="button" aria-label="Increase rewatch count" disabled={(savedItem.rewatchCount ?? 0) >= 999} onClick={() => update({ rewatchCount: Math.min(999, (savedItem.rewatchCount ?? 0) + 1) })}>+</button>
+                  </div>
+                </div>
                 <button type="button" className={`rewatch-toggle${savedItem.isRewatching ? ' is-active' : ''}`} aria-pressed={Boolean(savedItem.isRewatching)} onClick={() => update({ isRewatching: !savedItem.isRewatching })}><span aria-hidden="true">↻</span><strong>{savedItem.isRewatching ? 'Rewatching' : 'Start a rewatch'}</strong></button>
               </div>
               {record.type !== 'Movie' && <div className="tracking-row">

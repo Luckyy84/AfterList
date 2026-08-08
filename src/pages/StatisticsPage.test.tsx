@@ -47,7 +47,7 @@ describe('StatisticsPage', () => {
       completionRate: 67,
       favorites: 2,
       averageRating: '9.0',
-      episodesWatched: 7,
+      episodesWatched: 9,
       watchMinutes: 372,
     })
     expect(statistics.statusCounts).toEqual({ Planned: 0, Watching: 1, Paused: 0, Watched: 2, Dropped: 0 })
@@ -64,6 +64,22 @@ describe('StatisticsPage', () => {
     expect(screen.getByTestId('watch-time-value').textContent).toBe('2h')
     expect(screen.getByRole('heading', { name: 'All statuses' })).not.toBeNull()
     expect(screen.getByRole('heading', { name: 'All types' })).not.toBeNull()
+  })
+
+  it('adds completed rewatches to estimated watch time', () => {
+    const movieWithRewatches = { ...baseItem, rewatchCount: 2 }
+    const seriesWithRewatch: MediaItem = {
+      ...baseItem,
+      id: 'series-rewatch',
+      type: 'TV Series',
+      currentEpisode: 6,
+      totalEpisodes: 6,
+      runtimeMinutes: 30,
+      rewatchCount: 1,
+    }
+
+    expect(calculateStatistics([movieWithRewatches]).watchMinutes).toBe(360)
+    expect(calculateStatistics([seriesWithRewatch])).toMatchObject({ watchMinutes: 360, episodesWatched: 12 })
   })
 
   it('backfills missing TMDB runtime metadata', async () => {
