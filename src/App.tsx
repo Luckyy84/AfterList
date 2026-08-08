@@ -79,7 +79,7 @@ function App() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <AppNav items={items} onCreate={requestCreate} onOpenExisting={openSavedItem} profileUsername={ownProfile?.username} />
+      <AppNav items={items} onCreate={requestCreate} onOpenExisting={openSavedItem} profileUsername={ownProfile?.username} profileIsPublic={ownProfile?.is_public} />
 
       {(syncError || isSyncing) && (
         <div className={`sync-banner${syncError ? ' is-error' : ''}`} role={syncError ? 'alert' : 'status'}>

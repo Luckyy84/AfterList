@@ -11,6 +11,7 @@ type AppNavProps = {
   onCreate: (item: MediaItem) => void
   onOpenExisting: (id: string) => void
   profileUsername?: string | null
+  profileIsPublic?: boolean
 }
 
 const navItems = [
@@ -46,7 +47,7 @@ function Icon({ name }: { name: 'account' | 'settings' | 'menu' | 'close' | 'hom
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
 }
 
-export default function AppNav({ items, onCreate, onOpenExisting, profileUsername }: AppNavProps) {
+export default function AppNav({ items, onCreate, onOpenExisting, profileUsername, profileIsPublic = false }: AppNavProps) {
   const { isLoading, signOut, user } = useAuth()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false)
@@ -54,6 +55,7 @@ export default function AppNav({ items, onCreate, onOpenExisting, profileUsernam
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
   const accountMenuRef = useRef<HTMLDivElement | null>(null)
   const displayName = getDisplayName(user)
+  const profilePath = profileUsername && profileIsPublic ? `/user/${profileUsername}` : '/settings/profile'
 
   useEffect(() => {
     if (!isAccountOpen) return undefined
@@ -137,7 +139,7 @@ export default function AppNav({ items, onCreate, onOpenExisting, profileUsernam
         {isAccountOpen && (
           <div className="nav-account-dropdown glass-panel" role="menu">
             <div className="nav-account-details"><span>{displayName}</span>{user?.email && <small>{user.email}</small>}</div>
-            {user && <Link role="menuitem" to={profileUsername ? `/user/${profileUsername}` : '/settings/profile'} onClick={() => setIsAccountOpen(false)}>Profile</Link>}
+            {user && <Link role="menuitem" to={profilePath} onClick={() => setIsAccountOpen(false)}>{profileIsPublic ? 'Profile' : 'Profile settings'}</Link>}
             {!user && <Link role="menuitem" to="/login" onClick={() => setIsAccountOpen(false)}>Sign in for cloud sync</Link>}
             <Link role="menuitem" to="/privacy" onClick={() => setIsAccountOpen(false)}>Privacy &amp; Cookies</Link>
             <Link role="menuitem" to="/terms" onClick={() => setIsAccountOpen(false)}>Terms of Use</Link>
@@ -155,7 +157,7 @@ export default function AppNav({ items, onCreate, onOpenExisting, profileUsernam
           ))}
           <span className="nav-mobile-divider" aria-hidden="true" />
           {user
-            ? <Link to={profileUsername ? `/user/${profileUsername}` : '/settings/profile'} onClick={closeNav}><Icon name="account" /><span>Profile</span><small>{displayName}<br />Signed in</small></Link>
+            ? <Link to={profilePath} onClick={closeNav}><Icon name="account" /><span>{profileIsPublic ? 'Profile' : 'Profile settings'}</span><small>{displayName}<br />{profileIsPublic ? 'Public' : 'Private'}</small></Link>
             : <Link to="/login" onClick={closeNav}><Icon name="account" /><span>Sign in</span></Link>}
           <Link to="/settings" onClick={closeNav}><Icon name="settings" /><span>Settings</span></Link>
           {user && <button type="button" onClick={() => void handleSignOut()}><Icon name="signout" /><span>Sign out</span></button>}

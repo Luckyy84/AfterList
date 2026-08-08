@@ -14,5 +14,7 @@
 .public-profile-stats div { min-width: 120px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .public-profile-stats dt { color: var(--muted); font-size: 11px; text-transform: capitalize; }
 .public-profile-stats dd { margin: 6px 0 0; color: var(--cream); font-size: 24px; font-weight: 900; }
-.public-profile-state { min-height: 50vh; }
+.public-profile-state { min-height: 50vh; align-content: start; }
+.public-profile-state .primary-action { width: fit-content; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; text-decoration: none; }
+.settings-controls label:has(input:disabled) { opacity: .58; }
 @media (max-width: 560px) { .public-profile-header { grid-template-columns: auto 1fr; } .public-profile-header .secondary-action { grid-column: 1 / -1; } .public-profile-tabs { overflow-x: auto; flex-wrap: nowrap; } }

@@ -9,6 +9,7 @@ export default function PublicProfilePage({ mode }: { mode: 'overview' | 'librar
   const navigate = useNavigate()
   const [data, setData] = useState<PublicProfileResponse | PublicMediaPage | null>(null)
   const [error, setError] = useState('')
+  const [errorStatus, setErrorStatus] = useState<number | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   useEffect(() => {
@@ -20,12 +21,17 @@ export default function PublicProfilePage({ mode }: { mode: 'overview' | 'librar
         navigate(`/user/${next.redirectUsername}${mode === 'library' ? '/library' : mode === 'list' ? `/lists/${listSlug}` : ''}`, { replace: true })
         return
       }
-      setData(next); setError(''); document.title = `${next.displayName || next.username} | AfterList`
-    }).catch((cause) => { if (!controller.signal.aborted) setError((cause as { status?: number }).status === 429 ? 'Too many requests. Please try again shortly.' : cause instanceof Error ? cause.message : 'Profile unavailable.') })
+      setData(next); setError(''); setErrorStatus(null); document.title = `${next.displayName || next.username} | AfterList`
+    }).catch((cause) => {
+      if (controller.signal.aborted) return
+      const status = (cause as { status?: number }).status ?? null
+      setErrorStatus(status)
+      setError(status === 429 ? 'Too many requests. Please try again shortly.' : cause instanceof Error ? cause.message : 'Profile unavailable.')
+    })
     return () => { controller.abort(); document.title = previousTitle }
   }, [attempt, listSlug, mode, navigate, username])
   if (!data && !error) return <section className="public-profile-state" aria-busy="true" role="status"><h1>Loading profile…</h1></section>
-  if (error) return <section className="empty-state public-profile-state" role="alert"><h1>Profile unavailable</h1><p>{error}</p><button className="primary-action" onClick={() => setAttempt((value) => value + 1)}>Try again</button></section>
+  if (error) return <section className="empty-state public-profile-state" role="alert"><h1>Profile unavailable</h1><p>{errorStatus === 404 ? 'This profile is private or does not exist.' : error}</p>{errorStatus === 404 ? <Link className="primary-action" to="/discover">Browse AfterList</Link> : <button className="primary-action" onClick={() => setAttempt((value) => value + 1)}>Try again</button>}</section>
   const resolved = data!
   const overview = mode === 'overview' ? resolved as PublicProfileResponse : null
   const page = mode !== 'overview' ? resolved as PublicMediaPage : null
