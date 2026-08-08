@@ -2,7 +2,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 
 export type LibrarySort = 'recent' | 'title' | 'rating'
-export type LibraryStatus = 'All' | 'Planned' | 'Watching' | 'Watched' | 'Dropped'
+export type LibraryStatus = 'All' | 'Planned' | 'Watching' | 'Paused' | 'Watched' | 'Dropped'
 export type CardDensity = 'comfortable' | 'compact'
 export type MotionPreference = 'system' | 'reduced' | 'full'
 

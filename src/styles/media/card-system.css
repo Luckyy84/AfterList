@@ -135,6 +135,7 @@
 
 .card-status.Watched { background: rgba(184, 214, 176, 0.95); }
 .card-status.Dropped { color: #eeeae1; background: rgba(52, 50, 46, 0.94); }
+.card-status.Paused { color: #17120f; background: rgba(184, 166, 217, .95); }
 
 .card-favorite {
   right: 9px;

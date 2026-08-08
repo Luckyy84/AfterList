@@ -3,16 +3,12 @@ import MediaCard from '../components/media/MediaCard'
 import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
-import { discoverTmdb } from '../services/tmdb'
-import { findMatchingMediaItem } from '../utils/media'
+import { discoverMedia } from '../services/media'
+import { findMatchingMediaItem, searchResultToMediaItem } from '../utils/media'
 
 type DiscoverPageProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
-}
-
-function toMediaItem(result: SearchResultItem): MediaItem {
-  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
 }
 
 const genreIds: Record<string, number[]> = {
@@ -32,7 +28,7 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
 
   useEffect(() => {
     const controller = new AbortController()
-    discoverTmdb({ feed, mediaType, page: 1, signal: controller.signal })
+    discoverMedia({ feed, mediaType, page: 1, signal: controller.signal })
       .then(setResults)
       .catch((cause) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Discovery is unavailable.') })
       .finally(() => { if (!controller.signal.aborted) setIsLoading(false) })
@@ -41,7 +37,7 @@ export default function DiscoverPage({ items, onCreate }: DiscoverPageProps) {
 
   const cards = useMemo(() => results
     .filter((result) => genre === 'all' || result.genreIds?.some((id) => genreIds[genre].includes(id)))
-    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? toMediaItem(result) })), [genre, items, results])
+    .map((result) => ({ result, item: findMatchingMediaItem(items, result) ?? searchResultToMediaItem(result) })), [genre, items, results])
 
   const add = (item: MediaItem, status: MediaStatus = 'Planned') => {
     onCreate({ ...item, status, progress: status === 'Watched' ? 'Watched' : item.progress })

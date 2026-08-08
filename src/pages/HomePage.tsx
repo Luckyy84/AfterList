@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import WatchlistRow from '../components/media/MediaRow'
 import type { MediaItem, MediaStatus } from '../types/media'
 import type { SearchResultItem } from '../types/search'
 import { useIsMobile } from '../hooks/useMediaQuery'
-import { discoverTmdb } from '../services/tmdb'
-import { findMatchingMediaItem, getMediaKey } from '../utils/media'
+import { discoverMedia } from '../services/media'
+import { findMatchingMediaItem, getMediaKey, searchResultToMediaItem } from '../utils/media'
+import { getMediaPath } from '../utils/mediaRoutes'
 
 type HomePageProps = {
   items: MediaItem[]
@@ -15,13 +16,9 @@ type HomePageProps = {
   isSignedIn?: boolean
 }
 
-const watchStatuses: MediaStatus[] = ['Watching', 'Watched', 'Planned', 'Dropped']
+const watchStatuses: MediaStatus[] = ['Watching', 'Paused', 'Watched', 'Planned', 'Dropped']
 const HERO_PREVIEW_LIMIT = 5
 const heroEase = [0.22, 1, 0.36, 1] as const
-
-function toMediaItem(result: SearchResultItem): MediaItem {
-  return { id: `${result.source}-${result.externalId}`, externalId: result.externalId, source: result.source, title: result.title, type: result.type, status: 'Planned', poster: result.poster, backdrop: result.backdrop, progress: result.year, rating: result.rating, description: result.description, year: result.year }
-}
 
 function getHeroPreviewItems(items: MediaItem[], currentIndex: number) {
   if (!items.length) return []
@@ -45,6 +42,7 @@ function HomeSkeleton() {
 }
 
 function HomePage({ items, onCreate, isLoading = false, isSignedIn = false }: HomePageProps) {
+  const location = useLocation()
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const [heroIndex, setHeroIndex] = useState(0)
@@ -82,18 +80,18 @@ function HomePage({ items, onCreate, isLoading = false, isSignedIn = false }: Ho
       let didLoad = false
       if (recommendationExternalId) {
         try {
-          results = await discoverTmdb({ feed: 'recommendations', externalId: recommendationExternalId, mediaType: recommendationMediaType, signal: controller.signal })
+          results = await discoverMedia({ feed: 'recommendations', externalId: recommendationExternalId, mediaType: recommendationMediaType, signal: controller.signal })
           didLoad = results.length > 0
         } catch { /* Fall through to public trending titles. */ }
       }
       if (!results.length) {
         try {
-          results = await discoverTmdb({ feed: 'trending', mediaType: 'all', signal: controller.signal })
+          results = await discoverMedia({ feed: 'trending', mediaType: 'all', signal: controller.signal })
           didLoad = true
         } catch { /* The watchlist remains usable when discovery is offline. */ }
       }
       if (!controller.signal.aborted) {
-        setDiscoveryItems(results.map(toMediaItem).filter((result) => !savedKeys.has(getMediaKey(result))).slice(0, 12))
+        setDiscoveryItems(results.map((result) => searchResultToMediaItem(result)).filter((result) => !savedKeys.has(getMediaKey(result))).slice(0, 12))
         setDiscoveryState(didLoad ? 'ready' : 'error')
       }
     }
@@ -128,7 +126,7 @@ function HomePage({ items, onCreate, isLoading = false, isSignedIn = false }: Ho
                 {hero.rating && hero.rating !== 'N/A' && <span>Rating {hero.rating}</span>}
               </div>
               <div className="hero-actions">
-                <Link className="primary-action" to={`/details/${hero.source}/${encodeURIComponent(hero.externalId ?? hero.id)}`} state={{ item: hero }}>View {hero.title}</Link>
+                <Link className="primary-action" to={getMediaPath(hero)} state={{ item: hero, from: `${location.pathname}${location.search}` }}>View {hero.title}</Link>
                 <Link className="secondary-action" to={isWatchingHero ? '/discover' : '/library'}>{isWatchingHero ? 'Discover something new' : 'Choose something from your list'}</Link>
               </div>
             </div>

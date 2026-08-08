@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
 
@@ -16,10 +16,12 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function AuthPage({ mode }: AuthPageProps) {
-  const { isConfigured, isLoading, signIn, signUp, signInWithGoogle, user } = useAuth()
+  const { isConfigured, isLoading, requestPasswordReset, signIn, signUp, signInWithGoogle, user } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(location.state?.passwordUpdated ? 'Password updated. Sign in with your new password.' : '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
   const isSignup = mode === 'signup'
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -45,7 +47,10 @@ export default function AuthPage({ mode }: AuthPageProps) {
     setIsSubmitting(true)
 
     try {
-      if (isSignup) {
+      if (isResettingPassword) {
+        await requestPasswordReset(email)
+        setNotice('If an account exists for that email, a password reset link is on its way.')
+      } else if (isSignup) {
         const session = await signUp(email, password, displayName)
 
         if (session) {
@@ -95,10 +100,12 @@ export default function AuthPage({ mode }: AuthPageProps) {
     >
       <div className="auth-copy glass-panel">
         <p className="eyebrow">AfterList account</p>
-        <h1>{isSignup ? 'Protect the list you built.' : 'Welcome back'}</h1>
+        <h1>{isSignup ? 'Protect the list you built.' : isResettingPassword ? 'Find your way back.' : 'Welcome back'}</h1>
         <p>
           {isSignup
             ? 'An account keeps your watchlist backed up and synced across your devices. You can keep using AfterList as a guest, too.'
+            : isResettingPassword
+              ? 'Enter your account email and we will send you a secure link to choose a new password.'
             : 'Sign in to keep your anime, movies, and TV series synced across devices.'}
         </p>
 
@@ -111,20 +118,20 @@ export default function AuthPage({ mode }: AuthPageProps) {
 
       <div className="auth-panel glass-panel">
         <div className="auth-panel-head">
-          <p className="eyebrow">{isSignup ? 'Sign up' : 'Sign in'}</p>
-          <h2>{isSignup ? 'Start tracking everywhere.' : 'Continue your list.'}</h2>
-          <p>{isSignup ? 'Use Google or email and password to create your AfterList account.' : 'Use Google or your email and password to continue.'}</p>
+          <p className="eyebrow">{isSignup ? 'Sign up' : isResettingPassword ? 'Reset password' : 'Sign in'}</p>
+          <h2>{isSignup ? 'Start tracking everywhere.' : isResettingPassword ? 'Check your inbox next.' : 'Continue your list.'}</h2>
+          <p>{isSignup ? 'Use Google or email and password to create your AfterList account.' : isResettingPassword ? 'We will email a one-time recovery link if the account exists.' : 'Use Google or your email and password to continue.'}</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <button className="auth-google" type="button" onClick={handleGoogleAuth} disabled={isSubmitting}>
+          {!isResettingPassword && <button className="auth-google" type="button" onClick={handleGoogleAuth} disabled={isSubmitting}>
             <span className="auth-google-icon" aria-hidden="true">G</span>
             Continue with Google
-          </button>
+          </button>}
 
-          <div className="auth-divider" role="separator">
+          {!isResettingPassword && <div className="auth-divider" role="separator">
             <span>or continue with email</span>
-          </div>
+          </div>}
 
           {isSignup && (
             <label className="auth-field">
@@ -138,7 +145,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
             <input name="email" type="email" placeholder="you@example.com" autoComplete="email" required disabled={isSubmitting} />
           </label>
 
-          <label className="auth-field">
+          {!isResettingPassword && <label className="auth-field">
             <span>Password</span>
             <input
               name="password"
@@ -149,7 +156,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               required
               disabled={isSubmitting}
             />
-          </label>
+          </label>}
 
           {isSignup && (
             <label className="auth-field">
@@ -159,16 +166,22 @@ export default function AuthPage({ mode }: AuthPageProps) {
           )}
 
           <button className="auth-submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Working...' : isSignup ? 'Create account' : 'Sign in'}
+            {isSubmitting ? 'Working...' : isSignup ? 'Create account' : isResettingPassword ? 'Send reset link' : 'Sign in'}
           </button>
 
           {notice && <p className="auth-notice">{notice}</p>}
         </form>
 
-        <p className="auth-switch">
+        {!isSignup && (
+          <button className="auth-text-action" type="button" onClick={() => { setIsResettingPassword((current) => !current); setNotice('') }} disabled={isSubmitting}>
+            {isResettingPassword ? 'Back to sign in' : 'Forgot your password?'}
+          </button>
+        )}
+
+        {!isResettingPassword && <p className="auth-switch">
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <Link to={isSignup ? '/login' : '/signup'}>{isSignup ? 'Sign in' : 'Create one'}</Link>
-        </p>
+        </p>}
 
         {isSignup && (
           <p className="auth-legal">

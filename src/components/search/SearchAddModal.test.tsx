@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import SearchAddModal from './SearchAddModal'
-import { discoverTmdb, searchTmdb } from '../../services/tmdb'
+import { discoverMedia, searchMedia } from '../../services/media'
 
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
@@ -12,7 +12,7 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => true,
 }))
 vi.mock('../../hooks/useMediaQuery', () => ({ useIsMobile: () => false }))
-vi.mock('../../services/tmdb', () => ({ discoverTmdb: vi.fn(), searchTmdb: vi.fn() }))
+vi.mock('../../services/media', () => ({ discoverMedia: vi.fn(), searchMedia: vi.fn() }))
 
 const result = {
   externalId: 'movie:1', source: 'tmdb' as const, title: 'Obsession', type: 'Movie' as const,
@@ -26,7 +26,7 @@ afterEach(() => {
 
 describe('SearchAddModal results', () => {
   it('closes when the user clicks outside the search shell', async () => {
-    vi.mocked(discoverTmdb).mockResolvedValue([result])
+    vi.mocked(discoverMedia).mockResolvedValue([result])
 
     render(
       <MemoryRouter>
@@ -43,7 +43,7 @@ describe('SearchAddModal results', () => {
   })
 
   it('shows trending titles before a search is entered', async () => {
-    vi.mocked(discoverTmdb).mockResolvedValue([result])
+    vi.mocked(discoverMedia).mockResolvedValue([result])
 
     render(
       <MemoryRouter>
@@ -54,12 +54,12 @@ describe('SearchAddModal results', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() => expect(screen.getByText('Trending now')).not.toBeNull())
     expect(screen.getByRole('link', { name: /Obsession/ })).not.toBeNull()
-    expect(discoverTmdb).toHaveBeenCalledWith(expect.objectContaining({ feed: 'trending', mediaType: 'all' }))
+    expect(discoverMedia).toHaveBeenCalledWith(expect.objectContaining({ feed: 'trending', mediaType: 'all' }))
   })
 
   it('opens details from the card and adds separately from the plus button', async () => {
-    vi.mocked(discoverTmdb).mockResolvedValue([])
-    vi.mocked(searchTmdb).mockResolvedValue([result])
+    vi.mocked(discoverMedia).mockResolvedValue([])
+    vi.mocked(searchMedia).mockResolvedValue([result])
     const onCreate = vi.fn()
     function Path() { return <output>{useLocation().pathname}</output> }
 
@@ -79,7 +79,7 @@ describe('SearchAddModal results', () => {
     expect(screen.getByText('/')).not.toBeNull()
 
     await userEvent.click(screen.getByRole('link', { name: /Obsession/ }))
-    expect(screen.getByText('/details/tmdb/movie%3A1')).not.toBeNull()
+    expect(screen.getByText('/movie/1/obsession')).not.toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

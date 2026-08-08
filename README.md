@@ -23,7 +23,7 @@ The app uses Vercel's static Vite deployment flow, Vercel API functions for TMDB
 
 ## Current Status
 
-Phase 1 is complete, Phase 2 is active, and Phase 3 has started with Supabase Auth UI + account wiring. The app saves API-backed items to `localStorage`, uses a polished dark glass UI with Motion-powered hero, carousel, search, and modal animations, searches/fetches TMDB data through AfterList Vercel API proxies, and now includes Supabase-powered login/signup routes.
+AfterList now supports the complete private-tracker and opt-in sharing roadmap. Guests remain local-first, signed-in users sync through Supabase, TMDB and AniList data stay behind Vercel API functions, and public profiles remain disabled unless `PUBLIC_PROFILES_ENABLED=true` is configured explicitly.
 
 Implemented so far:
 
@@ -36,7 +36,7 @@ Implemented so far:
 - Desktop row arrows
 - Mobile native swipe/grab rows
 - Media cards with poster, title, type, and status
-- Statuses: `Planned`, `Watching`, `Watched`, `Dropped`
+- Statuses: `Planned`, `Watching`, `Paused`, `Watched`, `Dropped`
 - Automatic migration from old `Completed` status to `Watched`
 - Details modal for saved items
 - Richer TMDB details in saved-item modal: genres, runtime, seasons, episodes, and country metadata
@@ -60,55 +60,24 @@ Implemented so far:
 - Email/password auth wiring
 - Google OAuth button wiring
 - Signed-in nav state and sign-out button
+- Canonical, refresh-safe `/movie`, `/tv`, and `/anime` title URLs
+- Native AniList search, discovery, details, and richer anime metadata
+- Canonical provider aliases with explicit, reversible duplicate confirmation
+- Episode progress, rewatches, dates, ratings, favorites, and private notes
+- Custom lists, event history, richer statistics, and JSON export
+- Integration API tokens and Jellyfin synchronization
+- Private-by-default usernames, profiles, favorites, statistics, libraries, and public lists
+- Playwright browser coverage plus migration/RLS pgTAP test assets
 
 ## Roadmap
 
-### Phase 1 — App Foundation
+The three planned milestones are implemented in the repository:
 
-- Basic homepage ✅
-- Media cards ✅
-- Type filters ✅
-- Status filters ✅
-- Edit status ✅
-- Search / create preview flow ✅
-- Remove item ✅
-- Save data with localStorage ✅
-- Duplicate prevention ✅
-- Motion animations for hero, rows, search, and modals ✅
-- Mobile layout and performance stabilization ✅
-- Vercel deployment ✅
+1. Stable canonical media pages and legacy-link compatibility.
+2. AniList, canonical identity, deeper tracking, lists, history, and export.
+3. Private-by-default profiles and explicitly shared libraries and lists.
 
-### Phase 2 — Real API Search/Add Flow
-
-- Connect TMDB for movies and TV series ✅
-- Replace mock movie/TV search results with API results ✅
-- Remove local search/demo fallback data ✅
-- Add loading and error states ✅
-- Map TMDB results into the app `MediaItem` structure ✅
-- Prevent duplicates using API IDs/source IDs ✅
-- Add API-based item creation ✅
-- Add TMDB attribution in the UI ✅
-- Move TMDB requests behind a Vercel/serverless API proxy ✅
-- Fetch richer TMDB details for saved items ✅
-- Add anime API later, likely AniList or Jikan
-
-### Phase 3 — Accounts and Sync
-
-- Auth UI ✅
-- Supabase client setup ✅
-- Email/password login ✅
-- Email/password signup ✅
-- Google OAuth wiring ✅
-- Signed-in nav state ✅
-- Database storage
-- Sync watchlist across devices
-- Optional local-to-account import
-
-### Phase 4 — Sharing
-
-- Public user profiles
-- Friend sharing
-- Optional public watchlists
+Before enabling the new database-backed features in an environment, apply the additive Supabase migrations, run the SQL/RLS suite against a disposable database, and then set `PUBLIC_PROFILES_ENABLED=true` deliberately. Follows, feeds, comments, reactions, reviews, and broader moderation remain future work.
 
 ## TMDB Proxy Setup
 

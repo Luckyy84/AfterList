@@ -1,8 +1,13 @@
 export type MediaType = 'Anime' | 'Movie' | 'TV Series'
 
-export type MediaStatus = 'Planned' | 'Watching' | 'Watched' | 'Dropped'
+export type MediaStatus = 'Planned' | 'Watching' | 'Paused' | 'Watched' | 'Dropped'
 
 export type MediaSource = 'tmdb' | 'anilist'
+
+export type MediaAlias = { source: MediaSource; externalId: string }
+export type MediaRelation = { relationType: string; item: { externalId: string; source: MediaSource; title: string; type: MediaType; year: string; poster: string; backdrop: string; rating: string; description: string }; format?: string }
+export type MediaStudio = { id?: number; name?: string; siteUrl?: string }
+export type MediaTrailer = { id: string; site?: string; thumbnail?: string; url?: string }
 
 export type MediaDetails = {
   genres: string[]
@@ -20,6 +25,14 @@ export type MediaDetails = {
   originalLanguage?: string
   countries: string[]
   voteCount?: number
+  alternativeTitles?: string[]
+  format?: string
+  airingStatus?: string
+  episodeDuration?: number
+  relations?: MediaRelation[]
+  studios?: MediaStudio[]
+  trailer?: MediaTrailer
+  malId?: number
 }
 
 export type MediaItem = {
@@ -41,8 +54,22 @@ export type MediaItem = {
   personalRating?: number | null
   isFavorite?: boolean
   updatedAt?: string
+  canonicalId?: string
+  aliases?: MediaAlias[]
+  alternativeTitles?: string[]
+  format?: string
+  airingStatus?: string
+  episodeDuration?: number
+  relations?: MediaRelation[]
+  studios?: MediaStudio[]
+  trailer?: MediaTrailer
+  isRewatching?: boolean
+  rewatchCount?: number
+  startedAt?: string | null
+  completedAt?: string | null
+  privateNotes?: string
 }
 
 export type MediaUpdate = Partial<
-  Pick<MediaItem, 'status' | 'poster' | 'backdrop' | 'currentEpisode' | 'totalEpisodes' | 'runtimeMinutes' | 'personalRating' | 'isFavorite'>
+  Pick<MediaItem, 'status' | 'poster' | 'backdrop' | 'currentEpisode' | 'totalEpisodes' | 'runtimeMinutes' | 'personalRating' | 'isFavorite' | 'isRewatching' | 'rewatchCount' | 'startedAt' | 'completedAt' | 'privateNotes'>
 >

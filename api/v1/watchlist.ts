@@ -12,6 +12,12 @@ type TmdbTvDetails = {
   seasons?: TmdbSeason[]
 }
 
+const LEGACY_WATCHLIST_COLUMNS = [
+  'id', 'user_id', 'external_id', 'source', 'title', 'type', 'status', 'poster', 'backdrop',
+  'progress', 'rating', 'description', 'year', 'current_episode', 'total_episodes',
+  'runtime_minutes', 'personal_rating', 'is_favorite', 'created_at', 'updated_at',
+].join(',')
+
 function text(value: unknown, max: number) {
   return typeof value === 'string' && value.trim() && value.length <= max ? value.trim() : null
 }
@@ -100,7 +106,10 @@ export async function GET(request: Request) {
   const integration = await authenticateIntegration(request, 'watchlist:read')
   if (!integration) return json({ error: 'Unauthorized.' }, 401)
   const since = new URL(request.url).searchParams.get('updatedAfter')
-  let query = adminClient().from('watchlist_items').select('*').eq('user_id', integration.user_id).order('updated_at')
+  let query = adminClient().from('watchlist_items').select(LEGACY_WATCHLIST_COLUMNS)
+    .eq('user_id', integration.user_id)
+    .is('merged_into_id', null)
+    .order('updated_at')
   if (since && !Number.isNaN(new Date(since).getTime())) query = query.gt('updated_at', new Date(since).toISOString())
   const { data, error } = await query
   return error ? json({ error: 'Could not load watchlist.' }, 500) : json({ items: data })

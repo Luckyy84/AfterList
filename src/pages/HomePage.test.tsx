@@ -11,7 +11,7 @@ vi.mock('motion/react', () => ({
   useReducedMotion: () => true,
 }))
 vi.mock('../hooks/useMediaQuery', () => ({ useIsMobile: () => false }))
-vi.mock('../services/tmdb', () => ({ discoverTmdb: vi.fn(async () => []) }))
+vi.mock('../services/media', () => ({ discoverMedia: vi.fn(async () => []) }))
 vi.mock('../components/media/MediaRow', () => ({
   default: ({ items, title }: { items: MediaItem[]; title: string }) => <div data-testid="media-row">{title}:{items.map((item) => item.title).join(',')}</div>,
 }))

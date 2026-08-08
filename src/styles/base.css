@@ -293,6 +293,7 @@ h3,
   color: #fff;
   background: #262626;
 }
+.pill.Paused { color: #17120f; background: #b8a6d9; }
 
 .library-section {
   margin-top: 44px;

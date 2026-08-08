@@ -25,7 +25,7 @@ describe('MediaCard', () => {
     render(<MemoryRouter><MediaCard item={item} /><Path /></MemoryRouter>)
 
     await userEvent.click(screen.getByRole('button', { name: `Open details for ${item.title}` }))
-    expect(screen.getByText('/details/tmdb/tv%3A1')).not.toBeNull()
+    expect(screen.getByText('/tv/1/house-of-the-dragon')).not.toBeNull()
   })
 
   it('shows discovery metadata and Add without exposing the temporary Planned status', () => {

@@ -1,6 +1,6 @@
 import type { MediaItem, MediaStatus, MediaType } from '../types/media'
 
-const statuses: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
+const statuses: MediaStatus[] = ['Planned', 'Watching', 'Paused', 'Watched', 'Dropped']
 const mediaTypes: MediaType[] = ['Anime', 'Movie', 'TV Series']
 
 export function getWatchedEpisodeCount(item: MediaItem) {

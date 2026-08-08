@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from 'motion/react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import type { SearchResultItem } from '../../types/search'
-import type { MediaItem, MediaStatus } from '../../types/media'
-import { findMatchingMediaItem } from '../../utils/media'
-import { discoverTmdb, searchTmdb } from '../../services/tmdb'
+import type { MediaItem } from '../../types/media'
+import { findMatchingMediaItem, searchResultToMediaItem } from '../../utils/media'
+import { getMediaPath } from '../../utils/mediaRoutes'
+import { discoverMedia, searchMedia } from '../../services/media'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const modalEase = [0.22, 1, 0.36, 1] as const
@@ -52,27 +53,6 @@ type SearchAddModalProps = {
   onOpenExisting: (id: string) => void
 }
 
-function createId(result: SearchResultItem) {
-  return `${result.source}-${result.externalId}`
-}
-
-function createMediaItem(result: SearchResultItem, status: MediaStatus): MediaItem {
-  return {
-    id: createId(result),
-    externalId: result.externalId,
-    source: result.source,
-    title: result.title,
-    type: result.type,
-    status,
-    poster: result.poster,
-    backdrop: result.backdrop,
-    progress: status === 'Watched' ? 'Watched' : result.year,
-    rating: result.rating,
-    description: result.description,
-    year: result.year,
-  }
-}
-
 function mergeUniqueResults(results: SearchResultItem[]) {
   const seen = new Set<string>()
 
@@ -87,6 +67,7 @@ function mergeUniqueResults(results: SearchResultItem[]) {
 
 function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const shouldReduceMotion = useReducedMotion()
   const isMobile = useIsMobile()
   const shouldSimplifyMotion = shouldReduceMotion
@@ -115,7 +96,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
     if (!isExpanded || normalizedQuery || trendingResults.length) return
 
     const controller = new AbortController()
-    discoverTmdb({ feed: 'trending', mediaType: 'all', signal: controller.signal })
+    discoverMedia({ feed: 'trending', mediaType: 'all', signal: controller.signal })
       .then((items) => {
         const trending = mergeUniqueResults(items).slice(0, 6)
         setTrendingResults(trending)
@@ -138,15 +119,15 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
       setIsSearching(true)
       setSearchError(null)
       try {
-        const tmdbResults = await searchTmdb(query, { signal: controller.signal })
-        setApiResults(tmdbResults)
-        setHighlightedIndex(tmdbResults.length ? 0 : -1)
+        const mediaResults = await searchMedia(query, { signal: controller.signal })
+        setApiResults(mediaResults)
+        setHighlightedIndex(mediaResults.length ? 0 : -1)
       } catch (error) {
         if (controller.signal.aborted) return
 
         console.error(error)
         setApiResults([])
-        setSearchError(error instanceof Error ? error.message : 'TMDB search failed. Try again in a moment.')
+        setSearchError(error instanceof Error ? error.message : 'Media search failed. Try again in a moment.')
       } finally {
         if (!controller.signal.aborted) {
           setIsSearching(false)
@@ -207,8 +188,9 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
 
   const openResult = (result: SearchResultItem) => {
     closeSearch()
-    navigate(`/details/${result.source}/${encodeURIComponent(result.externalId)}`, {
-      state: { item: createMediaItem(result, 'Planned') },
+    const item = searchResultToMediaItem(result)
+    navigate(getMediaPath(item), {
+      state: { item, from: `${location.pathname}${location.search}` },
     })
   }
 
@@ -373,8 +355,8 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   >
                     <Link
                       className="nav-search-result-link"
-                      to={`/details/${result.source}/${encodeURIComponent(result.externalId)}`}
-                      state={{ item: createMediaItem(result, 'Planned') }}
+                      to={getMediaPath(searchResultToMediaItem(result))}
+                      state={{ item: searchResultToMediaItem(result), from: `${location.pathname}${location.search}` }}
                       onFocus={() => setHighlightedIndex(index)}
                       onClick={closeSearch}
                     >
@@ -393,7 +375,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                       aria-label={existingItem ? `${result.title} is already in your watchlist` : `Add ${result.title} to watchlist`}
                       disabled={Boolean(existingItem)}
                       onFocus={() => setHighlightedIndex(index)}
-                      onClick={() => onCreate(createMediaItem(result, 'Planned'))}
+                      onClick={() => onCreate(searchResultToMediaItem(result))}
                     >
                       <span aria-hidden="true">{existingItem ? '✓' : '+'}</span>
                     </button>

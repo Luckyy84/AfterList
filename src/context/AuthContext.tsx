@@ -11,6 +11,8 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<Session | null>
   signUp: (email: string, password: string, displayName?: string) => Promise<Session | null>
   signInWithGoogle: () => Promise<void>
+  requestPasswordReset: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -88,6 +90,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         })
 
         if (error) throw error
+      },
+      async requestPasswordReset(email) {
+        if (!supabase) throw new Error('Supabase is not configured yet.')
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        })
+
+        if (error) throw error
+      },
+      async updatePassword(password) {
+        if (!supabase) throw new Error('Supabase is not configured yet.')
+
+        const { error } = await supabase.auth.updateUser({ password })
+        if (error) throw error
+
+        const { error: signOutError } = await supabase.auth.signOut()
+        if (signOutError) throw signOutError
+        setSession(null)
       },
       async signOut() {
         if (!supabase) return

@@ -1,6 +1,8 @@
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 const TMDB_ANIMATION_GENRE_ID = 16
+const MAX_SEARCH_QUERY_LENGTH = 120
+const TMDB_TIMEOUT_MS = 10_000
 
 type MediaType = 'Anime' | 'Movie' | 'TV Series'
 type SourceType = 'tmdb'
@@ -151,6 +153,10 @@ export async function GET(request: Request) {
       return jsonResponse({ results: [] })
     }
 
+    if (query.length > MAX_SEARCH_QUERY_LENGTH) {
+      return jsonResponse({ error: `Search query must be ${MAX_SEARCH_QUERY_LENGTH} characters or fewer.` }, { status: 400 })
+    }
+
     if (!apiKey && !accessToken) {
       return jsonResponse({ error: 'TMDB is not configured on the server.' }, { status: 503 })
     }
@@ -167,6 +173,7 @@ export async function GET(request: Request) {
     }
 
     const response = await fetch(`${TMDB_API_BASE_URL}/search/multi?${params.toString()}`, {
+      signal: AbortSignal.timeout(TMDB_TIMEOUT_MS),
       headers: {
         accept: 'application/json',
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

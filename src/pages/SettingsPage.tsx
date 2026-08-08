@@ -3,9 +3,14 @@ import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-do
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
 import { usePreferences, type Preferences } from '../context/PreferencesContext'
+import type { MediaItem } from '../types/media'
+import { createCustomList, deleteCustomList, fetchCustomLists, type CustomList } from '../services/mediaLibrary'
+import type { OwnProfile } from '../types/profile'
+import { claimUsername, saveOwnProfile, setCustomListPublic } from '../services/profiles'
 
 const sections = [
   { id: 'account', label: 'Account', description: 'Your sign-in and watchlist storage.' },
+  { id: 'profile', label: 'Profile', description: 'Choose what other people can see.' },
   { id: 'library', label: 'Library', description: 'Choose how your collection opens.' },
   { id: 'appearance', label: 'Appearance', description: 'Tune density and motion on this device.' },
   { id: 'integrations', label: 'Integrations', description: 'Manage access for Jellyfin and personal clients.' },
@@ -14,12 +19,17 @@ const sections = [
 
 type SectionId = (typeof sections)[number]['id']
 
+export function ProfileSettings({ userId, profile, onSaved }: { userId: string; profile: OwnProfile | null; onSaved?: () => void | Promise<void> }) {
+  const [username, setUsername] = useState(profile?.username ?? ''); const [displayName, setDisplayName] = useState(profile?.display_name ?? ''); const [bio, setBio] = useState(profile?.bio ?? ''); const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? ''); const [website, setWebsite] = useState(profile?.external_links?.[0]?.url ?? ''); const [isPublic, setIsPublic] = useState(profile?.is_public ?? false); const [showLibrary, setShowLibrary] = useState(profile?.show_library ?? false); const [showFavorites, setShowFavorites] = useState(profile?.show_favorites ?? false); const [showStats, setShowStats] = useState(profile?.show_stats ?? false); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false)
+  return <form className="settings-panel settings-preferences" onSubmit={(event) => { event.preventDefault(); setBusy(true); setMessage(''); void (async () => { const clean = username.trim().toLowerCase(); if (!/^[a-z0-9_]{3,30}$/.test(clean)) throw new Error('Username must be 3–30 letters, numbers, or underscores.'); if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) throw new Error('Avatar must use an http or https URL.'); if (website && !/^https?:\/\//i.test(website)) throw new Error('Website must use an http or https URL.'); if (clean !== profile?.username) await claimUsername(clean); await saveOwnProfile({ user_id: userId, username: clean, display_name: displayName.trim(), bio: bio.trim(), avatar_url: avatarUrl || null, external_links: website ? [{ label: 'Website', url: website }] : [], is_public: isPublic, show_library: showLibrary, show_favorites: showFavorites, show_stats: showStats }); await onSaved?.(); setMessage('Profile saved.') })().catch((cause) => setMessage(cause instanceof Error ? cause.message : 'Could not save profile.')).finally(() => setBusy(false)) }}><div className="settings-controls"><label><span>Username</span><input aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label><label><span>Display name</span><input aria-label="Display name" maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label><label><span>Bio</span><textarea aria-label="Bio" maxLength={500} value={bio} onChange={(event) => setBio(event.target.value)} /></label><label><span>Avatar URL</span><input aria-label="Avatar URL" type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} /></label><label><span>Website</span><input aria-label="Website" type="url" value={website} onChange={(event) => setWebsite(event.target.value)} /></label><label className="settings-toggle"><span>Public profile</span><input aria-label="Public profile" type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} /></label><label className="settings-toggle"><span>Show library</span><input aria-label="Show library" type="checkbox" checked={showLibrary} disabled={!isPublic} onChange={(event) => setShowLibrary(event.target.checked)} /></label><label className="settings-toggle"><span>Show favorites</span><input aria-label="Show favorites" type="checkbox" checked={showFavorites} disabled={!isPublic} onChange={(event) => setShowFavorites(event.target.checked)} /></label><label className="settings-toggle"><span>Show statistics</span><input aria-label="Show statistics" type="checkbox" checked={showStats} disabled={!isPublic} onChange={(event) => setShowStats(event.target.checked)} /></label></div><button className="settings-action" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save profile'}</button>{message && <p role="status">{message}</p>}</form>
+}
+
 function getDisplayName(email?: string, metadata?: Record<string, unknown>) {
   const name = metadata?.display_name || metadata?.full_name || metadata?.name || email?.split('@')[0]
   return typeof name === 'string' && name.trim() ? name.trim() : 'AfterList user'
 }
 
-export default function SettingsPage() {
+export default function SettingsPage({ items = [], ownProfile = null, onProfileSaved }: { items?: MediaItem[]; ownProfile?: OwnProfile | null; onProfileSaved?: () => void | Promise<void> }) {
   const { section } = useParams()
   const activeSection = sections.find((item) => item.id === section)
   const { isLoading, session, signOut, user } = useAuth()
@@ -31,6 +41,9 @@ export default function SettingsPage() {
   const [newToken, setNewToken] = useState('')
   const [tokenError, setTokenError] = useState('')
   const [isTokenBusy, setIsTokenBusy] = useState(false)
+  const [customLists, setCustomLists] = useState<CustomList[]>([])
+  const [listName, setListName] = useState('')
+  const [listError, setListError] = useState('')
   const displayName = getDisplayName(user?.email, user?.user_metadata)
 
   const setPreference = <Key extends keyof Preferences>(key: Key) => (event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
@@ -50,6 +63,11 @@ export default function SettingsPage() {
       })
       .catch(() => setTokenError('Could not load integration tokens.'))
   }, [section, session?.access_token])
+
+  useEffect(() => {
+    if (section !== 'library' || !user) return
+    fetchCustomLists(user.id).then(setCustomLists).catch(() => setListError('Could not load custom lists.'))
+  }, [section, user])
 
   if (!activeSection) return <Navigate to="/settings/account" replace />
 
@@ -127,12 +145,31 @@ export default function SettingsPage() {
         </div>
       </section>
     ),
+    profile: user ? <ProfileSettings key={ownProfile?.username ?? 'new'} userId={user.id} profile={ownProfile} onSaved={onProfileSaved} /> : <section className="settings-panel settings-empty-panel"><p>Sign in to create a public profile.</p><Link to="/login">Sign in</Link></section>,
     library: (
       <section className="settings-panel settings-preferences">
         <div className="settings-controls">
-          <label><span>Default status<small>Filter shown when Library opens</small></span><select aria-label="Default library status" value={preferences.libraryStatus} onChange={setPreference('libraryStatus')}><option>All</option><option>Planned</option><option>Watching</option><option>Watched</option><option>Dropped</option></select></label>
+          <label><span>Default status<small>Filter shown when Library opens</small></span><select aria-label="Default library status" value={preferences.libraryStatus} onChange={setPreference('libraryStatus')}><option>All</option><option>Planned</option><option>Watching</option><option>Paused</option><option>Watched</option><option>Dropped</option></select></label>
           <label><span>Default sorting<small>Order titles automatically</small></span><select aria-label="Default library sorting" value={preferences.librarySort} onChange={setPreference('librarySort')}><option value="recent">Recently updated</option><option value="title">Title</option><option value="rating">My rating</option></select></label>
           <label className="settings-toggle"><span>Favorites only<small>Open Library with favorites filtered</small></span><input aria-label="Favorites only by default" type="checkbox" checked={preferences.favoritesOnly} onChange={setPreference('favoritesOnly')} /></label>
+        </div>
+        <div className="settings-block settings-block-divided">
+          <h3>Custom lists</h3>
+          {user ? <><form onSubmit={(event) => { event.preventDefault(); setListError(''); void createCustomList(user.id, listName).then((list) => { setCustomLists((current) => [...current, list]); setListName('') }).catch((cause) => setListError(cause instanceof Error ? cause.message : 'Could not create list.')) }}><label><span>List name</span><input aria-label="Custom list name" maxLength={80} required value={listName} onChange={(event) => setListName(event.target.value)} /></label><button className="settings-action" type="submit">Create list</button></form><ul className="settings-token-list">{customLists.map((list) => <li key={list.id}><span><strong>{list.name}</strong><small>/{list.slug}</small></span><label><input aria-label={`Make ${list.name} public`} type="checkbox" checked={list.is_public} onChange={(event) => { const isPublic = event.target.checked; setCustomLists((current) => current.map((item) => item.id === list.id ? { ...item, is_public: isPublic } : item)); void setCustomListPublic(list.id, user.id, isPublic).catch(() => setListError('Could not update list privacy.')) }} />Public</label><button type="button" onClick={() => void deleteCustomList(list.id, user.id).then(() => setCustomLists((current) => current.filter((item) => item.id !== list.id))).catch(() => setListError('Could not delete list.'))}>Delete</button></li>)}</ul></> : <p>Sign in to create custom lists.</p>}
+          {listError && <p role="alert" className="settings-token-error">{listError}</p>}
+        </div>
+        <div className="settings-block settings-block-divided">
+          <h3>Export library</h3>
+          <p>Download a JSON backup including your tracking history and private notes.</p>
+          <button className="settings-action" type="button" onClick={() => {
+            const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), version: 1, items }, null, 2)], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `afterlist-export-${new Date().toISOString().slice(0, 10)}.json`
+            link.click()
+            URL.revokeObjectURL(url)
+          }}>Export JSON</button>
         </div>
       </section>
     ),

@@ -11,7 +11,7 @@ type LibraryPageProps = {
 }
 
 const typeOptions = ['All', 'Anime', 'Movie', 'TV Series'].map((value) => ({ value, label: value }))
-const statusOptions = ['All', 'Planned', 'Watching', 'Watched', 'Dropped'].map((value) => ({ value, label: value }))
+const statusOptions = ['All', 'Planned', 'Watching', 'Paused', 'Watched', 'Dropped'].map((value) => ({ value, label: value }))
 const sortOptions = [{ value: 'recent', label: 'Recently updated' }, { value: 'title', label: 'Title' }, { value: 'rating', label: 'My rating' }]
 
 export default function LibraryPage({ items, initialType }: LibraryPageProps) {

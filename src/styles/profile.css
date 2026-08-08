@@ -1,0 +1,18 @@
+.public-profile-page { display: grid; gap: 30px; }
+.public-profile-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); padding: 28px 0; }
+.public-profile-header img { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; }
+.public-profile-header h1,
+.public-profile-header p { margin: 0; }
+.public-profile-header div { display: grid; gap: 8px; }
+.public-profile-tabs,
+.public-list-links,
+.public-profile-links { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.public-profile-tabs a { border-bottom: 2px solid transparent; padding: 10px 2px; color: var(--text-secondary); }
+.public-profile-tabs a:focus-visible,
+.public-profile-tabs a:hover { border-color: var(--accent); color: var(--cream); }
+.public-profile-stats { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; }
+.public-profile-stats div { min-width: 120px; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.public-profile-stats dt { color: var(--muted); font-size: 11px; text-transform: capitalize; }
+.public-profile-stats dd { margin: 6px 0 0; color: var(--cream); font-size: 24px; font-weight: 900; }
+.public-profile-state { min-height: 50vh; }
+@media (max-width: 560px) { .public-profile-header { grid-template-columns: auto 1fr; } .public-profile-header .secondary-action { grid-column: 1 / -1; } .public-profile-tabs { overflow-x: auto; flex-wrap: nowrap; } }

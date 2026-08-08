@@ -1,0 +1,8 @@
+_repo/
+outputs/
+design/
+afterlist-main.zip
+Jellyfin.Plugin.AfterList/
+*.md
+**/*.test.ts
+**/*.test.tsx

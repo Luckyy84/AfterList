@@ -1,5 +1,6 @@
 import type { MediaDetails, MediaItem } from '../types/media'
 import type { SearchResultItem } from '../types/search'
+import { searchResultToMediaItem } from '../utils/media'
 
 type SearchTmdbOptions = {
   signal?: AbortSignal
@@ -11,8 +12,14 @@ type SearchProxyResponse = {
 }
 
 type DetailsProxyResponse = {
+  item?: SearchResultItem
   details?: MediaDetails
   error?: string
+}
+
+export type TmdbMediaResponse = {
+  item: MediaItem
+  details: MediaDetails
 }
 
 export type DiscoverFeed = 'trending' | 'popular' | 'recommendations'
@@ -93,4 +100,17 @@ export async function fetchTmdbDetails(item: Pick<MediaItem, 'externalId'>, opti
   }
 
   return data.details ?? null
+}
+
+export async function fetchTmdbMedia(externalId: string, options: SearchTmdbOptions = {}): Promise<TmdbMediaResponse> {
+  const response = await fetch(`/api/details?externalId=${encodeURIComponent(externalId)}`, {
+    signal: options.signal,
+    headers: { accept: 'application/json' },
+  })
+  const data = (await response.json()) as DetailsProxyResponse
+
+  if (!response.ok) throw new Error(data.error || `TMDB details failed with status ${response.status}`)
+  if (!data.item || !data.details) throw new Error('TMDB returned incomplete title details.')
+
+  return { item: searchResultToMediaItem(data.item), details: data.details }
 }

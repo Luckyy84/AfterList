@@ -21,11 +21,18 @@ export type WatchlistItemRow = {
   runtime_minutes: number | null
   personal_rating: number | null
   is_favorite: boolean
+  media_id: string | null
+  is_rewatching: boolean
+  rewatch_count: number
+  started_on: string | null
+  completed_on: string | null
+  private_notes: string
+  merged_into_id: string | null
   created_at: string
   updated_at: string
 }
 
-type WatchlistInsertPayload = Omit<WatchlistItemRow, 'id' | 'created_at' | 'updated_at'>
+type WatchlistInsertPayload = Omit<WatchlistItemRow, 'id' | 'created_at' | 'updated_at' | 'merged_into_id'>
 
 function assertSupabase() {
   if (!supabase) {
@@ -55,6 +62,12 @@ export function mapWatchlistRowToMediaItem(row: WatchlistItemRow): MediaItem {
     personalRating: row.personal_rating,
     isFavorite: row.is_favorite,
     updatedAt: row.updated_at,
+    canonicalId: row.media_id ?? undefined,
+    isRewatching: row.is_rewatching ?? false,
+    rewatchCount: row.rewatch_count ?? 0,
+    startedAt: row.started_on ?? null,
+    completedAt: row.completed_on ?? null,
+    privateNotes: row.private_notes ?? '',
   }
 }
 
@@ -81,21 +94,43 @@ function mapMediaItemToInsertPayload(item: MediaItem, userId: string): Watchlist
     runtime_minutes: item.runtimeMinutes ?? null,
     personal_rating: item.personalRating ?? null,
     is_favorite: item.isFavorite ?? false,
+    media_id: item.canonicalId ?? null,
+    is_rewatching: item.isRewatching ?? false,
+    rewatch_count: item.rewatchCount ?? 0,
+    started_on: item.startedAt ?? null,
+    completed_on: item.completedAt ?? null,
+    private_notes: item.privateNotes ?? '',
   }
 }
 
 export async function fetchCloudWatchlist(userId: string) {
   const client = assertSupabase()
-
-  const { data, error } = await client
+  const watchlistRequest = client
     .from('watchlist_items')
     .select('*')
     .eq('user_id', userId)
+    .is('merged_into_id', null)
     .order('created_at', { ascending: false })
+  const aliasesRequest = client
+    .from('user_media_alias_links')
+    .select('media_id,provider,external_id')
+    .eq('user_id', userId)
+  const [{ data, error }, aliasesResult] = await Promise.all([watchlistRequest, aliasesRequest])
 
   if (error) throw error
-
-  return (data as WatchlistItemRow[]).map(mapWatchlistRowToMediaItem)
+  const aliasesByMediaId = new Map<string, MediaItem['aliases']>()
+  if (!aliasesResult.error) {
+    for (const alias of aliasesResult.data as Array<{ media_id: string; provider: string; external_id: string }> ?? []) {
+      if (alias.provider !== 'tmdb' && alias.provider !== 'anilist') continue
+      const aliases = aliasesByMediaId.get(alias.media_id) ?? []
+      aliases.push({ source: alias.provider, externalId: alias.external_id })
+      aliasesByMediaId.set(alias.media_id, aliases)
+    }
+  }
+  return (data as WatchlistItemRow[]).map((row) => ({
+    ...mapWatchlistRowToMediaItem(row),
+    aliases: row.media_id ? aliasesByMediaId.get(row.media_id) : undefined,
+  }))
 }
 
 export async function createCloudWatchlistItem(item: MediaItem, userId: string) {
@@ -140,6 +175,11 @@ export async function updateCloudWatchlistItem(id: string, updates: MediaUpdate,
       runtime_minutes: updated.runtimeMinutes ?? null,
       personal_rating: updated.personalRating ?? null,
       is_favorite: updated.isFavorite ?? false,
+      is_rewatching: updated.isRewatching ?? false,
+      rewatch_count: updated.rewatchCount ?? 0,
+      started_on: updated.startedAt ?? null,
+      completed_on: updated.completedAt ?? null,
+      private_notes: updated.privateNotes ?? '',
       updated_at: updated.updatedAt,
     })
     .eq('id', id)

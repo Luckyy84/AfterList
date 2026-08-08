@@ -2,8 +2,9 @@ import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from 
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../services/tmdb'
 import type { MediaItem, MediaStatus, MediaType, MediaUpdate } from '../types/media'
 import { calculateStatistics, formatWatchTime, getWatchedEpisodeCount } from '../utils/statistics'
+import { fetchWatchlistEvents } from '../services/mediaLibrary'
 
-const statuses: MediaStatus[] = ['Planned', 'Watching', 'Watched', 'Dropped']
+const statuses: MediaStatus[] = ['Planned', 'Watching', 'Paused', 'Watched', 'Dropped']
 const mediaTypes: MediaType[] = ['Anime', 'Movie', 'TV Series']
 const typeLabels: Record<MediaType, string> = { Anime: 'Anime', Movie: 'Movies', 'TV Series': 'TV Series' }
 const BACKFILL_CONCURRENCY = 3
@@ -24,14 +25,20 @@ function MetricIcon({ name }: { name: 'heart' | 'star' | 'play' | 'anime' | 'mov
 type StatisticsPageProps = {
   items: MediaItem[]
   onUpdate: (id: string, updates: MediaUpdate) => void | Promise<void>
+  userId?: string
 }
 
-export default function StatisticsPage({ items, onUpdate }: StatisticsPageProps) {
+export default function StatisticsPage({ items, onUpdate, userId }: StatisticsPageProps) {
   const statistics = calculateStatistics(items)
   const attemptedIdsRef = useRef(new Set<string>())
   const itemIdentityKey = items.map((item) => item.id).join('|')
   const [runtimeState, setRuntimeState] = useState<'ready' | 'loading' | 'partial'>(() =>
     items.some((item) => !item.runtimeMinutes && canFetchTmdbDetails(item)) ? 'loading' : 'ready')
+  const [recentEventCount, setRecentEventCount] = useState<number | null>(null)
+  useEffect(() => {
+    if (!userId) return
+    fetchWatchlistEvents(userId).then((events) => setRecentEventCount(events.filter((event) => Date.now() - new Date(event.created_at).getTime() <= 30 * 86400000).length)).catch(() => setRecentEventCount(null))
+  }, [userId])
 
   const backfillRuntimes = useEffectEvent(async (signal: AbortSignal) => {
     const candidates = items.filter((item) =>
@@ -95,6 +102,7 @@ export default function StatisticsPage({ items, onUpdate }: StatisticsPageProps)
         <h1>Statistics</h1>
         <p>A truthful snapshot calculated from your current library.</p>
       </header>
+      <p className="stats-activity-summary">{recentEventCount == null ? 'Recent activity uses your current library on this device.' : `${recentEventCount} tracking updates in the last 30 days.`}</p>
 
       {!items.length ? (
         <div className="empty-state stats-empty">

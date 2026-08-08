@@ -5,6 +5,7 @@
   margin: 0 auto;
   color: var(--cream);
 }
+.stats-activity-summary { margin: -8px 0 20px; color: var(--muted); font-size: 12px; }
 
 .stats-intro {
   margin: 24px 0;

@@ -81,6 +81,7 @@ body::after,
 .pill.Watching, .card-status.Watching { background: #ef6a4c; }
 .pill.Watched, .card-status.Watched { background: #9fc4a2; }
 .pill.Planned, .card-status.Planned { background: #e2c778; }
+.pill.Paused, .card-status.Paused { color: #17120f; background: #b8a6d9; }
 
 .page-intro { max-width: 980px; margin-block: 84px 46px; }
 .page-intro h1 { font-size: clamp(56px, 9vw, 126px); line-height: 0.84; }

@@ -254,6 +254,32 @@
   text-align: center;
 }
 
+.auth-text-action {
+  display: block;
+  border: 0;
+  margin: 16px auto 0;
+  padding: 4px;
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.auth-text-action:hover:not(:disabled) {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.auth-text-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.auth-notice a {
+  color: #fff;
+  font-weight: 850;
+}
+
 .auth-switch a,
 .auth-legal a {
   color: #fff;

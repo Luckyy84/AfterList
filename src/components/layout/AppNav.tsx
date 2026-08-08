@@ -10,6 +10,7 @@ type AppNavProps = {
   items: MediaItem[]
   onCreate: (item: MediaItem) => void
   onOpenExisting: (id: string) => void
+  profileUsername?: string | null
 }
 
 const navItems = [
@@ -45,7 +46,7 @@ function Icon({ name }: { name: 'account' | 'settings' | 'menu' | 'close' | 'hom
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
 }
 
-export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps) {
+export default function AppNav({ items, onCreate, onOpenExisting, profileUsername }: AppNavProps) {
   const { isLoading, signOut, user } = useAuth()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isNavOpen, setIsNavOpen] = useState(false)
@@ -102,7 +103,6 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
   }, [isNavOpen])
 
   const closeNav = () => setIsNavOpen(false)
-  const openAccount = () => { setIsNavOpen(false); setIsAccountOpen(true) }
   const handleSignOut = async () => {
     setIsAccountOpen(false)
     setIsNavOpen(false)
@@ -137,6 +137,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
         {isAccountOpen && (
           <div className="nav-account-dropdown glass-panel" role="menu">
             <div className="nav-account-details"><span>{displayName}</span>{user?.email && <small>{user.email}</small>}</div>
+            {user && <Link role="menuitem" to={profileUsername ? `/user/${profileUsername}` : '/settings/profile'} onClick={() => setIsAccountOpen(false)}>Profile</Link>}
             {!user && <Link role="menuitem" to="/login" onClick={() => setIsAccountOpen(false)}>Sign in for cloud sync</Link>}
             <Link role="menuitem" to="/privacy" onClick={() => setIsAccountOpen(false)}>Privacy &amp; Cookies</Link>
             <Link role="menuitem" to="/terms" onClick={() => setIsAccountOpen(false)}>Terms of Use</Link>
@@ -154,7 +155,7 @@ export default function AppNav({ items, onCreate, onOpenExisting }: AppNavProps)
           ))}
           <span className="nav-mobile-divider" aria-hidden="true" />
           {user
-            ? <button type="button" onClick={openAccount}><Icon name="account" /><span>Profile</span><small>{displayName}<br />Signed in</small></button>
+            ? <Link to={profileUsername ? `/user/${profileUsername}` : '/settings/profile'} onClick={closeNav}><Icon name="account" /><span>Profile</span><small>{displayName}<br />Signed in</small></Link>
             : <Link to="/login" onClick={closeNav}><Icon name="account" /><span>Sign in</span></Link>}
           <Link to="/settings" onClick={closeNav}><Icon name="settings" /><span>Settings</span></Link>
           {user && <button type="button" onClick={() => void handleSignOut()}><Icon name="signout" /><span>Sign out</span></button>}

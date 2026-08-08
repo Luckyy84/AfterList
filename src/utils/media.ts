@@ -1,4 +1,5 @@
 import type { MediaItem, MediaSource, MediaType, MediaUpdate } from '../types/media'
+import type { SearchResultItem } from '../types/search'
 
 export function getStatusLabel(status: string) {
   return status.toUpperCase()
@@ -11,10 +12,12 @@ type MediaComparable = {
   externalId?: string
   year?: string
   progress?: string
+  canonicalId?: string
+  aliases?: MediaItem['aliases']
 }
 
 function normalizeText(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
 function getComparableYear(item: MediaComparable) {
@@ -25,6 +28,9 @@ function getComparableYear(item: MediaComparable) {
 }
 
 export function areSameMediaEntry(first: MediaComparable, second: MediaComparable) {
+  if (first.canonicalId && second.canonicalId && first.canonicalId === second.canonicalId) return true
+  const firstAliases = new Set((first.aliases ?? []).map((alias) => `${alias.source}:${alias.externalId}`))
+  if ((second.aliases ?? []).some((alias) => firstAliases.has(`${alias.source}:${alias.externalId}`))) return true
   if (first.source && first.externalId && second.source && second.externalId) {
     return first.source === second.source && first.externalId === second.externalId
   }
@@ -51,6 +57,16 @@ export function findMatchingMediaItem<TItem extends MediaComparable>(items: Medi
   return items.find((item) => areSameMediaEntry(item, targetItem))
 }
 
+export function findProbableMediaDuplicate(items: MediaItem[], targetItem: MediaComparable) {
+  return items.find((item) => {
+    if (areSameMediaEntry(item, targetItem)) return false
+    const itemYear = getComparableYear(item)
+    const targetYear = getComparableYear(targetItem)
+    return normalizeText(item.title) === normalizeText(targetItem.title)
+      && Boolean(itemYear && targetYear && itemYear === targetYear)
+  })
+}
+
 export function getMediaKey(item: Pick<MediaItem, 'source' | 'externalId'>) {
   return item.source && item.externalId ? `${item.source}:${item.externalId}` : ''
 }
@@ -65,6 +81,10 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
   updated.personalRating = updated.personalRating == null || !Number.isFinite(updated.personalRating)
     ? null
     : Math.min(10, Math.max(1, Math.round(updated.personalRating)))
+  updated.rewatchCount = Number.isFinite(updated.rewatchCount)
+    ? Math.max(0, Math.floor(updated.rewatchCount ?? 0))
+    : 0
+  updated.privateNotes = updated.privateNotes?.slice(0, 5000) ?? ''
 
   if (updated.type === 'Movie') {
     updated.currentEpisode = undefined
@@ -85,6 +105,24 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
   }
 
   return updated
+}
+
+export function searchResultToMediaItem(result: SearchResultItem, status: MediaItem['status'] = 'Planned'): MediaItem {
+  return {
+    id: `${result.source}-${result.externalId}`,
+    externalId: result.externalId,
+    source: result.source,
+    title: result.title,
+    type: result.type,
+    status,
+    poster: result.poster,
+    backdrop: result.backdrop,
+    progress: status === 'Watched' ? 'Watched' : result.year,
+    rating: result.rating,
+    description: result.description,
+    year: result.year,
+    aliases: [{ source: result.source, externalId: result.externalId }],
+  }
 }
 
 export function mergeWatchlists(

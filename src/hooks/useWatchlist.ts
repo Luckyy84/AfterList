@@ -43,6 +43,11 @@ function migrateItem(item: LegacyMediaItem & { source: MediaSource; externalId: 
     status: item.status === 'Completed' ? 'Watched' : item.status,
     currentEpisode: item.currentEpisode ?? 0,
     personalRating: item.personalRating ?? null,
+    isRewatching: item.isRewatching ?? false,
+    rewatchCount: item.rewatchCount ?? 0,
+    startedAt: item.startedAt ?? null,
+    completedAt: item.completedAt ?? null,
+    privateNotes: item.privateNotes ?? '',
     isFavorite: item.isFavorite ?? false,
     updatedAt: item.updatedAt ?? now,
   }

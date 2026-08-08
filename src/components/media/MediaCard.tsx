@@ -1,9 +1,10 @@
 import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { MediaItem } from '../../types/media'
 import { snappySpring } from '../../motion'
+import { getMediaPath } from '../../utils/mediaRoutes'
 
 type MediaCardProps = {
   item: MediaItem
@@ -15,6 +16,7 @@ type MediaCardProps = {
 
 function MediaCard({ item, isSaved = true, onAdd, animateLayout = true, variant = 'poster' }: MediaCardProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const imageSource = variant === 'landscape' ? item.backdrop || item.poster : item.poster
   const [failedSource, setFailedSource] = useState('')
   const progress = item.type !== 'Movie' && item.totalEpisodes
@@ -43,7 +45,7 @@ function MediaCard({ item, isSaved = true, onAdd, animateLayout = true, variant 
         className="media-card"
         type="button"
         aria-label={`Open details for ${item.title}`}
-        onClick={() => navigate(`/details/${item.source}/${encodeURIComponent(item.externalId ?? item.id)}`, { state: { item } })}
+        onClick={() => navigate(getMediaPath(item), { state: { item, from: `${location.pathname}${location.search}` } })}
       >
         <span className="media-poster-shell" data-title={item.title}>
           {imageSource && failedSource !== imageSource ? <img

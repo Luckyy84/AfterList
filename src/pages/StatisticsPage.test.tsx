@@ -50,7 +50,7 @@ describe('StatisticsPage', () => {
       episodesWatched: 7,
       watchMinutes: 372,
     })
-    expect(statistics.statusCounts).toEqual({ Planned: 0, Watching: 1, Watched: 2, Dropped: 0 })
+    expect(statistics.statusCounts).toEqual({ Planned: 0, Watching: 1, Paused: 0, Watched: 2, Dropped: 0 })
     expect(statistics.typeCounts).toEqual({ Anime: 1, Movie: 1, 'TV Series': 1 })
     expect(formatWatchTime(statistics.watchMinutes)).toBe('6h 12m')
   })

@@ -449,6 +449,7 @@ a { color: inherit; }
 .hero-meta .pill.Watched { color: var(--watched-text); background: var(--watched-bg); }
 .hero-meta .pill.Planned { color: var(--planned-text); background: var(--planned-bg); }
 .hero-meta .pill.Dropped { color: var(--dropped-text); background: var(--dropped-bg); }
+.hero-meta .pill.Paused { color: #17120f; background: #b8a6d9; }
 
 .hero-actions { max-width: 560px; display: flex; gap: 10px; margin-top: 10px; }
 
@@ -647,6 +648,7 @@ a { color: inherit; }
 .card-status.Watched { color: var(--watched-text); background: var(--watched-bg); }
 .card-status.Planned { color: var(--planned-text); background: var(--planned-bg); }
 .card-status.Dropped { color: var(--dropped-text); background: var(--dropped-bg); }
+.card-status.Paused { color: #17120f; background: #b8a6d9; }
 .media-progress { height: 4px !important; background: linear-gradient(90deg, var(--accent) var(--media-progress), rgba(245, 242, 236, .22) var(--media-progress)) !important; }
 
 .media-card-wrapper.is-landscape {
@@ -966,3 +968,11 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+.duplicate-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 20px; background: rgba(5, 4, 3, .78); backdrop-filter: blur(8px); }
+.duplicate-dialog { width: min(520px, 100%); display: grid; gap: 14px; border: 1px solid var(--line-strong); border-radius: 16px; padding: 26px; }
+.duplicate-dialog h2,
+.duplicate-dialog p { margin: 0; }
+.duplicate-dialog > p:not(.eyebrow) { color: var(--text-secondary); line-height: 1.6; }
+.duplicate-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.duplicate-cancel { min-height: 42px; border: 0; padding: 0 10px; color: var(--muted); background: transparent; }

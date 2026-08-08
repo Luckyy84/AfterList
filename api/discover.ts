@@ -1,6 +1,7 @@
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 const TMDB_ANIMATION_GENRE_ID = 16
+const TMDB_TIMEOUT_MS = 10_000
 
 type RequestedMediaType = 'all' | 'movie' | 'tv'
 type TmdbMediaType = Exclude<RequestedMediaType, 'all'>
@@ -103,6 +104,7 @@ async function fetchTmdb(path: string, page: number, accessToken?: string, apiKe
   if (!accessToken && apiKey) params.set('api_key', apiKey)
 
   const response = await fetch(`${TMDB_API_BASE_URL}${path}?${params}`, {
+    signal: AbortSignal.timeout(TMDB_TIMEOUT_MS),
     headers: {
       accept: 'application/json',
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

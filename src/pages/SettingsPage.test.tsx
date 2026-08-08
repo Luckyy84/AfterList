@@ -12,6 +12,8 @@ vi.mock('../context/AuthContext', () => ({
 afterEach(() => {
   cleanup()
   localStorage.clear()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('SettingsPage', () => {
@@ -39,5 +41,17 @@ describe('SettingsPage', () => {
       cardDensity: 'compact',
       favoritesOnly: true,
     })
+  })
+
+  it('exports a complete JSON library backup', () => {
+    const createObjectURL = vi.fn(() => 'blob:export')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    render(<MemoryRouter initialEntries={['/settings/library']}><PreferencesProvider><Routes><Route path="/settings/:section" element={<SettingsPage items={[{ id: '1', title: 'Private', type: 'Movie', status: 'Paused', poster: '', backdrop: '', progress: '', rating: '', description: '', privateNotes: 'owner only' }]} />} /></Routes></PreferencesProvider></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }))
+    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob))
+    expect(click).toHaveBeenCalled()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:export')
   })
 })
