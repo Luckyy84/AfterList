@@ -7,6 +7,7 @@ import { softSpring } from '../motion'
 import { getMediaPath, mediaIdentityMatches, parsePositiveMediaId, type MediaRouteKind } from '../utils/mediaRoutes'
 import CustomListMemberships from '../components/media/CustomListMemberships'
 import WatchlistHistory from '../components/media/WatchlistHistory'
+import DateField from '../components/ui/DateField'
 
 const statuses: MediaStatus[] = ['Planned', 'Watching', 'Paused', 'Watched', 'Dropped']
 
@@ -218,13 +219,14 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
               </div>
               <fieldset className="status-choice-group">
                 <legend>Watch status</legend>
-                {statuses.map((status) => <button type="button" key={status} className={savedItem.status === status ? 'is-active' : ''} aria-pressed={savedItem.status === status} onClick={() => update({ status })}>{status}</button>)}
+                {statuses.map((status) => <button type="button" key={status} data-status={status} className={savedItem.status === status ? 'is-active' : ''} aria-pressed={savedItem.status === status} onClick={() => update({ status })}>{status}</button>)}
               </fieldset>
+              <p className="tracking-date-hint">Started and completed dates are added automatically when you begin or finish a title. You can still edit them.</p>
               <div className="tracking-history-grid">
-                <label><span className="details-section-label">Started</span><input type="date" aria-label="Started date" max={savedItem.completedAt ?? undefined} value={savedItem.startedAt ?? ''} onChange={(event) => update({ startedAt: event.currentTarget.value || null })} /></label>
-                <label><span className="details-section-label">Completed</span><input type="date" aria-label="Completed date" min={savedItem.startedAt ?? undefined} value={savedItem.completedAt ?? ''} onChange={(event) => update({ completedAt: event.currentTarget.value || null })} /></label>
+                <DateField label="Started" max={savedItem.completedAt ?? undefined} value={savedItem.startedAt} onChange={(startedAt) => update({ startedAt })} />
+                <DateField label="Completed" min={savedItem.startedAt ?? undefined} value={savedItem.completedAt} onChange={(completedAt) => update({ completedAt })} />
                 <label><span className="details-section-label">Rewatch count</span><input type="number" aria-label="Rewatch count" min="0" max="999" value={savedItem.rewatchCount ?? 0} onChange={(event) => { if (!Number.isNaN(event.currentTarget.valueAsNumber)) update({ rewatchCount: event.currentTarget.valueAsNumber }) }} /></label>
-                <button type="button" className={`rewatch-toggle${savedItem.isRewatching ? ' is-active' : ''}`} aria-pressed={Boolean(savedItem.isRewatching)} onClick={() => update({ isRewatching: !savedItem.isRewatching })}>{savedItem.isRewatching ? 'Rewatching' : 'Mark as rewatching'}</button>
+                <button type="button" className={`rewatch-toggle${savedItem.isRewatching ? ' is-active' : ''}`} aria-pressed={Boolean(savedItem.isRewatching)} onClick={() => update({ isRewatching: !savedItem.isRewatching })}><span aria-hidden="true">↻</span><strong>{savedItem.isRewatching ? 'Rewatching' : 'Start a rewatch'}</strong></button>
               </div>
               {record.type !== 'Movie' && <div className="tracking-row">
                 <div><span className="details-section-label">Progress</span><strong>{totalEpisodes ? `Episode ${currentEpisode} of ${totalEpisodes}` : `Episode ${currentEpisode}`}</strong></div>

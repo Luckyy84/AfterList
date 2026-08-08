@@ -71,6 +71,23 @@ export function getMediaKey(item: Pick<MediaItem, 'source' | 'externalId'>) {
   return item.source && item.externalId ? `${item.source}:${item.externalId}` : ''
 }
 
+function localDateValue(timestamp: string) {
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) return null
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function applyAutomaticTrackingDates(updated: MediaItem, now: string) {
+  const today = localDateValue(now)
+  if (!today) return
+
+  if (updated.status === 'Watching' && !updated.startedAt) updated.startedAt = today
+  if (updated.status === 'Watched' && !updated.completedAt) updated.completedAt = today
+}
+
 export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = new Date().toISOString()): MediaItem {
   const updated = { ...item, ...updates, updatedAt: now }
 
@@ -89,6 +106,7 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
   if (updated.type === 'Movie') {
     updated.currentEpisode = undefined
     updated.totalEpisodes = undefined
+    applyAutomaticTrackingDates(updated, now)
     return updated
   }
 
@@ -103,6 +121,8 @@ export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = ne
     if (updated.currentEpisode === updated.totalEpisodes) updated.status = 'Watched'
     else if (updates.currentEpisode !== undefined && item.status === 'Watched') updated.status = 'Watching'
   }
+
+  applyAutomaticTrackingDates(updated, now)
 
   return updated
 }

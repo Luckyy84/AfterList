@@ -25,6 +25,24 @@ describe('watchlist tracking', () => {
       .toMatchObject({ rewatchCount: 0, privateNotes: 'x'.repeat(5000) })
   })
 
+  it('adds lifecycle dates when tracking starts or completes without overwriting existing dates', () => {
+    const planned = { ...item, status: 'Planned' as const, currentEpisode: 0, startedAt: null, completedAt: null }
+    expect(applyMediaUpdate(planned, { status: 'Watching' }, '2026-08-08T21:00:00.000Z'))
+      .toMatchObject({ status: 'Watching', startedAt: '2026-08-08', completedAt: null })
+    expect(applyMediaUpdate(planned, { status: 'Watched' }, '2026-08-08T21:00:00.000Z'))
+      .toMatchObject({ status: 'Watched', completedAt: '2026-08-08' })
+
+    const dated = { ...planned, startedAt: '2026-07-01', completedAt: '2026-07-31' }
+    expect(applyMediaUpdate(dated, { status: 'Watching' }, '2026-08-08T21:00:00.000Z'))
+      .toMatchObject({ startedAt: '2026-07-01', completedAt: '2026-07-31' })
+  })
+
+  it('adds completion dates when episode progress completes a title', () => {
+    const watching = { ...item, status: 'Watching' as const, currentEpisode: 9, completedAt: null }
+    expect(applyMediaUpdate(watching, { currentEpisode: 10 }, '2026-08-08T21:00:00.000Z'))
+      .toMatchObject({ status: 'Watched', completedAt: '2026-08-08' })
+  })
+
   it('flags only cross-identity title and year matches as probable', () => {
     const probable = { ...item, id: 'anime', source: 'anilist' as const, externalId: '99', year: '2026', progress: '2026' }
     const existing = { ...item, title: 'Show!', year: '2026', progress: '2026' }
