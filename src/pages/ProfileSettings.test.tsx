@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { claimUsername, saveOwnProfile } from '../services/profiles'
 import { ProfileSettings } from './SettingsPage'
 
-vi.mock('motion/react', () => ({ motion: { section: 'section' } }))
+vi.mock('motion/react', async () => import('../test/motionMock'))
 vi.mock('../services/profiles', () => ({ claimUsername: vi.fn(), saveOwnProfile: vi.fn(), setCustomListPublic: vi.fn() }))
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 describe('ProfileSettings', () => {
@@ -12,7 +12,9 @@ describe('ProfileSettings', () => {
     render(<ProfileSettings userId="u1" profile={null} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Username' }), 'no spaces')
     await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
-    expect(await screen.findByText(/Username must be/)).not.toBeNull()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Username must be/)
+    expect(screen.getByRole('textbox', { name: 'Username' }).getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByRole('textbox', { name: 'Username' })).toBe(document.activeElement)
     expect(claimUsername).not.toHaveBeenCalled()
   })
   it('surfaces duplicate or reserved username failures', async () => {
@@ -33,6 +35,6 @@ describe('ProfileSettings', () => {
     await userEvent.click(libraryToggle)
     await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
     expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ is_public: true, show_library: true }))
-    expect(await screen.findByText('Profile saved.')).not.toBeNull()
+    expect((await screen.findByRole('status')).textContent).toBe('Profile saved.')
   })
 })

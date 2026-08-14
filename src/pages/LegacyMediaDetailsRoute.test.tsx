@@ -22,14 +22,14 @@ afterEach(() => {
 
 describe('LegacyMediaDetailsRoute', () => {
   it('redirects a validated state seed without refetching', async () => {
-    render(<MemoryRouter initialEntries={[{ pathname: '/details/tmdb/movie%3A550', state: { item } }]}><Routes><Route path="/details/:source/:externalId" element={<LegacyMediaDetailsRoute />} /></Routes><Path /></MemoryRouter>)
+    render(<MemoryRouter initialEntries={[{ pathname: '/details/tmdb/movie%3A550', state: { item } }]}><Routes><Route path="/details/:source/:externalId" element={<LegacyMediaDetailsRoute />} /><Route path="/movie/:id/:slug" element={null} /></Routes><Path /></MemoryRouter>)
     expect(await screen.findByText('/movie/550/fight-club')).not.toBeNull()
     expect(fetchTmdbMedia).not.toHaveBeenCalled()
   })
 
   it('resolves a directly loaded legacy link before redirecting', async () => {
     vi.mocked(fetchTmdbMedia).mockResolvedValue({ item, details: { genres: [], countries: [] } })
-    render(<MemoryRouter initialEntries={['/details/tmdb/movie%3A550']}><Routes><Route path="/details/:source/:externalId" element={<LegacyMediaDetailsRoute />} /></Routes><Path /></MemoryRouter>)
+    render(<MemoryRouter initialEntries={['/details/tmdb/movie%3A550']}><Routes><Route path="/details/:source/:externalId" element={<LegacyMediaDetailsRoute />} /><Route path="/movie/:id/:slug" element={null} /></Routes><Path /></MemoryRouter>)
     expect(screen.getByText('Updating this saved link.')).not.toBeNull()
     expect(await screen.findByText('/movie/550/fight-club')).not.toBeNull()
     expect(fetchTmdbMedia).toHaveBeenCalledWith('movie:550', expect.objectContaining({ signal: expect.any(AbortSignal) }))

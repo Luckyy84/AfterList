@@ -246,6 +246,23 @@
   line-height: 1.5;
 }
 
+.auth-notice.is-error {
+  border-color: rgba(255, 132, 112, .42);
+  color: #ffd2cb;
+  background: rgba(118, 25, 13, .22);
+}
+
+.auth-notice.is-success {
+  border-color: rgba(119, 205, 139, .34);
+  color: #d7f7dc;
+  background: rgba(26, 90, 42, .18);
+}
+
+.auth-field input[aria-invalid='true'] {
+  border-color: #ff8b78;
+  box-shadow: 0 0 0 3px rgba(255, 96, 72, .12);
+}
+
 .auth-switch {
   margin: 20px 0 0;
   color: rgba(255, 255, 255, 0.56);

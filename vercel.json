@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
   "crons": [
     { "path": "/api/cron/refresh-watchlist", "schedule": "0 0 * * *" },
     { "path": "/api/cron/refresh-watchlist", "schedule": "0 1 * * *" }
@@ -16,9 +17,28 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/((?!api/.*).*)",
-      "destination": "/"
-    }
+    { "source": "/discover", "destination": "/index.html" },
+    { "source": "/library", "destination": "/index.html" },
+    { "source": "/statistics", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
+    { "source": "/settings/:section", "destination": "/index.html" },
+    { "source": "/movie/:id", "destination": "/index.html" },
+    { "source": "/movie/:id/:slug", "destination": "/index.html" },
+    { "source": "/tv/:id", "destination": "/index.html" },
+    { "source": "/tv/:id/:slug", "destination": "/index.html" },
+    { "source": "/anime", "destination": "/index.html" },
+    { "source": "/anime/:id", "destination": "/index.html" },
+    { "source": "/anime/:id/:slug", "destination": "/index.html" },
+    { "source": "/movies", "destination": "/index.html" },
+    { "source": "/series", "destination": "/index.html" },
+    { "source": "/details/:source/:externalId", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/index.html" },
+    { "source": "/reset-password", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" },
+    { "source": "/user/:username", "destination": "/index.html" },
+    { "source": "/user/:username/library", "destination": "/index.html" },
+    { "source": "/user/:username/lists/:listSlug", "destination": "/index.html" }
   ]
 }

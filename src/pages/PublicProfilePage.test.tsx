@@ -1,11 +1,11 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchPublicProfile } from '../services/profiles'
 import PublicProfilePage from './PublicProfilePage'
 
 vi.mock('../services/profiles', () => ({ fetchPublicProfile: vi.fn(), fetchPublicLibrary: vi.fn(), fetchPublicList: vi.fn() }))
-vi.mock('motion/react', () => ({ motion: { article: 'article' } }))
+vi.mock('motion/react', async () => import('../test/motionMock'))
 function Path() { return <output>{useLocation().pathname}</output> }
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 describe('PublicProfilePage', () => {
@@ -15,6 +15,8 @@ describe('PublicProfilePage', () => {
     expect(await screen.findByRole('heading', { name: 'Lucky' })).not.toBeNull()
     expect(screen.getByText('4')).not.toBeNull()
     expect(screen.queryByText(/email|private|token/i)).toBeNull()
+    await waitFor(() => expect(document.title).toBe('Lucky (@lucky) | AfterList'))
+    expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('index, follow')
   })
   it('replaces old username routes with the canonical username', async () => {
     vi.mocked(fetchPublicProfile).mockResolvedValue({ username: 'lucky', displayName: 'Lucky', redirectUsername: 'lucky' })
@@ -28,6 +30,7 @@ describe('PublicProfilePage', () => {
     expect(screen.getByText('This profile is private or does not exist.')).not.toBeNull()
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Browse AfterList' }).getAttribute('href')).toBe('/discover')
+    await waitFor(() => expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('noindex, nofollow'))
   })
   it('keeps retry available for temporary failures', async () => {
     const error = Object.assign(new Error('Temporarily unavailable.'), { status: 503 }); vi.mocked(fetchPublicProfile).mockRejectedValue(error)

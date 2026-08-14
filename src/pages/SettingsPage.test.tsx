@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import SettingsPage from './SettingsPage'
 import { PreferencesProvider } from '../context/PreferencesContext'
 
-vi.mock('motion/react', () => ({ motion: { section: 'section' } }))
+vi.mock('motion/react', async () => import('../test/motionMock'))
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({ isLoading: false, signOut: vi.fn(), user: null }),
 }))

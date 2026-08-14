@@ -78,6 +78,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
   const [isLoadingTrending, setIsLoadingTrending] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [searchAttempt, setSearchAttempt] = useState(0)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const searchShellRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -139,7 +140,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
       window.clearTimeout(searchTimer)
       controller.abort()
     }
-  }, [isExpanded, normalizedQuery, query])
+  }, [isExpanded, normalizedQuery, query, searchAttempt])
 
   useEffect(() => {
     if (!isExpanded) return
@@ -245,6 +246,8 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                 ref={inputRef}
                 value={query}
                 aria-label="Search movies, TV series, and anime"
+                aria-invalid={Boolean(searchError)}
+                aria-describedby={searchError ? 'nav-search-error' : undefined}
                 placeholder="Search titles..."
                 onFocus={() => setHighlightedIndex(results.length > 0 ? 0 : -1)}
                 onKeyDown={handleInputKeyDown}
@@ -272,6 +275,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
               {!normalizedQuery && isLoadingTrending && (
                 <motion.div
                   className="nav-search-empty"
+                  role="status"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={panelTransition}
@@ -314,19 +318,23 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
 
               {normalizedQuery && searchError && (
                 <motion.div
+                  id="nav-search-error"
                   className="nav-search-empty"
+                  role="alert"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={panelTransition}
                 >
                   <strong>TMDB unavailable</strong>
                   <span>{searchError}</span>
+                  <button type="button" onClick={() => setSearchAttempt((attempt) => attempt + 1)}>Try again</button>
                 </motion.div>
               )}
 
               {normalizedQuery && !isSearching && !searchError && results.length === 0 && (
                 <motion.div
                   className="nav-search-empty"
+                  role="status"
                   initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={panelTransition}

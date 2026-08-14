@@ -8,6 +8,8 @@ import { getMediaPath, mediaIdentityMatches, parsePositiveMediaId, type MediaRou
 import CustomListMemberships from '../components/media/CustomListMemberships'
 import WatchlistHistory from '../components/media/WatchlistHistory'
 import DateField from '../components/ui/DateField'
+import PageMetadata from '../components/seo/PageMetadata'
+import { SITE_ORIGIN, type JsonLdValue } from '../components/seo/metadata'
 
 const statuses: MediaStatus[] = ['Planned', 'Watching', 'Paused', 'Watched', 'Dropped']
 
@@ -29,34 +31,6 @@ function safeBackTarget(state: DetailsLocationState | null) {
   return from?.startsWith('/') && !from.startsWith('//') && !/^\/(?:movie|tv|anime)\//.test(from)
     ? from
     : '/discover'
-}
-
-function useMediaMetadata(item: MediaItem | null) {
-  useEffect(() => {
-    if (!item) return undefined
-    const previousTitle = document.title
-    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
-    const previousDescription = description?.content
-    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
-    const createdCanonical = !canonical
-    const previousCanonical = canonical?.href
-
-    document.title = `${item.title} | AfterList`
-    if (description) description.content = item.description
-    if (!canonical) {
-      canonical = document.createElement('link')
-      canonical.rel = 'canonical'
-      document.head.append(canonical)
-    }
-    canonical.href = new URL(getMediaPath(item), window.location.origin).href
-
-    return () => {
-      document.title = previousTitle
-      if (description && previousDescription !== undefined) description.content = previousDescription
-      if (createdCanonical) canonical?.remove()
-      else if (canonical && previousCanonical) canonical.href = previousCanonical
-    }
-  }, [item])
 }
 
 export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove, onUpdate }: DetailsPageProps) {
@@ -117,31 +91,35 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
     }
   }, [error, externalId, id, record, routeKind])
 
-  useMediaMetadata(record)
-
   const extraMeta = useMemo(() => details
     ? [details.runtimeLabel, [details.seasonsLabel, details.episodesLabel].filter(Boolean).join(' / ')].filter(Boolean)
     : [], [details])
 
   if (!record) {
     if (!error) return (
-      <section className="details-page details-page-loading" aria-busy="true" aria-label="Loading title details">
-        <div className="details-page-layout">
-          <span className="details-skeleton-poster" />
-          <div className="details-skeleton-copy" role="status"><span>Loading title details…</span><i /><i /><i /><i /></div>
-        </div>
-      </section>
+      <>
+        <PageMetadata config={{ title: 'Loading title | AfterList', description: 'AfterList is loading this title.', canonicalPath: location.pathname, index: false }} />
+        <section className="details-page details-page-loading" aria-busy="true" aria-label="Loading title details">
+          <div className="details-page-layout">
+            <span className="details-skeleton-poster" />
+            <div className="details-skeleton-copy" role="status"><span>Loading title details…</span><i /><i /><i /><i /></div>
+          </div>
+        </section>
+      </>
     )
 
     return (
-      <section className="empty-state details-not-found" role="alert">
-        <h1 tabIndex={-1} ref={headingRef}>Title unavailable</h1>
-        <p>{error}</p>
-        <div className="details-state-actions">
-          {externalId && <button className="primary-action" type="button" onClick={() => { setLoadError(null); setRequestVersion((version) => version + 1) }}>Try again</button>}
-          <Link className="secondary-action" to={backTarget}>Back to browsing</Link>
-        </div>
-      </section>
+      <>
+        <PageMetadata config={{ title: 'Page not found | AfterList', description: 'This title is unavailable on AfterList.', canonicalPath: location.pathname, index: false }} />
+        <section className="empty-state details-not-found" role="alert">
+          <h1 tabIndex={-1} ref={headingRef}>Title unavailable</h1>
+          <p>{error}</p>
+          <div className="details-state-actions">
+            {externalId && <button className="primary-action" type="button" onClick={() => { setLoadError(null); setRequestVersion((version) => version + 1) }}>Try again</button>}
+            <Link className="secondary-action" to={backTarget}>Back to browsing</Link>
+          </div>
+        </section>
+      </>
     )
   }
 
@@ -154,9 +132,21 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
     record.rating !== 'N/A' ? `${record.source === 'anilist' ? 'AniList' : 'TMDB'} ${record.rating}` : null,
     ...extraMeta,
   ].filter(Boolean)
-  const canonicalUrl = new URL(getMediaPath(record), window.location.origin).href
+  const canonicalPath = getMediaPath(record)
+  const canonicalUrl = new URL(canonicalPath, SITE_ORIGIN).href
   const backdrop = details?.backdrop || record.backdrop || record.poster
   const poster = details?.poster || record.poster
+  const metadataYear = record.year || record.progress
+  const titleWithYear = `${record.title}${metadataYear ? ` (${metadataYear})` : ''} | AfterList`
+  const mediaJsonLd: JsonLdValue | undefined = currentLoad ? {
+    '@context': 'https://schema.org',
+    '@type': record.type === 'Movie' ? 'Movie' : 'TVSeries',
+    name: record.title,
+    description: record.description,
+    dateCreated: metadataYear || null,
+    image: poster || null,
+    url: canonicalUrl,
+  } : undefined
 
   const copyLink = async () => {
     try {
@@ -169,6 +159,14 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
   }
 
   return (
+    <>
+    <PageMetadata config={{
+      title: titleWithYear,
+      description: record.description || `View ${record.title} details and track it with AfterList.`,
+      canonicalPath,
+      index: Boolean(currentLoad),
+      jsonLd: mediaJsonLd,
+    }} />
     <motion.article className="details-page" initial={shouldReduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={shouldReduceMotion ? { duration: 0.01 } : softSpring}>
       {backdrop && !failedArtwork.has(backdrop) && <img className="details-page-backdrop" src={backdrop} alt="" aria-hidden="true" onError={() => setFailedArtwork((failed) => new Set(failed).add(backdrop))} />}
       <Link className="details-back" to={backTarget}>← Back</Link>
@@ -264,5 +262,6 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
         </motion.div>
       </div>
     </motion.article>
+    </>
   )
 }

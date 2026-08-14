@@ -6,10 +6,7 @@ import type { MediaDetails, MediaItem } from '../types/media'
 import { fetchMedia } from '../services/media'
 import MediaDetailsPage from './MediaDetailsPage'
 
-vi.mock('motion/react', () => ({
-  motion: { article: 'article', img: 'img', div: 'div' },
-  useReducedMotion: () => true,
-}))
+vi.mock('motion/react', async () => import('../test/motionMock'))
 vi.mock('../services/media', () => ({ fetchMedia: vi.fn() }))
 vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ user: null }) }))
 
@@ -83,6 +80,10 @@ describe('MediaDetailsPage', () => {
     await screen.findByRole('heading', { name: 'Test Show' })
     await waitFor(() => expect(screen.getByText('/tv/1/test-show')).not.toBeNull())
     expect(screen.getByRole('button', { name: 'Add to watchlist' })).not.toBeNull()
+    await waitFor(() => expect(document.title).toBe('Test Show (2024) | AfterList'))
+    expect(document.querySelector<HTMLMetaElement>('meta[name="robots"]')?.content).toBe('index, follow')
+    expect(document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href).toBe('https://afterlist.luckako.uk/tv/1/test-show')
+    expect(document.querySelector('#afterlist-page-jsonld')?.textContent).toContain('TVSeries')
   })
 
   it('ignores navigation state for a different identity', async () => {

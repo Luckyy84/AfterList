@@ -112,15 +112,15 @@ test('old usernames replace the route while preserving the public subpage', asyn
 test('private and missing profiles render the same signed-out unavailable state', async ({ page }) => {
   await page.goto('/user/private_user')
   await expect(page.getByRole('heading', { level: 1, name: 'Profile unavailable' })).toBeVisible()
-  await expect(page.getByText('Profile not found or private.')).toBeVisible()
+  await expect(page.getByText('This profile is private or does not exist.')).toBeVisible()
 
   await page.goto('/user/missing_user')
   await expect(page.getByRole('heading', { level: 1, name: 'Profile unavailable' })).toBeVisible()
-  await expect(page.getByText('Profile not found or private.')).toBeVisible()
+  await expect(page.getByText('This profile is private or does not exist.')).toBeVisible()
 
   await page.goto('/user/lucky/lists/private-drafts')
   await expect(page.getByRole('heading', { level: 1, name: 'Profile unavailable' })).toBeVisible()
-  await expect(page.getByText('Profile not found or private.')).toBeVisible()
+  await expect(page.getByText('This profile is private or does not exist.')).toBeVisible()
 })
 
 test('public profiles have a usable keyboard path', async ({ page }) => {
