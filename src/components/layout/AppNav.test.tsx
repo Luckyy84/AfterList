@@ -6,7 +6,7 @@ import AppNav from './AppNav'
 
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ isLoading: false, signOut: vi.fn(), user: { email: 'lucky@example.com', user_metadata: { display_name: 'Lucky' } } }) }))
 vi.mock('../search/SearchAddModal', () => ({ default: () => null }))
-vi.mock('motion/react', () => ({ motion: { span: 'span' } }))
+vi.mock('motion/react', async () => import('../../test/motionMock'))
 afterEach(cleanup)
 
 describe('AppNav profile destination', () => {

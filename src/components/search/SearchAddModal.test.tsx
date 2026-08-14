@@ -5,12 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import SearchAddModal from './SearchAddModal'
 import { discoverMedia, searchMedia } from '../../services/media'
 
-vi.mock('motion/react', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-  LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
-  motion: { button: 'button', div: 'div' },
-  useReducedMotion: () => true,
-}))
+vi.mock('motion/react', async () => import('../../test/motionMock'))
 vi.mock('../../hooks/useMediaQuery', () => ({ useIsMobile: () => false }))
 vi.mock('../../services/media', () => ({ discoverMedia: vi.fn(), searchMedia: vi.fn() }))
 
@@ -22,6 +17,7 @@ const result = {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  vi.restoreAllMocks()
 })
 
 describe('SearchAddModal results', () => {
@@ -81,5 +77,20 @@ describe('SearchAddModal results', () => {
     await userEvent.click(screen.getByRole('link', { name: /Obsession/ }))
     expect(screen.getByText('/movie/1/obsession')).not.toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('announces search failures and retries the same query', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    vi.mocked(discoverMedia).mockResolvedValue([])
+    vi.mocked(searchMedia).mockRejectedValueOnce(new Error('Search is unavailable.')).mockResolvedValueOnce([result])
+    render(<MemoryRouter><SearchAddModal items={[]} onCreate={vi.fn()} onOpenExisting={vi.fn()} /></MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    const input = screen.getByRole('textbox', { name: 'Search movies, TV series, and anime' })
+    await userEvent.type(input, 'Obsession')
+    expect((await screen.findByRole('alert')).textContent).toContain('Search is unavailable.')
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('link', { name: /Obsession/ })).not.toBeNull()
+    expect(searchMedia).toHaveBeenCalledTimes(2)
   })
 })

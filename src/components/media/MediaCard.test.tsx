@@ -6,10 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MediaItem } from '../../types/media'
 import MediaCard from './MediaCard'
 
-vi.mock('motion/react', () => ({
-  motion: { article: ({ children, className }: { children: React.ReactNode; className?: string }) => <article className={className}>{children}</article> },
-  useReducedMotion: () => true,
-}))
+vi.mock('motion/react', async () => import('../../test/motionMock'))
 
 const item: MediaItem = {
   id: 'tmdb-tv:1', externalId: 'tv:1', source: 'tmdb', title: 'House of the Dragon', type: 'TV Series',

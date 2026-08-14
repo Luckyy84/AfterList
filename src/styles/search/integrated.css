@@ -104,6 +104,21 @@
   color: rgba(255, 255, 255, 0.52);
 }
 
+.nav-search-empty button {
+  min-height: 38px;
+  justify-self: center;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 9px;
+  margin-top: 6px;
+  padding: 8px 14px;
+  color: #fff;
+  background: rgba(255, 255, 255, .06);
+  font: inherit;
+  font-weight: 750;
+}
+
+.nav-search-bar input[aria-invalid='true'] { border-color: rgba(255, 139, 120, .72); }
+
 .nav-search-result,
 .nav-search-result.is-top-result {
   grid-template-columns: 52px minmax(0, 1fr);

@@ -1,19 +1,8 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { MotionConfig, motion } from 'motion/react'
-import { Analytics } from '@vercel/analytics/react'
-import HomePage from './pages/HomePage'
-import AuthPage from './pages/AuthPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import LegalPage from './pages/LegalPage'
-import DiscoverPage from './pages/DiscoverPage'
-import LibraryPage from './pages/LibraryPage'
-import StatisticsPage from './pages/StatisticsPage'
-import MediaDetailsPage from './pages/MediaDetailsPage'
-import LegacyMediaDetailsRoute from './pages/LegacyMediaDetailsRoute'
-import SettingsPage from './pages/SettingsPage'
 import AppNav from './components/layout/AppNav'
-import Footer from './components/layout/Footer'
+import RouteMetadata from './components/seo/RouteMetadata'
 import { useWatchlist } from './hooks/useWatchlist'
 import './styles/index.css'
 import { pageMotion, softSpring } from './motion'
@@ -22,8 +11,57 @@ import { usePreferences } from './context/PreferencesContext'
 import { getMediaPath } from './utils/mediaRoutes'
 import { findMatchingMediaItem, findProbableMediaDuplicate } from './utils/media'
 import { confirmMediaMatch, rejectMediaMatch } from './services/mediaLibrary'
-import PublicProfilePage from './pages/PublicProfilePage'
 import { useOwnProfile } from './hooks/useOwnProfile'
+
+const HomePage = lazy(() => import('./pages/HomePage'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
+const DiscoverPage = lazy(() => import('./pages/DiscoverPage'))
+const LibraryPage = lazy(() => import('./pages/LibraryPage'))
+const StatisticsPage = lazy(() => import('./pages/StatisticsPage'))
+const MediaDetailsPage = lazy(() => import('./pages/MediaDetailsPage'))
+const LegacyMediaDetailsRoute = lazy(() => import('./pages/LegacyMediaDetailsRoute'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const Analytics = lazy(() => import('@vercel/analytics/react').then((module) => ({ default: module.Analytics })))
+const Footer = lazy(() => import('./components/layout/Footer'))
+
+function RouteLoadingState() {
+  return (
+    <section className="route-loading-state" role="status" aria-live="polite" aria-busy="true">
+      <span className="route-loading-mark" aria-hidden="true" />
+      <span>Loading page…</span>
+    </section>
+  )
+}
+
+function DeferredAnalytics() {
+  const [isReady, setIsReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsReady(true), 0)
+    return () => window.clearTimeout(timer)
+  }, [])
+  return isReady ? <Suspense fallback={null}><Analytics /></Suspense> : null
+}
+
+function DeferredFooter() {
+  const [isReady, setIsReady] = useState(() => typeof window === 'undefined' || !('IntersectionObserver' in window))
+  const placeholderRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (isReady) return undefined
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsReady(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '300px' })
+    if (placeholderRef.current) observer.observe(placeholderRef.current)
+    return () => observer.disconnect()
+  }, [isReady])
+  return <div ref={placeholderRef} className="deferred-footer-shell">{isReady ? <Suspense fallback={null}><Footer /></Suspense> : null}</div>
+}
 
 function App() {
   const location = useLocation()
@@ -79,6 +117,7 @@ function App() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
+      <RouteMetadata />
       <AppNav items={items} onCreate={requestCreate} onOpenExisting={openSavedItem} profileUsername={ownProfile?.username} profileIsPublic={ownProfile?.is_public} />
 
       {(syncError || isSyncing) && (
@@ -90,6 +129,7 @@ function App() {
 
       <main id="main-content" className="app-content">
         <motion.div key={location.pathname} {...pageMotion} transition={softSpring}>
+        <Suspense fallback={<RouteLoadingState />}>
         <Routes location={location}>
           <Route path="/" element={<HomePage items={items} onCreate={requestCreate} isLoading={isAuthLoading || (isSyncing && items.length === 0)} isSignedIn={Boolean(user)} />} />
           <Route path="/discover" element={<DiscoverPage items={items} onCreate={requestCreate} />} />
@@ -116,11 +156,13 @@ function App() {
           <Route path="/user/:username" element={<PublicProfilePage mode="overview" />} />
           <Route path="/user/:username/library" element={<PublicProfilePage mode="library" />} />
           <Route path="/user/:username/lists/:listSlug" element={<PublicProfilePage mode="list" />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
         </motion.div>
       </main>
 
-      <Footer />
+      <DeferredFooter />
       {possibleDuplicate && (
         <div className="duplicate-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPossibleDuplicate(null) }}>
           <section className="duplicate-dialog glass-panel" role="dialog" aria-modal="true" aria-labelledby="duplicate-title">
@@ -136,7 +178,7 @@ function App() {
           </section>
         </div>
       )}
-      <Analytics />
+      <DeferredAnalytics />
     </div>
     </MotionConfig>
   )

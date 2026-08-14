@@ -136,7 +136,8 @@ export default function LegalPage({ type }: LegalPageProps) {
       </div>
 
       <p className="legal-note">
-        This page is a simple project policy, not legal advice. For questions, use the project links in the footer.
+        This page is a simple project policy, not legal advice. For questions,{' '}
+        <a href="https://github.com/Luckyy84/AfterList/issues" target="_blank" rel="noreferrer">contact the project on GitHub</a>.
       </p>
 
       <Link className="legal-back-link" to="/">

@@ -976,3 +976,4 @@ a { color: inherit; }
 .duplicate-dialog > p:not(.eyebrow) { color: var(--text-secondary); line-height: 1.6; }
 .duplicate-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .duplicate-cancel { min-height: 42px; border: 0; padding: 0 10px; color: var(--muted); background: transparent; }
+.deferred-footer-shell { min-height: 1px; }

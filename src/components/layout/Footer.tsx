@@ -23,7 +23,7 @@ export default function Footer() {
           <h3>RESOURCES</h3>
           <ul>
             <li><a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a></li>
-            <li><a href="https://github.com/Luckyy84/AfterList" target="_blank" rel="noreferrer">GitHub</a></li>
+            <li><a href="https://github.com/Luckyy84/AfterList/issues" target="_blank" rel="noreferrer">Contact on GitHub</a></li>
           </ul>
         </div>
 

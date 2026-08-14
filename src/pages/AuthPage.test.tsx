@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthPage from './AuthPage'
 
 const auth = vi.hoisted(() => ({
@@ -22,6 +22,7 @@ vi.mock('../context/AuthContext', () => ({
 
 describe('AuthPage password recovery', () => {
   beforeEach(() => vi.clearAllMocks())
+  afterEach(cleanup)
 
   it('requests a reset link without revealing whether the account exists', async () => {
     const user = userEvent.setup()
@@ -32,6 +33,20 @@ describe('AuthPage password recovery', () => {
     await user.click(screen.getByRole('button', { name: 'Send reset link' }))
 
     expect(auth.requestPasswordReset).toHaveBeenCalledWith('viewer@example.com')
-    expect(screen.getByText('If an account exists for that email, a password reset link is on its way.')).not.toBeNull()
+    expect(screen.getByRole('status').textContent).toContain('If an account exists for that email')
+  })
+
+  it('associates password mismatch errors with the invalid field and focuses it', async () => {
+    const user = userEvent.setup()
+    render(<MemoryRouter><AuthPage mode="signup" /></MemoryRouter>)
+    await user.type(screen.getByLabelText('Email'), 'viewer@example.com')
+    await user.type(screen.getByLabelText('Password'), 'password-one')
+    const confirmation = screen.getByLabelText('Confirm password')
+    await user.type(confirmation, 'password-two')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(screen.getByRole('alert').textContent).toBe('Passwords do not match.')
+    expect(confirmation.getAttribute('aria-invalid')).toBe('true')
+    expect(confirmation.getAttribute('aria-describedby')).toBe('auth-notice')
+    expect(confirmation).toBe(document.activeElement)
   })
 })

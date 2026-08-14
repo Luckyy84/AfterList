@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
@@ -19,9 +19,75 @@ const sections = [
 
 type SectionId = (typeof sections)[number]['id']
 
+type ProfileField = 'username' | 'avatarUrl' | 'website'
+type FormMessage = { kind: 'error' | 'success'; text: string }
+
 export function ProfileSettings({ userId, profile, onSaved }: { userId: string; profile: OwnProfile | null; onSaved?: () => void | Promise<void> }) {
-  const [username, setUsername] = useState(profile?.username ?? ''); const [displayName, setDisplayName] = useState(profile?.display_name ?? ''); const [bio, setBio] = useState(profile?.bio ?? ''); const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? ''); const [website, setWebsite] = useState(profile?.external_links?.[0]?.url ?? ''); const [isPublic, setIsPublic] = useState(profile?.is_public ?? false); const [showLibrary, setShowLibrary] = useState(profile?.show_library ?? false); const [showFavorites, setShowFavorites] = useState(profile?.show_favorites ?? false); const [showStats, setShowStats] = useState(profile?.show_stats ?? false); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false)
-  return <form className="settings-panel settings-preferences" onSubmit={(event) => { event.preventDefault(); setBusy(true); setMessage(''); void (async () => { const clean = username.trim().toLowerCase(); if (!/^[a-z0-9_]{3,30}$/.test(clean)) throw new Error('Username must be 3–30 letters, numbers, or underscores.'); if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) throw new Error('Avatar must use an http or https URL.'); if (website && !/^https?:\/\//i.test(website)) throw new Error('Website must use an http or https URL.'); if (clean !== profile?.username) await claimUsername(clean); await saveOwnProfile({ user_id: userId, username: clean, display_name: displayName.trim(), bio: bio.trim(), avatar_url: avatarUrl || null, external_links: website ? [{ label: 'Website', url: website }] : [], is_public: isPublic, show_library: showLibrary, show_favorites: showFavorites, show_stats: showStats }); await onSaved?.(); setMessage('Profile saved.') })().catch((cause) => setMessage(cause instanceof Error ? cause.message : 'Could not save profile.')).finally(() => setBusy(false)) }}><div className="settings-controls"><label><span>Username</span><input aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label><label><span>Display name</span><input aria-label="Display name" maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label><label><span>Bio</span><textarea aria-label="Bio" maxLength={500} value={bio} onChange={(event) => setBio(event.target.value)} /></label><label><span>Avatar URL</span><input aria-label="Avatar URL" type="url" value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} /></label><label><span>Website</span><input aria-label="Website" type="url" value={website} onChange={(event) => setWebsite(event.target.value)} /></label><label className="settings-toggle"><span>Public profile<small>Turn this on and save before sharing your profile.</small></span><input aria-label="Public profile" type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} /></label><label className="settings-toggle"><span>Show library<small>Available after Public profile is turned on.</small></span><input aria-label="Show library" type="checkbox" checked={showLibrary} disabled={!isPublic} onChange={(event) => setShowLibrary(event.target.checked)} /></label><label className="settings-toggle"><span>Show favorites<small>Available after Public profile is turned on.</small></span><input aria-label="Show favorites" type="checkbox" checked={showFavorites} disabled={!isPublic} onChange={(event) => setShowFavorites(event.target.checked)} /></label><label className="settings-toggle"><span>Show statistics<small>Available after Public profile is turned on.</small></span><input aria-label="Show statistics" type="checkbox" checked={showStats} disabled={!isPublic} onChange={(event) => setShowStats(event.target.checked)} /></label></div><button className="settings-action" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save profile'}</button>{message && <p role="status">{message}</p>}</form>
+  const [username, setUsername] = useState(profile?.username ?? '')
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
+  const [bio, setBio] = useState(profile?.bio ?? '')
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? '')
+  const [website, setWebsite] = useState(profile?.external_links?.[0]?.url ?? '')
+  const [isPublic, setIsPublic] = useState(profile?.is_public ?? false)
+  const [showLibrary, setShowLibrary] = useState(profile?.show_library ?? false)
+  const [showFavorites, setShowFavorites] = useState(profile?.show_favorites ?? false)
+  const [showStats, setShowStats] = useState(profile?.show_stats ?? false)
+  const [message, setMessage] = useState<FormMessage | null>(null)
+  const [invalidField, setInvalidField] = useState<ProfileField | null>(null)
+  const [busy, setBusy] = useState(false)
+  const usernameRef = useRef<HTMLInputElement | null>(null)
+  const avatarRef = useRef<HTMLInputElement | null>(null)
+  const websiteRef = useRef<HTMLInputElement | null>(null)
+  const messageRef = useRef<HTMLParagraphElement | null>(null)
+
+  const focusField = (field: ProfileField) => {
+    const fields = { username: usernameRef, avatarUrl: avatarRef, website: websiteRef }
+    queueMicrotask(() => fields[field].current?.focus())
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setMessage(null)
+    setInvalidField(null)
+    const clean = username.trim().toLowerCase()
+    if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+      setInvalidField('username'); setMessage({ kind: 'error', text: 'Username must be 3–30 letters, numbers, or underscores.' }); focusField('username'); return
+    }
+    if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
+      setInvalidField('avatarUrl'); setMessage({ kind: 'error', text: 'Avatar must use an http or https URL.' }); focusField('avatarUrl'); return
+    }
+    if (website && !/^https?:\/\//i.test(website)) {
+      setInvalidField('website'); setMessage({ kind: 'error', text: 'Website must use an http or https URL.' }); focusField('website'); return
+    }
+    setBusy(true)
+    void (async () => {
+      if (clean !== profile?.username) await claimUsername(clean)
+      await saveOwnProfile({ user_id: userId, username: clean, display_name: displayName.trim(), bio: bio.trim(), avatar_url: avatarUrl || null, external_links: website ? [{ label: 'Website', url: website }] : [], is_public: isPublic, show_library: showLibrary, show_favorites: showFavorites, show_stats: showStats })
+      await onSaved?.()
+      setMessage({ kind: 'success', text: 'Profile saved.' })
+    })().catch((cause) => {
+      setMessage({ kind: 'error', text: cause instanceof Error ? cause.message : 'Could not save profile.' })
+      queueMicrotask(() => messageRef.current?.focus())
+    }).finally(() => setBusy(false))
+  }
+
+  const fieldError = (field: ProfileField) => invalidField === field
+
+  return <form className="settings-panel settings-preferences" onSubmit={handleSubmit} aria-busy={busy} noValidate>
+    <div className="settings-controls">
+      <label><span>Username</span><input ref={usernameRef} aria-label="Username" value={username} onChange={(event) => { setUsername(event.target.value); setInvalidField(null) }} required aria-invalid={fieldError('username')} aria-describedby={fieldError('username') ? 'profile-form-message' : undefined} /></label>
+      <label><span>Display name</span><input aria-label="Display name" maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
+      <label><span>Bio</span><textarea aria-label="Bio" maxLength={500} value={bio} onChange={(event) => setBio(event.target.value)} /></label>
+      <label><span>Avatar URL</span><input ref={avatarRef} aria-label="Avatar URL" type="url" value={avatarUrl} onChange={(event) => { setAvatarUrl(event.target.value); setInvalidField(null) }} aria-invalid={fieldError('avatarUrl')} aria-describedby={fieldError('avatarUrl') ? 'profile-form-message' : undefined} /></label>
+      <label><span>Website</span><input ref={websiteRef} aria-label="Website" type="url" value={website} onChange={(event) => { setWebsite(event.target.value); setInvalidField(null) }} aria-invalid={fieldError('website')} aria-describedby={fieldError('website') ? 'profile-form-message' : undefined} /></label>
+      <label className="settings-toggle"><span>Public profile<small>Turn this on and save before sharing your profile.</small></span><input aria-label="Public profile" type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} /></label>
+      <label className="settings-toggle"><span>Show library<small>Available after Public profile is turned on.</small></span><input aria-label="Show library" type="checkbox" checked={showLibrary} disabled={!isPublic} onChange={(event) => setShowLibrary(event.target.checked)} /></label>
+      <label className="settings-toggle"><span>Show favorites<small>Available after Public profile is turned on.</small></span><input aria-label="Show favorites" type="checkbox" checked={showFavorites} disabled={!isPublic} onChange={(event) => setShowFavorites(event.target.checked)} /></label>
+      <label className="settings-toggle"><span>Show statistics<small>Available after Public profile is turned on.</small></span><input aria-label="Show statistics" type="checkbox" checked={showStats} disabled={!isPublic} onChange={(event) => setShowStats(event.target.checked)} /></label>
+    </div>
+    <button className="settings-action" disabled={busy} type="submit">{busy ? 'Saving…' : 'Save profile'}</button>
+    {message && <p id="profile-form-message" ref={messageRef} tabIndex={message.kind === 'error' ? -1 : undefined} className={message.kind === 'error' ? 'settings-token-error' : undefined} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p>}
+  </form>
 }
 
 function getDisplayName(email?: string, metadata?: Record<string, unknown>) {
@@ -44,7 +110,19 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
   const [customLists, setCustomLists] = useState<CustomList[]>([])
   const [listName, setListName] = useState('')
   const [listError, setListError] = useState('')
+  const tokenErrorRef = useRef<HTMLParagraphElement | null>(null)
+  const listErrorRef = useRef<HTMLParagraphElement | null>(null)
   const displayName = getDisplayName(user?.email, user?.user_metadata)
+
+  const showTokenError = useCallback((message: string) => {
+    setTokenError(message)
+    queueMicrotask(() => tokenErrorRef.current?.focus())
+  }, [])
+
+  const showListError = useCallback((message: string) => {
+    setListError(message)
+    queueMicrotask(() => listErrorRef.current?.focus())
+  }, [])
 
   const setPreference = <Key extends keyof Preferences>(key: Key) => (event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const value = event.currentTarget instanceof HTMLInputElement && event.currentTarget.type === 'checkbox'
@@ -61,13 +139,13 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         const body = await response.json() as { tokens?: typeof tokens }
         setTokens(body.tokens ?? [])
       })
-      .catch(() => setTokenError('Could not load integration tokens.'))
-  }, [section, session?.access_token])
+      .catch(() => showTokenError('Could not load integration tokens.'))
+  }, [section, session?.access_token, showTokenError])
 
   useEffect(() => {
     if (section !== 'library' || !user) return
-    fetchCustomLists(user.id).then(setCustomLists).catch(() => setListError('Could not load custom lists.'))
-  }, [section, user])
+    fetchCustomLists(user.id).then(setCustomLists).catch(() => showListError('Could not load custom lists.'))
+  }, [section, showListError, user])
 
   if (!activeSection) return <Navigate to="/settings/account" replace />
 
@@ -98,7 +176,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
       setNewToken(body.token)
       setTokens((current) => [body.integration!, ...current])
     } catch (error) {
-      setTokenError(error instanceof Error ? error.message : 'Could not create integration token.')
+      showTokenError(error instanceof Error ? error.message : 'Could not create integration token.')
     } finally {
       setIsTokenBusy(false)
     }
@@ -116,7 +194,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
       if (!response.ok) throw new Error('Could not revoke integration token.')
       setTokens((current) => current.filter((token) => token.id !== id))
     } catch (error) {
-      setTokenError(error instanceof Error ? error.message : 'Could not revoke integration token.')
+      showTokenError(error instanceof Error ? error.message : 'Could not revoke integration token.')
     } finally {
       setIsTokenBusy(false)
     }
@@ -155,8 +233,8 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         </div>
         <div className="settings-block settings-block-divided">
           <h3>Custom lists</h3>
-          {user ? <><form onSubmit={(event) => { event.preventDefault(); setListError(''); void createCustomList(user.id, listName).then((list) => { setCustomLists((current) => [...current, list]); setListName('') }).catch((cause) => setListError(cause instanceof Error ? cause.message : 'Could not create list.')) }}><label><span>List name</span><input aria-label="Custom list name" maxLength={80} required value={listName} onChange={(event) => setListName(event.target.value)} /></label><button className="settings-action" type="submit">Create list</button></form><ul className="settings-token-list">{customLists.map((list) => <li key={list.id}><span><strong>{list.name}</strong><small>/{list.slug}</small></span><label><input aria-label={`Make ${list.name} public`} type="checkbox" checked={list.is_public} onChange={(event) => { const isPublic = event.target.checked; setCustomLists((current) => current.map((item) => item.id === list.id ? { ...item, is_public: isPublic } : item)); void setCustomListPublic(list.id, user.id, isPublic).catch(() => setListError('Could not update list privacy.')) }} />Public</label><button type="button" onClick={() => void deleteCustomList(list.id, user.id).then(() => setCustomLists((current) => current.filter((item) => item.id !== list.id))).catch(() => setListError('Could not delete list.'))}>Delete</button></li>)}</ul></> : <p>Sign in to create custom lists.</p>}
-          {listError && <p role="alert" className="settings-token-error">{listError}</p>}
+          {user ? <><form onSubmit={(event) => { event.preventDefault(); setListError(''); void createCustomList(user.id, listName).then((list) => { setCustomLists((current) => [...current, list]); setListName('') }).catch((cause) => showListError(cause instanceof Error ? cause.message : 'Could not create list.')) }}><label><span>List name</span><input aria-label="Custom list name" maxLength={80} required value={listName} onChange={(event) => setListName(event.target.value)} /></label><button className="settings-action" type="submit">Create list</button></form><ul className="settings-token-list">{customLists.map((list) => <li key={list.id}><span><strong>{list.name}</strong><small>/{list.slug}</small></span><label><input aria-label={`Make ${list.name} public`} type="checkbox" checked={list.is_public} onChange={(event) => { const isPublic = event.target.checked; setCustomLists((current) => current.map((item) => item.id === list.id ? { ...item, is_public: isPublic } : item)); void setCustomListPublic(list.id, user.id, isPublic).catch(() => showListError('Could not update list privacy.')) }} />Public</label><button type="button" onClick={() => void deleteCustomList(list.id, user.id).then(() => setCustomLists((current) => current.filter((item) => item.id !== list.id))).catch(() => showListError('Could not delete list.'))}>Delete</button></li>)}</ul></> : <p>Sign in to create custom lists.</p>}
+          {listError && <p ref={listErrorRef} tabIndex={-1} role="alert" className="settings-token-error">{listError}</p>}
         </div>
         <div className="settings-block settings-block-divided">
           <h3>Export library</h3>
@@ -194,7 +272,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         </form>
         {newToken && <div className="settings-new-token" role="status"><strong>Copy this token now—it is shown once.</strong><code>{newToken}</code><button type="button" onClick={() => void navigator.clipboard.writeText(newToken)}>Copy token</button></div>}
         {tokens.length > 0 && <ul className="settings-token-list">{tokens.map((token) => <li key={token.id}><span><strong>{token.name}</strong><small>{token.last_used_at ? `Last used ${new Date(token.last_used_at).toLocaleDateString()}` : 'Never used'}{token.expires_at ? ` · Expires ${new Date(token.expires_at).toLocaleDateString()}` : ' · No expiry'}</small></span><button type="button" disabled={isTokenBusy} onClick={() => void revokeToken(token.id)}>Revoke</button></li>)}</ul>}
-        {tokenError && <p className="settings-token-error" role="alert">{tokenError}</p>}
+        {tokenError && <p ref={tokenErrorRef} tabIndex={-1} className="settings-token-error" role="alert">{tokenError}</p>}
       </section>
     ) : (
       <section className="settings-panel settings-empty-panel">

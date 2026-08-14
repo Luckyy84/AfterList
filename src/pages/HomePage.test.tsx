@@ -5,11 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { MediaItem } from '../types/media'
 import HomePage from './HomePage'
 
-vi.mock('motion/react', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-  motion: { section: 'section', button: 'button' },
-  useReducedMotion: () => true,
-}))
+vi.mock('motion/react', async () => import('../test/motionMock'))
 vi.mock('../hooks/useMediaQuery', () => ({ useIsMobile: () => false }))
 vi.mock('../services/media', () => ({ discoverMedia: vi.fn(async () => []) }))
 vi.mock('../components/media/MediaRow', () => ({
