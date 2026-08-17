@@ -109,7 +109,8 @@ export async function GET(request: Request) {
     return json({ error: 'Unauthorized.' }, 401)
   }
 
-  if (!isBerlinRefreshHour(new Date())) {
+  const force = new URL(request.url).searchParams.get('force') === 'true'
+  if (!force && !isBerlinRefreshHour(new Date())) {
     return json({ ok: true, skipped: true, reason: 'It is not 02:00 in Europe/Berlin.' })
   }
 
