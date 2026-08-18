@@ -33,14 +33,36 @@ export async function fetchAnilistMedia(id: string, options: RequestOptions = {}
   return { item: searchResultToMediaItem(data.item), details: data.details }
 }
 
+function normalizedTitle(title: string) {
+  return title.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function areCrossProviderAnimeMatches(first: SearchResultItem, second: SearchResultItem) {
+  return first.source !== second.source
+    && first.type === 'Anime'
+    && second.type === 'Anime'
+    && /^\d{4}$/.test(first.year)
+    && first.year === second.year
+    && normalizedTitle(first.title) === normalizedTitle(second.title)
+}
+
 function mergeResults(groups: SearchResultItem[][]) {
-  const seen = new Set<string>()
-  return groups.flat().filter((item) => {
-    const key = `${item.source}:${item.externalId}`
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
+  const merged: SearchResultItem[] = []
+
+  for (const item of groups.flat()) {
+    const identity = `${item.source}:${item.externalId}`
+    if (merged.some((candidate) => `${candidate.source}:${candidate.externalId}` === identity)) continue
+
+    const duplicateIndex = merged.findIndex((candidate) => areCrossProviderAnimeMatches(candidate, item))
+
+    if (duplicateIndex < 0) {
+      merged.push(item)
+    } else if (item.source === 'anilist') {
+      merged[duplicateIndex] = item
+    }
+  }
+
+  return merged
 }
 
 async function settledResults(requests: Array<Promise<SearchResultItem[]>>) {

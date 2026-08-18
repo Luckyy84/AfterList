@@ -300,7 +300,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   transition={panelTransition}
                 >
                   <strong>Search to add</strong>
-                  <span>Search movies, TV series, and anime from TMDB.</span>
+                  <span>Search movies, TV series, and anime from TMDB and AniList.</span>
                 </motion.div>
               )}
 
@@ -311,7 +311,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={panelTransition}
                 >
-                  <strong>Searching TMDB</strong>
+                  <strong>Searching media providers</strong>
                   <span>Finding movies, TV series, and anime results...</span>
                 </motion.div>
               )}
@@ -325,7 +325,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={panelTransition}
                 >
-                  <strong>TMDB unavailable</strong>
+                  <strong>Search unavailable</strong>
                   <span>{searchError}</span>
                   <button type="button" onClick={() => setSearchAttempt((attempt) => attempt + 1)}>Try again</button>
                 </motion.div>
@@ -340,7 +340,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                   transition={panelTransition}
                 >
                   <strong>No results found</strong>
-                  <span>Try a different TMDB title.</span>
+                  <span>Try a different title.</span>
                 </motion.div>
               )}
 
@@ -372,7 +372,7 @@ function SearchAddModal({ items, onCreate }: SearchAddModalProps) {
                       <span>
                         <strong>{result.title}</strong>
                         <small>
-                          {result.type} / {result.year} / Rating {result.rating} / TMDB
+                          {result.type} / {result.year} / Rating {result.rating} / {result.source === 'anilist' ? 'AniList' : 'TMDB'}
                           {existingItem ? ` / Saved as ${existingItem.status}` : ''}
                         </small>
                       </span>

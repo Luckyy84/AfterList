@@ -93,4 +93,15 @@ describe('SearchAddModal results', () => {
     expect(await screen.findByRole('link', { name: /Obsession/ })).not.toBeNull()
     expect(searchMedia).toHaveBeenCalledTimes(2)
   })
+
+  it('labels AniList results with their actual provider', async () => {
+    vi.mocked(discoverMedia).mockResolvedValue([])
+    vi.mocked(searchMedia).mockResolvedValue([{ ...result, source: 'anilist', externalId: '146676', title: 'Love Flops', type: 'Anime' }])
+    render(<MemoryRouter><SearchAddModal items={[]} onCreate={vi.fn()} onOpenExisting={vi.fn()} /></MemoryRouter>)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Search movies, TV series, and anime' }), 'Love Flops')
+
+    expect(await screen.findByText(/Rating 8\.3 \/ AniList/)).not.toBeNull()
+  })
 })
