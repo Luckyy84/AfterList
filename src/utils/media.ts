@@ -90,6 +90,14 @@ function applyAutomaticTrackingDates(updated: MediaItem, now: string) {
 
 export function applyMediaUpdate(item: MediaItem, updates: MediaUpdate, now = new Date().toISOString()): MediaItem {
   const updated = { ...item, ...updates, updatedAt: now }
+  const startingRewatch = updates.isRewatching === true && !item.isRewatching
+
+  if (startingRewatch) {
+    updated.status = 'Watching'
+    updated.currentEpisode = item.type === 'Movie' ? undefined : 0
+    updated.startedAt = localDateValue(now)
+    updated.completedAt = null
+  }
 
   updated.runtimeMinutes = Number.isFinite(updated.runtimeMinutes) && updated.runtimeMinutes! > 0
     ? Math.round(updated.runtimeMinutes!)

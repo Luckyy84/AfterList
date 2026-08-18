@@ -12,7 +12,7 @@ vi.mock('../_lib/afterlistApi.js', () => ({
   json: (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } }),
 }))
 
-import { GET, cumulativeEpisode } from './watchlist'
+import { GET, PUT, cumulativeEpisode } from './watchlist'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -51,5 +51,45 @@ describe('v1 watchlist reads', () => {
     expect(projection).not.toContain('merged_into_id')
     expect(projection).not.toContain('private_notes')
     await expect(response.json()).resolves.toEqual({ items: [{ id: 'visible' }] })
+  })
+})
+
+describe('v1 watchlist writes', () => {
+  it('marks a series watched and dates completion when progress reaches the total', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { applied: true }, error: null })
+    apiMocks.adminClient.mockReturnValue({ rpc })
+
+    const response = await PUT(new Request('http://localhost/api/v1/watchlist', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        source: 'tmdb', externalId: 'tv:12', title: 'Show', type: 'TV Series', status: 'Watching',
+        currentEpisode: 12, totalEpisodes: 12, updatedAt: '2026-08-18T09:00:00.000Z',
+      }),
+    }))
+
+    expect(response.status).toBe(200)
+    expect(rpc.mock.calls[0][1].p_item).toMatchObject({
+      status: 'Watched', current_episode: 12, total_episodes: 12, completed_on: '2026-08-18',
+    })
+  })
+
+  it('passes an explicit rewatch transition and fresh start date to the database', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { applied: true }, error: null })
+    apiMocks.adminClient.mockReturnValue({ rpc })
+
+    await PUT(new Request('http://localhost/api/v1/watchlist', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        source: 'tmdb', externalId: 'tv:12', title: 'Show', type: 'TV Series', status: 'Watching',
+        currentEpisode: 0, totalEpisodes: 12, isRewatching: true, updatedAt: '2026-08-18T09:00:00.000Z',
+      }),
+    }))
+
+    expect(rpc.mock.calls[0][1].p_item).toMatchObject({
+      status: 'Watching', current_episode: 0, is_rewatching: true,
+      started_on: '2026-08-18', completed_on: null,
+    })
   })
 })

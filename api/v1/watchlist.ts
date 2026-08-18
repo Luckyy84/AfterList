@@ -26,6 +26,11 @@ function integer(value: unknown, minimum: number, maximum: number) {
   return Number.isInteger(value) && Number(value) >= minimum && Number(value) <= maximum ? Number(value) : null
 }
 
+function date(value: unknown) {
+  const result = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+  return result && !Number.isNaN(new Date(`${result}T00:00:00.000Z`).getTime()) ? result : null
+}
+
 export function cumulativeEpisode(seasons: TmdbSeason[], seasonNumber: number, episodeNumber: number) {
   const currentSeason = seasons.find((season) => season.season_number === seasonNumber)
   if (!currentSeason?.episode_count || episodeNumber > currentSeason.episode_count) return null
@@ -39,7 +44,7 @@ function normalizeItem(input: IncomingItem) {
   const externalId = text(input.externalId, 80)
   const title = text(input.title, 300)
   const type = ['Anime', 'Movie', 'TV Series'].includes(String(input.type)) ? String(input.type) : null
-  const status = ['Planned', 'Watching', 'Watched', 'Dropped'].includes(String(input.status)) ? String(input.status) : null
+  const requestedStatus = ['Planned', 'Watching', 'Watched', 'Dropped'].includes(String(input.status)) ? String(input.status) : null
   const updatedAt = text(input.updatedAt, 40)
   const updatedDate = updatedAt ? new Date(updatedAt) : null
   const currentEpisode = input.currentEpisode === undefined ? 0 : integer(input.currentEpisode, 0, 1_000_000)
@@ -47,11 +52,15 @@ function normalizeItem(input: IncomingItem) {
   const seasonNumber = input.seasonNumber == null ? null : integer(input.seasonNumber, 1, 10_000)
   const episodeNumber = input.episodeNumber == null ? null : integer(input.episodeNumber, 1, 1_000_000)
 
-  if (!source || !externalId || !/^(movie|tv):[1-9]\d*$/.test(externalId) || !title || !type || !status
+  if (!source || !externalId || !/^(movie|tv):[1-9]\d*$/.test(externalId) || !title || !type || !requestedStatus
     || !updatedDate || Number.isNaN(updatedDate.getTime()) || currentEpisode === null
     || (totalEpisodes !== null && currentEpisode > totalEpisodes)
     || ((seasonNumber === null) !== (episodeNumber === null))) return null
   if ((externalId.startsWith('movie:')) !== (type === 'Movie')) return null
+
+  const status = totalEpisodes && currentEpisode >= totalEpisodes ? 'Watched' : requestedStatus
+  const trackingDate = updatedDate.toISOString().slice(0, 10)
+  const isRewatching = typeof input.isRewatching === 'boolean' ? input.isRewatching : null
 
   return {
     source,
@@ -70,6 +79,10 @@ function normalizeItem(input: IncomingItem) {
     runtime_minutes: input.runtimeMinutes == null ? null : integer(input.runtimeMinutes, 1, 100_000),
     personal_rating: input.personalRating == null ? null : integer(input.personalRating, 1, 10),
     is_favorite: input.isFavorite === true,
+    is_rewatching: isRewatching,
+    rewatch_count: input.rewatchCount == null ? null : integer(input.rewatchCount, 0, 1_000_000),
+    started_on: date(input.startedOn) ?? (status === 'Watching' ? trackingDate : null),
+    completed_on: date(input.completedOn) ?? (status === 'Watched' ? trackingDate : null),
     updated_at: updatedDate.toISOString(),
     season_number: seasonNumber,
     episode_number: episodeNumber,

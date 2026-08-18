@@ -25,6 +25,21 @@ describe('watchlist tracking', () => {
       .toMatchObject({ rewatchCount: 0, privateNotes: 'x'.repeat(5000) })
   })
 
+  it('starts a rewatch with fresh progress and lifecycle dates', () => {
+    expect(applyMediaUpdate({
+      ...item,
+      isRewatching: false,
+      startedAt: '2026-07-01',
+      completedAt: '2026-07-02',
+    }, { isRewatching: true }, '2026-08-18T09:00:00.000Z')).toMatchObject({
+      status: 'Watching',
+      currentEpisode: 0,
+      isRewatching: true,
+      startedAt: '2026-08-18',
+      completedAt: null,
+    })
+  })
+
   it('adds lifecycle dates when tracking starts or completes without overwriting existing dates', () => {
     const planned = { ...item, status: 'Planned' as const, currentEpisode: 0, startedAt: null, completedAt: null }
     expect(applyMediaUpdate(planned, { status: 'Watching' }, '2026-08-08T21:00:00.000Z'))
