@@ -30,7 +30,7 @@ body {
   color: var(--cream);
   background:
     radial-gradient(ellipse 86% 58% at 100% 0%, rgba(255, 156, 76, .13), transparent 58%),
-    linear-gradient(145deg, #0d0b09 0%, var(--bg) 46%, #070605 100%) fixed !important;
+    linear-gradient(145deg, #0d0b09 0%, var(--bg) 46%, #070605 100%) !important;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -38,25 +38,28 @@ body {
 body::before,
 body::after {
   pointer-events: none;
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  inset: 0 !important;
   z-index: -1;
   display: block !important;
   content: '';
 }
 
 body::before {
+  animation: none !important;
   background:
     conic-gradient(from 218deg at 100% 0%, transparent 0deg, rgba(255, 191, 126, .11) 16deg, rgba(255, 128, 48, .035) 36deg, transparent 54deg),
     radial-gradient(ellipse 72% 52% at 98% 3%, rgba(255, 199, 143, .13), transparent 64%);
+  filter: none !important;
+  opacity: 1 !important;
 }
 
 body::after {
   background:
     radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, .48) 100%),
     url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
-  opacity: .18;
-  mix-blend-mode: soft-light;
+  opacity: .055;
+  mix-blend-mode: normal;
 }
 
 .app::before { display: none !important; }
@@ -571,7 +574,7 @@ a { color: inherit; }
 .row-scroll-shell { position: relative; }
 .row-scroll { margin-inline: 0; padding: 16px 0 8px !important; overflow-x: auto !important; overflow-y: visible !important; scroll-snap-type: x proximity; scrollbar-width: none; }
 .row-scroll::-webkit-scrollbar { display: none; }
-.row-scroll-track { display: flex; gap: 16px; padding: 0 !important; }
+.row-scroll-track { display: flex; gap: 16px; padding: 0 !important; will-change: auto !important; }
 .row-scroll .media-card-wrapper { scroll-snap-align: start; }
 
 .row-scroll-button {
@@ -638,7 +641,7 @@ a { color: inherit; }
 }
 .media-poster-shell::before { display: none !important; }
 .media-artwork-fallback { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: rgba(245, 242, 236, .3); font-size: 36px; font-weight: 800; letter-spacing: -.04em; }
-.media-poster { filter: saturate(.94) contrast(1.03) !important; }
+.media-poster { filter: none !important; }
 .media-info { min-height: 74px !important; gap: 7px !important; padding: 12px 13px 14px !important; }
 .media-info strong { min-height: 0 !important; color: var(--cream) !important; font-size: 15px !important; font-weight: 700 !important; }
 .card-meta { color: var(--muted); font-size: 11px; }
