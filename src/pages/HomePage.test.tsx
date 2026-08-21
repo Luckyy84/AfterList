@@ -25,6 +25,7 @@ describe('HomePage watchlist tabs', () => {
     const { container } = render(<MemoryRouter><HomePage items={[watchedItem, baseItem]} onCreate={vi.fn()} /></MemoryRouter>)
 
     expect(container.querySelector('.hero-title')?.textContent).toBe('Watching title')
+    expect(screen.getByRole('link', { name: 'View details for Watching title' }).textContent).toBe('View details')
   })
 
   it('features a saved title instead of showing an empty hero when none are Watching', () => {

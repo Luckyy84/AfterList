@@ -126,7 +126,7 @@ function HomePage({ items, onCreate, isLoading = false, isSignedIn = false }: Ho
                 {hero.rating && hero.rating !== 'N/A' && <span>Rating {hero.rating}</span>}
               </div>
               <div className="hero-actions">
-                <Link className="primary-action" to={getMediaPath(hero)} state={{ item: hero, from: `${location.pathname}${location.search}` }}>View {hero.title}</Link>
+                <Link className="primary-action" to={getMediaPath(hero)} state={{ item: hero, from: `${location.pathname}${location.search}` }} aria-label={`View details for ${hero.title}`}>View details</Link>
                 <Link className="secondary-action" to={isWatchingHero ? '/discover' : '/library'}>{isWatchingHero ? 'Discover something new' : 'Choose something from your list'}</Link>
               </div>
             </div>
