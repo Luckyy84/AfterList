@@ -45,6 +45,7 @@ describe('MediaDetailsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Rate 8 out of 10' }))
     expect(onUpdate).toHaveBeenCalledWith(item.id, { currentEpisode: 3 })
     expect(onUpdate).toHaveBeenCalledWith(item.id, { personalRating: 8 })
+    expect(screen.getByRole('link', { name: 'Back' }).querySelector('svg')).not.toBeNull()
   })
 
   it('updates completed rewatches with reliable stepper controls', async () => {

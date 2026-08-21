@@ -169,7 +169,10 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
     }} />
     <motion.article className="details-page" initial={shouldReduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={shouldReduceMotion ? { duration: 0.01 } : softSpring}>
       {backdrop && !failedArtwork.has(backdrop) && <img className="details-page-backdrop" src={backdrop} alt="" aria-hidden="true" onError={() => setFailedArtwork((failed) => new Set(failed).add(backdrop))} />}
-      <Link className="details-back" to={backTarget}>← Back</Link>
+      <Link className="details-back" to={backTarget}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 18-6-6 6-6" /><path d="M8 12h9" /></svg>
+        <span>Back</span>
+      </Link>
 
       <div className="details-page-layout">
         {poster && !failedArtwork.has(poster)

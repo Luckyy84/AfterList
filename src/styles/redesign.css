@@ -636,13 +636,14 @@ a { color: inherit; }
 .status-editor .custom-select span { color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: 0; text-transform: none; }
 
 .media-card-wrapper {
-  --card-info-height: 74px;
+  --card-info-height: 88px;
   width: 232px;
   min-width: 232px;
   flex: 0 0 232px;
 }
 
 .media-card {
+  grid-template-rows: auto var(--card-info-height);
   gap: 0 !important;
   overflow: hidden !important;
   border: 1px solid var(--line) !important;
@@ -662,9 +663,17 @@ a { color: inherit; }
 .media-poster-shell::before { display: none !important; }
 .media-artwork-fallback { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; color: rgba(245, 242, 236, .3); font-size: 36px; font-weight: 800; letter-spacing: -.04em; }
 .media-poster { filter: none !important; }
-.media-info { min-height: 74px !important; gap: 7px !important; padding: 12px 13px 14px !important; }
-.media-info strong { min-height: 0 !important; color: var(--cream) !important; font-size: 15px !important; font-weight: 700 !important; }
-.card-meta { color: var(--muted); font-size: 11px; }
+.media-info {
+  height: var(--card-info-height) !important;
+  min-height: var(--card-info-height) !important;
+  grid-template-rows: 36px 15px;
+  align-content: start;
+  gap: 7px !important;
+  overflow: hidden;
+  padding: 12px 13px 14px !important;
+}
+.media-info strong { height: 36px; min-height: 36px !important; color: var(--cream) !important; font-size: 15px !important; font-weight: 700 !important; }
+.card-meta { height: 15px; min-height: 15px; overflow: hidden; color: var(--muted); font-size: 11px; }
 
 .card-status { border: 0; box-shadow: none; backdrop-filter: none; }
 .card-status.Watching { color: var(--watching-text); background: var(--watching-bg); }
@@ -675,12 +684,13 @@ a { color: inherit; }
 .media-progress { height: 4px !important; background: linear-gradient(90deg, var(--accent) var(--media-progress), rgba(245, 242, 236, .22) var(--media-progress)) !important; }
 
 .media-card-wrapper.is-landscape {
+  --card-info-height: 88px;
   width: 320px !important;
   min-width: 320px !important;
   flex-basis: 320px !important;
 }
 .is-landscape .media-poster-shell { aspect-ratio: 16 / 9 !important; }
-.is-landscape .media-info { min-height: 76px !important; }
+.is-landscape .media-info { height: var(--card-info-height) !important; min-height: var(--card-info-height) !important; }
 .is-landscape .media-info strong { white-space: normal !important; -webkit-line-clamp: 2; }
 .is-landscape .card-status { top: 10px; left: 10px; min-height: 24px; padding: 4px 9px; font-size: 10px; }
 
