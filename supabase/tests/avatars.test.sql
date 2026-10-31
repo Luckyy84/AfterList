@@ -17,7 +17,7 @@ select results_eq($$with changed as (update storage.objects set name='evil.webp'
 -- Native Supabase also rejects SQL DELETE before row policies via protect_delete.
 -- Keep that protection enabled; the minimal PostgreSQL harness has no such trigger.
 select case when to_regprocedure('storage.protect_delete()') is not null then
-  throws_ok($$delete from storage.objects where bucket_id='avatars'$$, 'P0001', 'Direct deletion from storage tables is not allowed. Use the Storage API instead.', 'native Storage rejects direct browser deletion')
+  throws_ok($$delete from storage.objects where bucket_id='avatars'$$, '42501', 'Direct deletion from storage tables is not allowed. Use the Storage API instead.', 'native Storage rejects direct browser deletion')
 else
   results_eq($$with removed as (delete from storage.objects where bucket_id='avatars' returning *) select count(*) from removed$$, array[0::bigint], 'browser cannot delete another avatar')
 end;
