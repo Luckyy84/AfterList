@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { fetchMedia } from '../services/media'
+import { fetchCatalogMedia, type CatalogState } from '../services/catalog'
 import type { MediaDetails, MediaItem, MediaStatus, MediaUpdate } from '../types/media'
 import { softSpring } from '../motion'
 import { getMediaPath, mediaIdentityMatches, parsePositiveMediaId, type MediaRouteKind } from '../utils/mediaRoutes'
+import MediaIdentityPanel from '../components/media/MediaIdentityPanel'
+import SeasonTracking from '../components/media/SeasonTracking'
 import CustomListMemberships from '../components/media/CustomListMemberships'
 import WatchlistHistory from '../components/media/WatchlistHistory'
 import DateField from '../components/ui/DateField'
@@ -44,7 +46,7 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
   const externalId = numericId ? (source === 'anilist' ? numericId : `${routeKind}:${numericId}`) : ''
   const seed = state?.item && mediaIdentityMatches(state.item, source, externalId) ? state.item : null
   const savedItem = items.find((candidate) => mediaIdentityMatches(candidate, source, externalId))
-  const [loaded, setLoaded] = useState<{ identity: string; item: MediaItem; details: MediaDetails } | null>(null)
+  const [loaded, setLoaded] = useState<{ identity: string; item: MediaItem; details: MediaDetails; catalog: CatalogState } | null>(null)
   const [loadError, setLoadError] = useState<{ identity: string; message: string } | null>(null)
   const [requestVersion, setRequestVersion] = useState(0)
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
@@ -57,9 +59,9 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
     if (!externalId) return undefined
 
     const controller = new AbortController()
-    fetchMedia(source, externalId, { signal: controller.signal })
+    fetchCatalogMedia(source, externalId, { signal: controller.signal })
       .then((response) => {
-        setLoaded({ identity: externalId, item: response.item, details: response.details })
+        setLoaded({ identity: externalId, item: response.item, details: response.details, catalog: response.catalog })
         setLoadError(null)
       })
       .catch((cause) => {
@@ -182,6 +184,7 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
           <p className="details-page-meta">{metadata.map((label, index) => <span key={label}>{index > 0 && <i aria-hidden="true">·</i>}{label}</span>)}</p>
           {details?.tagline && <p className="details-page-tagline">“{details.tagline}”</p>}
           <p className="details-page-description">{record.description}</p>
+          {currentLoad?.catalog && <p className="catalog-provenance">{currentLoad.catalog.refreshedAt ? <>Shared metadata {currentLoad.catalog.status === 'stale' ? '(stale; provider unavailable) ' : ''}refreshed <time dateTime={currentLoad.catalog.refreshedAt}>{new Date(currentLoad.catalog.refreshedAt).toLocaleString()}</time>.</> : `Shared catalog ${currentLoad.catalog.status}. Showing live provider details; apply systems_tracking migration and configure the server catalog to share metadata.`}</p>}
           {error && <div className="details-inline-error" role="alert"><span>{error}</span><button type="button" onClick={() => { setLoadError(null); setRequestVersion((version) => version + 1) }}>Retry details</button></div>}
 
           <div className="details-share">
@@ -251,7 +254,9 @@ export default function MediaDetailsPage({ routeKind, items, onCreate, onRemove,
                 {savedItem.personalRating != null && <button type="button" className="clear-rating" onClick={() => update({ personalRating: null })}>Clear rating</button>}
               </div>
               <label className="private-notes"><span className="details-section-label">Private notes</span><textarea key={`${savedItem.id}:${savedItem.privateNotes ?? ''}`} aria-label="Private notes" maxLength={5000} defaultValue={savedItem.privateNotes ?? ''} placeholder="Only you can see these notes." onBlur={(event) => update({ privateNotes: event.currentTarget.value })} /></label>
+              {record.type !== 'Movie' && <SeasonTracking key={savedItem.id} itemId={savedItem.id} source={savedItem.source} />}
               <CustomListMemberships itemId={savedItem.id} />
+              <MediaIdentityPanel key={`identity:${savedItem.id}`} itemId={savedItem.id} source={savedItem.source} externalId={savedItem.externalId} />
               <WatchlistHistory itemId={savedItem.id} />
               <div className="details-danger-zone">
                 <div><strong>Remove from AfterList</strong><span>Your tracking data for this title will be deleted.</span></div>

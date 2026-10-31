@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import CatalogSearch from '../components/media/CatalogSearch'
+import CustomListManager from '../components/media/CustomListManager'
 import MediaCard from '../components/media/MediaCard'
 import CustomSelect from '../components/ui/CustomSelect'
 import type { MediaItem, MediaStatus, MediaType } from '../types/media'
@@ -43,6 +45,8 @@ export default function LibraryPage({ items, initialType }: LibraryPageProps) {
         <p>Everything you saved, with its status and progress visible at a glance.</p>
       </header>
 
+      <CatalogSearch />
+      <CustomListManager items={items} />
       <section className="library-toolbar" aria-label="Library filters">
         <label>Media type
           <CustomSelect ariaLabel="Media type" value={type} options={typeOptions} onChange={(value) => setType(value as MediaType | 'All')} />

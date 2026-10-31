@@ -1,3 +1,4 @@
+import { resetProviderCache } from './_lib/provider'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './anilist'
 
@@ -24,6 +25,7 @@ const media = {
 }
 
 afterEach(() => {
+  resetProviderCache()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -99,6 +101,14 @@ describe('AniList proxy', () => {
     const response = await GET(new Request('http://localhost/api/anilist?operation=details&id=101280'))
     expect(response.status).toBe(502)
     expect(response.headers.get('cache-control')).toBe('no-store')
+  })
+
+  it.each([404,429])('preserves GraphQL error status %s in HTTP 200', async (status) => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(JSON.stringify({data:null,errors:[{status}]}),{headers:{'retry-after':'30'}})))
+    const response=await GET(new Request('http://localhost/api/anilist?operation=details&id=101280'))
+    expect(response.status).toBe(status)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    if(status===429) expect(response.headers.get('retry-after')).toBe('30')
   })
 
   it('normalizes null detail data to 404', async () => {

@@ -1,3 +1,4 @@
+import { providerFetch } from './_lib/provider.js'
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 const TMDB_ANIMATION_GENRE_ID = 16
@@ -40,20 +41,23 @@ type TmdbResult = {
 
 type TmdbResponse = { results?: TmdbResult[] }
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string,string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
+      ...extraHeaders,
       'content-type': 'application/json; charset=utf-8',
       'cache-control': status >= 400 ? 'no-store' : 'public, max-age=60, s-maxage=900, stale-while-revalidate=1800',
     },
   })
 }
 
-function parseExternalId(value: string) {
-  const [kind, rawId] = value.split(':')
-  const id = Number(rawId)
-  return (kind === 'movie' || kind === 'tv') && Number.isInteger(id) && id > 0
+function parseExternalId(value: string): { kind: TmdbMediaType; id: number } | null {
+  const match = /^(movie|tv):([1-9][0-9]*)$/.exec(value)
+  if (!match) return null
+  const kind = match[1]
+  const id = Number(match[2])
+  return (kind === 'movie' || kind === 'tv') && Number.isSafeInteger(id)
     ? { kind, id }
     : null
 }
@@ -103,14 +107,14 @@ async function fetchTmdb(path: string, page: number, accessToken?: string, apiKe
   const params = new URLSearchParams({ language: 'en-US', page: String(page), include_adult: 'false' })
   if (!accessToken && apiKey) params.set('api_key', apiKey)
 
-  const response = await fetch(`${TMDB_API_BASE_URL}${path}?${params}`, {
+  const response = await providerFetch(`${TMDB_API_BASE_URL}${path}?${params}`, {
     signal: AbortSignal.timeout(TMDB_TIMEOUT_MS),
     headers: {
       accept: 'application/json',
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   })
-  if (!response.ok) throw new Error(`TMDB returned ${response.status}`)
+  if (!response.ok) throw response
   return (await response.json()) as TmdbResponse
 }
 
@@ -162,7 +166,12 @@ export async function GET(request: Request) {
 
     return jsonResponse({ results })
   } catch (error) {
-    console.error(error)
+    if (error instanceof Response && error.status === 429) {
+      const retry = error.headers.get('retry-after')
+      return jsonResponse({error:'TMDB rate limit exceeded.'},429,retry && /^\d{1,5}$/.test(retry) ? {'retry-after':retry} : {})
+    }
+    if (error instanceof Error && ['TimeoutError','AbortError'].includes(error.name)) return jsonResponse({error:'TMDB discovery request timed out.'},504)
+    console.error('Catalogue request failed')
     return jsonResponse({ error: 'TMDB discovery is temporarily unavailable.' }, 502)
   }
 }

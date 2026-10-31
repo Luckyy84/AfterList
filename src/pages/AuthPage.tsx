@@ -164,7 +164,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
               type="password"
               placeholder="••••••••"
               autoComplete={isSignup ? 'new-password' : 'current-password'}
-              minLength={6}
+              minLength={isSignup ? 12 : undefined}
               required
               disabled={isSubmitting}
             />
@@ -173,7 +173,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
           {isSignup && (
             <label className="auth-field">
               <span>Confirm password</span>
-              <input ref={confirmPasswordRef} name="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" minLength={6} required disabled={isSubmitting} aria-invalid={invalidField === 'confirmPassword'} aria-describedby={invalidField === 'confirmPassword' ? 'auth-notice' : undefined} onChange={() => setInvalidField(null)} />
+              <input ref={confirmPasswordRef} name="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" minLength={isSignup ? 12 : undefined} required disabled={isSubmitting} aria-invalid={invalidField === 'confirmPassword'} aria-describedby={invalidField === 'confirmPassword' ? 'auth-notice' : undefined} onChange={() => setInvalidField(null)} />
             </label>
           )}
 

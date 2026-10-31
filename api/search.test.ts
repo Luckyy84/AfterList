@@ -1,7 +1,9 @@
+import { resetProviderCache } from './_lib/provider'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './search'
 
 afterEach(() => {
+  resetProviderCache()
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 })

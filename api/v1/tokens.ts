@@ -2,6 +2,11 @@ import { adminClient, authenticateUser, generateToken, hashToken, json } from '.
 
 const TOKEN_LIFETIME_DAYS = 90
 
+function tokenError(error: { code?: string }, action: string) {
+  const missing = ['42P01', '42703', 'PGRST202', 'PGRST204', 'PGRST205'].includes(error.code ?? '')
+  return json({ error: missing ? 'Integration schema unavailable. Apply the integration token migrations to this environment and retry.' : `Could not ${action} integration token.` }, missing ? 503 : 500)
+}
+
 export function integrationTokenExpiresAt(now = Date.now()) {
   return new Date(now + TOKEN_LIFETIME_DAYS * 24 * 60 * 60 * 1000).toISOString()
 }
@@ -15,13 +20,17 @@ export async function GET(request: Request) {
     .eq('user_id', user.id)
     .is('revoked_at', null)
     .order('created_at', { ascending: false })
-  return error ? json({ error: 'Could not load integration tokens.' }, 500) : json({ tokens: data })
+  return error ? tokenError(error, 'load') : json({ tokens: data })
 }
 
 export async function POST(request: Request) {
   const user = await authenticateUser(request)
   if (!user) return json({ error: 'Unauthorized.' }, 401)
-  const body = await request.json().catch(() => null) as { name?: unknown } | null
+  const body = await request.json().catch(() => null) as { name?: unknown; scopes?: unknown } | null
+  const scopes = body?.scopes ?? ['watchlist:read']
+  if (!Array.isArray(scopes) || !scopes.length || new Set(scopes).size !== scopes.length || scopes.some((scope) => !['watchlist:read', 'watchlist:write'].includes(scope))) {
+    return json({ error: 'Select watchlist:read and/or watchlist:write scopes.' }, 400)
+  }
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   if (!name || name.length > 80) return json({ error: 'Name must be between 1 and 80 characters.' }, 400)
 
@@ -31,10 +40,10 @@ export async function POST(request: Request) {
     user_id: user.id,
     name,
     token_hash: hashToken(token),
-    scopes: ['watchlist:read', 'watchlist:write'],
+    scopes,
     expires_at: expiresAt,
   }).select('id,name,scopes,created_at,last_used_at,expires_at,revoked_at').single()
-  return error ? json({ error: 'Could not create integration token.' }, 500) : json({ token, integration: data }, 201)
+  return error ? tokenError(error, 'create') : json({ token, integration: data }, 201)
 }
 
 export async function DELETE(request: Request) {
@@ -46,5 +55,5 @@ export async function DELETE(request: Request) {
     .update({ revoked_at: new Date().toISOString() })
     .eq('id', id)
     .eq('user_id', user.id)
-  return error ? json({ error: 'Could not revoke integration token.' }, 500) : new Response(null, { status: 204 })
+  return error ? tokenError(error, 'revoke') : new Response(null, { status: 204 })
 }

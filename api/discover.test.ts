@@ -1,7 +1,9 @@
+import { resetProviderCache } from './_lib/provider'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './discover'
 
 afterEach(() => {
+  resetProviderCache()
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 })
@@ -23,6 +25,17 @@ describe('TMDB discovery proxy', () => {
 
     expect(response.status).toBe(400)
     expect(response.headers.get('cache-control')).toBe('no-store')
+  })
+
+  it('rejects malformed recommendation identifiers without normalizing them', async () => {
+    vi.stubEnv('TMDB_API_KEY', 'test-key')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ results: [] })))
+    vi.stubGlobal('fetch', fetchMock)
+    for (const id of ['movie:1:extra', 'tv:1e2', 'movie:01', 'movie:+1']) {
+      const response = await GET(new Request(`http://localhost/api/discover?feed=recommendations&externalId=${encodeURIComponent(id)}`))
+      expect(response.status).toBe(400)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('normalizes successful public results and caches them', async () => {

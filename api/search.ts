@@ -1,3 +1,4 @@
+import { providerFetch } from './_lib/provider.js'
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 const TMDB_ANIMATION_GENRE_ID = 16
@@ -172,7 +173,7 @@ export async function GET(request: Request) {
       params.set('api_key', apiKey)
     }
 
-    const response = await fetch(`${TMDB_API_BASE_URL}/search/multi?${params.toString()}`, {
+    const response = await providerFetch(`${TMDB_API_BASE_URL}/search/multi?${params.toString()}`, {
       signal: AbortSignal.timeout(TMDB_TIMEOUT_MS),
       headers: {
         accept: 'application/json',
@@ -181,7 +182,8 @@ export async function GET(request: Request) {
     })
 
     if (!response.ok) {
-      return jsonResponse({ error: `TMDB search failed with status ${response.status}.` }, { status: response.status })
+      const retry = response.headers.get('retry-after')
+      return jsonResponse({ error: `TMDB search failed with status ${response.status}.` }, { status: response.status === 429 ? 429 : 502, headers:retry && /^\d{1,5}$/.test(retry) ? {'retry-after':retry} : undefined })
     }
 
     const data = (await response.json()) as TmdbSearchResponse
@@ -193,7 +195,8 @@ export async function GET(request: Request) {
 
     return jsonResponse({ results })
   } catch (error) {
-    console.error(error)
-    return jsonResponse({ error: 'TMDB proxy failed. Try again in a moment.' }, { status: 500 })
+    if (error instanceof Error && ['TimeoutError','AbortError'].includes(error.name)) return jsonResponse({error:'TMDB search request timed out.'},{status:504})
+    console.error('Catalogue request failed')
+    return jsonResponse({ error: 'TMDB proxy failed. Try again in a moment.' }, { status: 502 })
   }
 }

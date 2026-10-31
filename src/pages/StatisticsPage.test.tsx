@@ -10,6 +10,9 @@ vi.mock('../services/tmdb', () => ({
   fetchTmdbDetails: vi.fn(),
 }))
 
+import { fetchWatchActivity } from '../services/mediaLibrary'
+vi.mock('../services/mediaLibrary', () => ({ fetchWatchActivity: vi.fn(), libraryError: (error: Error) => error.message }))
+
 const baseItem: MediaItem = {
   id: 'movie',
   source: 'tmdb',
@@ -33,6 +36,12 @@ afterEach(() => {
 })
 
 describe('StatisticsPage', () => {
+  it('renders full-window activity and season totals independently of watch-time estimates', async () => {
+    vi.mocked(fetchWatchActivity).mockResolvedValue({ totalEvents: 150, updates: 120, added: 20, removed: 10, completions: 5, activeDays: 12, trackedSeasons: 4, completedSeasons: 2, daily: [], days: 30 })
+    render(<StatisticsPage items={[baseItem]} userId="owner" onUpdate={vi.fn()} />)
+    expect(await screen.findByText('120 tracking updates in the last 30 days.')).toBeTruthy()
+    expect(screen.getByText('2 / 4 seasons completed')).toBeTruthy()
+  })
   it('calculates the requested library statistics and watch-time rules', () => {
     const items: MediaItem[] = [
       baseItem,

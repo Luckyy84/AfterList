@@ -24,14 +24,16 @@ export function publicNotFound() {
 }
 
 export function rateLimit(request: Request, route: string) {
+  void route // Callers keep their route labels; all labels consume the same IP budget.
   const now = Date.now()
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown'
-  const key = `${route}:${ip}`
+  // ponytail: process-local fallback; use deployment WAF limits across instances.
+  const ip = (request.headers.get('x-vercel-forwarded-for') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown').split(',')[0].trim().slice(0, 128)
+  const key = `public:${ip}`
   const current = requests.get(key)
   if (!current || current.resetAt <= now) {
     if (requests.size >= 5_000) {
       for (const [candidate, value] of requests) if (value.resetAt <= now) requests.delete(candidate)
-      if (requests.size >= 5_000) requests.delete(requests.keys().next().value as string)
+      if (requests.size >= 5_000 && !requests.has(key)) return Math.ceil(RATE_WINDOW_MS / 1000)
     }
     requests.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS })
     return null

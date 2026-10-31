@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from 
 import { canFetchTmdbDetails, fetchTmdbDetails } from '../services/tmdb'
 import type { MediaItem, MediaStatus, MediaType, MediaUpdate } from '../types/media'
 import { calculateStatistics, formatWatchTime, getWatchedEpisodeCount } from '../utils/statistics'
-import { fetchWatchlistEvents } from '../services/mediaLibrary'
+import { fetchWatchActivity, libraryError, type WatchActivity } from '../services/mediaLibrary'
 
 const statuses: MediaStatus[] = ['Planned', 'Watching', 'Paused', 'Watched', 'Dropped']
 const mediaTypes: MediaType[] = ['Anime', 'Movie', 'TV Series']
@@ -34,11 +34,15 @@ export default function StatisticsPage({ items, onUpdate, userId }: StatisticsPa
   const itemIdentityKey = items.map((item) => item.id).join('|')
   const [runtimeState, setRuntimeState] = useState<'ready' | 'loading' | 'partial'>(() =>
     items.some((item) => !item.runtimeMinutes && canFetchTmdbDetails(item)) ? 'loading' : 'ready')
-  const [recentEventCount, setRecentEventCount] = useState<number | null>(null)
+  const [activity, setActivity] = useState<{ userId: string; data: WatchActivity } | null>(null)
+  const [activityError, setActivityError] = useState('')
   useEffect(() => {
     if (!userId) return
-    fetchWatchlistEvents(userId).then((events) => setRecentEventCount(events.filter((event) => Date.now() - new Date(event.created_at).getTime() <= 30 * 86400000).length)).catch(() => setRecentEventCount(null))
+    let alive = true
+    fetchWatchActivity().then((data) => { if (alive) { setActivity({ userId, data }); setActivityError('') } }).catch((cause) => { if (alive) setActivityError(libraryError(cause)) })
+    return () => { alive = false }
   }, [userId])
+  const currentActivity = activity?.userId === userId ? activity?.data : null
 
   const backfillRuntimes = useEffectEvent(async (signal: AbortSignal) => {
     const candidates = items.filter((item) =>
@@ -102,7 +106,9 @@ export default function StatisticsPage({ items, onUpdate, userId }: StatisticsPa
         <h1>Statistics</h1>
         <p>A truthful snapshot calculated from your current library.</p>
       </header>
-      <p className="stats-activity-summary">{recentEventCount == null ? 'Recent activity uses your current library on this device.' : `${recentEventCount} tracking updates in the last 30 days.`}</p>
+      <p className="stats-activity-summary">{currentActivity ? `${currentActivity.updates} tracking updates in the last 30 days.` : 'Activity history requires a signed-in, migrated account.'}</p>
+      {activityError && <p role="alert">{activityError}</p>}
+      {currentActivity && <details className="activity-analytics"><summary>Watch activity (last 30 days, UTC)</summary><p>{currentActivity.added} added · {currentActivity.removed} removed · {currentActivity.completions} title completions · {currentActivity.activeDays} active days · {currentActivity.totalEvents} total events.</p><p>{currentActivity.completedSeasons} / {currentActivity.trackedSeasons} seasons completed</p><p>Season counters are not added to title watch-time estimates, to avoid double counting. Historical events before tracking was enabled cannot be recovered.</p><ol>{currentActivity.daily.map((day) => <li key={day.date}><time dateTime={day.date}>{day.date}</time>: {day.events} events</li>)}</ol></details>}
 
       {!items.length ? (
         <div className="empty-state stats-empty">

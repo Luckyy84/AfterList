@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
+import AccountDeletion from './AccountDeletion'
+import AvatarUpload from './AvatarUpload'
 import { usePreferences, type Preferences } from '../context/PreferencesContext'
 import type { MediaItem } from '../types/media'
 import { createCustomList, deleteCustomList, fetchCustomLists, type CustomList } from '../services/mediaLibrary'
@@ -13,7 +15,7 @@ const sections = [
   { id: 'profile', label: 'Profile', description: 'Choose what other people can see.' },
   { id: 'library', label: 'Library', description: 'Choose how your collection opens.' },
   { id: 'appearance', label: 'Appearance', description: 'Tune density and motion on this device.' },
-  { id: 'integrations', label: 'Integrations', description: 'Manage access for Jellyfin and personal clients.' },
+  { id: 'integrations', label: 'Integrations', description: 'Manage access for personal clients.' },
   { id: 'privacy', label: 'Privacy', description: 'Review data handling and legal information.' },
 ] as const
 
@@ -78,6 +80,7 @@ export function ProfileSettings({ userId, profile, onSaved }: { userId: string; 
       <label><span>Username</span><input ref={usernameRef} aria-label="Username" value={username} onChange={(event) => { setUsername(event.target.value); setInvalidField(null) }} required aria-invalid={fieldError('username')} aria-describedby={fieldError('username') ? 'profile-form-message' : undefined} /></label>
       <label><span>Display name</span><input aria-label="Display name" maxLength={80} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
       <label><span>Bio</span><textarea aria-label="Bio" maxLength={500} value={bio} onChange={(event) => setBio(event.target.value)} /></label>
+      <AvatarUpload avatarUrl={avatarUrl} onChanged={(url) => { setAvatarUrl(url); void Promise.resolve(onSaved?.()).catch(() => setMessage({ kind: 'error', text: 'Avatar changed, but profile refresh failed. Reload to retry.' })) }} />
       <label><span>Avatar URL</span><input ref={avatarRef} aria-label="Avatar URL" type="url" value={avatarUrl} onChange={(event) => { setAvatarUrl(event.target.value); setInvalidField(null) }} aria-invalid={fieldError('avatarUrl')} aria-describedby={fieldError('avatarUrl') ? 'profile-form-message' : undefined} /></label>
       <label><span>Website</span><input ref={websiteRef} aria-label="Website" type="url" value={website} onChange={(event) => { setWebsite(event.target.value); setInvalidField(null) }} aria-invalid={fieldError('website')} aria-describedby={fieldError('website') ? 'profile-form-message' : undefined} /></label>
       <label className="settings-toggle"><span>Public profile<small>Turn this on and save before sharing your profile.</small></span><input aria-label="Public profile" type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} /></label>
@@ -103,7 +106,8 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
   const navigate = useNavigate()
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [tokens, setTokens] = useState<Array<{ id: string; name: string; created_at: string; last_used_at: string | null; expires_at: string | null }>>([])
-  const [tokenName, setTokenName] = useState('Jellyfin')
+  const [tokenName, setTokenName] = useState('Personal client')
+  const [tokenAccess, setTokenAccess] = useState('read')
   const [newToken, setNewToken] = useState('')
   const [tokenError, setTokenError] = useState('')
   const [isTokenBusy, setIsTokenBusy] = useState(false)
@@ -135,11 +139,11 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
     if (section !== 'integrations' || !session?.access_token) return
     fetch('/api/v1/tokens', { headers: { Authorization: `Bearer ${session.access_token}` } })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`Server returned ${response.status}.`)
+        if (!response.ok) { const body = await response.json(); throw new Error(body.error || `Server returned ${response.status}.`) }
         const body = await response.json() as { tokens?: typeof tokens }
         setTokens(body.tokens ?? [])
       })
-      .catch(() => showTokenError('Could not load integration tokens.'))
+      .catch((cause) => showTokenError(cause instanceof Error ? cause.message : 'Could not load integration tokens.'))
   }, [section, session?.access_token, showTokenError])
 
   useEffect(() => {
@@ -168,9 +172,9 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
       const response = await fetch('/api/v1/tokens', {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: tokenName }),
+        body: JSON.stringify({ name: tokenName, scopes: tokenAccess === 'write' ? ['watchlist:read', 'watchlist:write'] : ['watchlist:read'] }),
       })
-      if (!response.ok) throw new Error(`Server returned ${response.status}. Check the API deployment and server variables.`)
+      if (!response.ok) { const body = await response.json(); throw new Error(body.error || `Server returned ${response.status}. Check the API deployment and server variables.`) }
       const body = await response.json() as { token?: string; integration?: (typeof tokens)[number] }
       if (!body.token || !body.integration) throw new Error('The API returned an invalid response.')
       setNewToken(body.token)
@@ -191,7 +195,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         method: 'DELETE',
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
-      if (!response.ok) throw new Error('Could not revoke integration token.')
+      if (!response.ok) { const body = await response.json(); throw new Error(body.error || 'Could not revoke integration token.') }
       setTokens((current) => current.filter((token) => token.id !== id))
     } catch (error) {
       showTokenError(error instanceof Error ? error.message : 'Could not revoke integration token.')
@@ -214,6 +218,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
             </div>
           ) : <Link className="settings-action" to="/login">Sign in for cloud sync</Link>}
         </div>
+        {session?.access_token && <AccountDeletion accessToken={session.access_token} onDeleted={async () => { await signOut(); navigate('/login') }} />}
         <div className="settings-block settings-block-divided">
           <h3>Watchlist storage</h3>
           <dl className="settings-list">
@@ -233,7 +238,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         </div>
         <div className="settings-block settings-block-divided">
           <h3>Custom lists</h3>
-          {user ? <><form onSubmit={(event) => { event.preventDefault(); setListError(''); void createCustomList(user.id, listName).then((list) => { setCustomLists((current) => [...current, list]); setListName('') }).catch((cause) => showListError(cause instanceof Error ? cause.message : 'Could not create list.')) }}><label><span>List name</span><input aria-label="Custom list name" maxLength={80} required value={listName} onChange={(event) => setListName(event.target.value)} /></label><button className="settings-action" type="submit">Create list</button></form><ul className="settings-token-list">{customLists.map((list) => <li key={list.id}><span><strong>{list.name}</strong><small>/{list.slug}</small></span><label><input aria-label={`Make ${list.name} public`} type="checkbox" checked={list.is_public} onChange={(event) => { const isPublic = event.target.checked; setCustomLists((current) => current.map((item) => item.id === list.id ? { ...item, is_public: isPublic } : item)); void setCustomListPublic(list.id, user.id, isPublic).catch(() => showListError('Could not update list privacy.')) }} />Public</label><button type="button" onClick={() => void deleteCustomList(list.id, user.id).then(() => setCustomLists((current) => current.filter((item) => item.id !== list.id))).catch(() => showListError('Could not delete list.'))}>Delete</button></li>)}</ul></> : <p>Sign in to create custom lists.</p>}
+          {user ? <><form onSubmit={(event) => { event.preventDefault(); setListError(''); void createCustomList(user.id, listName).then((list) => { setCustomLists((current) => [...current, list]); setListName('') }).catch((cause) => showListError(cause instanceof Error ? cause.message : 'Could not create list.')) }}><label><span>List name</span><input aria-label="Custom list name" maxLength={80} required value={listName} onChange={(event) => setListName(event.target.value)} /></label><button className="settings-action" type="submit">Create list</button></form><ul className="settings-token-list">{customLists.map((list) => <li key={list.id}><span><strong>{list.name}</strong><small>/{list.slug}</small></span><label><input aria-label={`Make ${list.name} public`} type="checkbox" checked={list.is_public} onChange={(event) => { const isPublic = event.target.checked; void setCustomListPublic(list.id, user.id, isPublic).then(() => setCustomLists((current) => current.map((item) => item.id === list.id ? { ...item, is_public: isPublic } : item))).catch((cause) => showListError(cause instanceof Error ? cause.message : 'Could not update list privacy.')) }} />Public</label><button type="button" onClick={() => void deleteCustomList(list.id, user.id).then(() => setCustomLists((current) => current.filter((item) => item.id !== list.id))).catch(() => showListError('Could not delete list.'))}>Delete</button></li>)}</ul></> : <p>Sign in to create custom lists.</p>}
           {listError && <p ref={listErrorRef} tabIndex={-1} role="alert" className="settings-token-error">{listError}</p>}
         </div>
         <div className="settings-block settings-block-divided">
@@ -264,10 +269,11 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
       <section className="settings-panel settings-integrations">
         <div className="settings-block">
           <h3>Integration tokens</h3>
-          <p>Create a revocable watchlist token for Jellyfin or another personal client.</p>
+          <p>Create a revocable watchlist token for a personal client. Read-only is the default; grant write access only to trusted clients.</p>
         </div>
         <form className="settings-token-form" onSubmit={(event) => void createToken(event)}>
           <label htmlFor="token-name">Token name</label>
+          <label>Token access<select value={tokenAccess} onChange={(event) => setTokenAccess(event.target.value)}><option value="read">Read only</option><option value="write">Read and write</option></select></label>
           <div><input id="token-name" value={tokenName} maxLength={80} onChange={(event) => setTokenName(event.target.value)} required /><button type="submit" disabled={isTokenBusy}>Create token</button></div>
         </form>
         {newToken && <div className="settings-new-token" role="status"><strong>Copy this token now—it is shown once.</strong><code>{newToken}</code><button type="button" onClick={() => void navigator.clipboard.writeText(newToken)}>Copy token</button></div>}

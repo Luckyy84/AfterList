@@ -1,3 +1,4 @@
+import { providerFetch } from './_lib/provider.js'
 const ANILIST_URL = 'https://graphql.anilist.co'
 const TIMEOUT_MS = 10_000
 const MAX_QUERY = 120
@@ -118,7 +119,7 @@ function positiveInteger(value: string | null, fallback?: number, maximum = Numb
 }
 
 async function requestAniList(query: string, variables: Record<string, unknown>) {
-  return fetch(ANILIST_URL, {
+  return providerFetch(ANILIST_URL, {
     method: 'POST',
     signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { accept: 'application/json', 'content-type': 'application/json' },
@@ -183,7 +184,7 @@ export async function GET(request: Request) {
     const results = media.map(normalizedItem).filter((item): item is NonNullable<typeof item> => Boolean(item))
     return json({ results, pageInfo: payload.data?.Page?.pageInfo ?? null }, 200, undefined, operation === 'discover' ? 900 : 300)
   } catch (error) {
-    console.error('AniList proxy failed:', error instanceof Error ? error.name : 'UnknownError')
+    console.error('AniList proxy failed.')
     if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) return json({ error: 'AniList request timed out.' }, 504)
     return json({ error: 'AniList proxy failed. Try again in a moment.' }, 502)
   }

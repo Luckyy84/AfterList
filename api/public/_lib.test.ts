@@ -33,6 +33,12 @@ describe('public profile API helpers', () => {
     expect(publicJson({ error: 'no' }, 404).headers.get('cache-control')).toBe('no-store')
   })
 
+  it('shares an IP budget across public routes so route rotation cannot bypass it', () => {
+    const request = new Request('http://localhost', { headers: { 'x-forwarded-for': '203.0.113.99' } })
+    for (let index = 0; index < 60; index += 1) expect(rateLimit(request, index % 2 ? 'profile' : 'library')).toBeNull()
+    expect(rateLimit(request, 'list')).toBeGreaterThan(0)
+  })
+
   it('applies a best-effort per-route and IP rate limit', () => {
     const request = new Request('http://localhost', { headers: { 'x-forwarded-for': '203.0.113.42' } })
     for (let index = 0; index < 60; index += 1) expect(rateLimit(request, 'helper-test')).toBeNull()

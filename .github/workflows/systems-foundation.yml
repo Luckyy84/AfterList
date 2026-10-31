@@ -1,0 +1,51 @@
+name: Systems foundation
+on:
+  pull_request:
+  push:
+    branches: [main, feat/systems-upgrade]
+permissions:
+  contents: read
+concurrency:
+  group: foundation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck:api
+      - run: npm audit --omit=dev
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failures
+          path: test-results/
+          retention-days: 7
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Start disposable local Supabase only
+        run: supabase start
+      - name: Replay entire migration history from empty database
+        run: supabase db reset --local --no-seed
+      - name: Grants, RLS, behavior and account security regression tests
+        run: supabase test db --local
+      - name: Stop only this job's local stack
+        if: always()
+        run: supabase stop --no-backup

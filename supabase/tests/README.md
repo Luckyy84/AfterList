@@ -16,4 +16,4 @@ npx supabase test db --db-url "postgresql://..."
 
 The suite runs in transactions and rolls fixture data back. Never use `--linked` for routine verification.
 
-The repository's oldest migration currently assumes `public.watchlist_items` already exists. A clean `db reset` therefore requires the production baseline migration to be added first; until then, use a disposable database restored from that baseline. The tests intentionally fail closed if Milestone 2 tables, constraints, RLS policies, grants, or RPCs are absent.
+The oldest migration bootstraps an empty database. CI replays the full history on local Supabase; a SQL-only PostgreSQL fallback and its deliberately minimal auth contract are documented in `docs/SYSTEMS_FOUNDATION.md`. The tests fail closed if tables, constraints, RLS policies, grants, or RPCs are absent.

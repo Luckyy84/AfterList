@@ -4,10 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { claimUsername, saveOwnProfile } from '../services/profiles'
 import { ProfileSettings } from './SettingsPage'
 
+vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ session: null }) }))
 vi.mock('motion/react', async () => import('../test/motionMock'))
 vi.mock('../services/profiles', () => ({ claimUsername: vi.fn(), saveOwnProfile: vi.fn(), setCustomListPublic: vi.fn() }))
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 describe('ProfileSettings', () => {
+  it('exposes safe upload and removal controls', () => {
+    render(<ProfileSettings userId="u1" profile={null} />)
+    expect(screen.getByLabelText('Upload avatar')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Remove avatar' })).not.toBeNull()
+  })
   it('blocks invalid usernames before calling the claim RPC', async () => {
     render(<ProfileSettings userId="u1" profile={null} />)
     await userEvent.type(screen.getByRole('textbox', { name: 'Username' }), 'no spaces')

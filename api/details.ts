@@ -1,3 +1,4 @@
+import { providerFetch } from './_lib/provider.js'
 const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3'
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
 const TMDB_ANIMATION_GENRE_ID = 16
@@ -184,7 +185,7 @@ export async function GET(request: Request) {
 
     const params = new URLSearchParams({ language: 'en-US' })
     if (!accessToken && apiKey) params.set('api_key', apiKey)
-    const response = await fetch(`${TMDB_API_BASE_URL}/${parsedId.kind}/${parsedId.id}?${params}`, {
+    const response = await providerFetch(`${TMDB_API_BASE_URL}/${parsedId.kind}/${parsedId.id}?${params}`, {
       signal: AbortSignal.timeout(TMDB_TIMEOUT_MS),
       headers: { accept: 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
     })
@@ -207,7 +208,7 @@ export async function GET(request: Request) {
     if (!item) return jsonResponse({ error: 'TMDB returned an invalid details response.' }, { status: 502 })
     return jsonResponse(mapDetails(data, parsedId.kind, parsedId.id, item))
   } catch (error) {
-    console.error('TMDB details proxy failed:', error instanceof Error ? error.name : 'UnknownError')
+    console.error('TMDB details proxy failed.')
     if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       return jsonResponse({ error: 'TMDB details request timed out.' }, { status: 504 })
     }

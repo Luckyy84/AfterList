@@ -120,12 +120,16 @@ insert into public.media_entities(id, media_type)
 values ('15000000-0000-4000-8000-000000000001', 'Movie');
 select throws_ok(
   $$ insert into public.media_aliases(media_id, provider, external_id) values ('15000000-0000-4000-8000-000000000001', 'tmdb', 'movie:900001') $$,
-  '23505',
+  '23505', null,
   'the same provider identity cannot point at two canonical entities'
 );
 
+-- Unsafe series/season pairs must not acquire any merge side effects.
+select pg_temp.add_watchlist_item('21000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'tmdb', 'tv:710', 'Unsafe Series', 'Watching', 0, null, null);
+select pg_temp.add_watchlist_item('21000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'anilist', '710', 'Unsafe Season', 'Planned', 0, null, null);
+
 -- Same title/year across providers remains separate until the user confirms it.
-select pg_temp.add_watchlist_item('20000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'tmdb', 'tv:700', 'Shared Title', 'Paused', 1, '2026-01-01', null);
+select pg_temp.add_watchlist_item('20000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'tmdb', 'movie:700', 'Shared Title', 'Paused', 1, '2026-01-01', null);
 select pg_temp.add_watchlist_item('20000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'anilist', '700', 'Shared Title', 'Watching', 2, '2026-02-01', null);
 select isnt(
   (select media_id from public.watchlist_items where id = '20000000-0000-4000-8000-000000000001'),
@@ -144,12 +148,12 @@ select lives_ok(
 );
 select throws_ok(
   $$ select pg_temp.add_watchlist_item('30000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'anilist', '702', 'Bad Rewatch', 'Watching', -1, null, null) $$,
-  '23514',
+  '23514', null,
   'negative rewatch counts are rejected'
 );
 select throws_ok(
   $$ select pg_temp.add_watchlist_item('30000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'anilist', '703', 'Bad Dates', 'Watched', 0, '2026-03-01', '2026-02-01') $$,
-  '23514',
+  '23514', null,
   'completion cannot precede the start date'
 );
 
@@ -160,14 +164,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', true);
 select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","role":"authenticated"}', true);
 select is((select count(*) from public.custom_lists where id = '40000000-0000-4000-8000-000000000001'), 0::bigint, 'user B cannot read owner A custom lists');
-select is(
-  (with changed as (update public.custom_lists set name = 'Stolen' where id = '40000000-0000-4000-8000-000000000001' returning 1) select count(*) from changed),
-  0::bigint,
-  'user B cannot update owner A custom lists'
-);
+with changed as (update public.custom_lists set name = 'Stolen' where id = '40000000-0000-4000-8000-000000000001' returning 1)
+select is((select count(*) from changed), 0::bigint, 'user B cannot update owner A custom lists');
 select throws_ok(
   $$ insert into public.custom_list_items(list_id, watchlist_item_id, user_id) values ('40000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') $$,
-  '23503',
+  '23503', null,
   'cross-owner list membership is rejected by composite ownership keys'
 );
 select is((select count(*) from public.watchlist_events where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0::bigint, 'user B cannot read owner A events');
@@ -175,8 +176,8 @@ select is((select count(*) from public.user_media_match_decisions where user_id 
 
 reset role;
 set local role anon;
-select throws_ok($$ select count(*) from public.watchlist_events $$, '42501', 'anon cannot read private watchlist events');
-select throws_ok($$ select count(*) from public.custom_lists $$, '42501', 'anon cannot read custom lists');
+select throws_ok($$ select count(*) from public.watchlist_events $$, '42501', null, 'anon cannot read private watchlist events');
+select throws_ok($$ select count(*) from public.custom_lists $$, '42501', null, 'anon cannot read custom lists');
 
 reset role;
 set local role authenticated;
@@ -188,13 +189,20 @@ select lives_ok(
   'owner A can add their own item to their own list'
 );
 
+select throws_ok($$ select public.confirm_media_match('tmdb', 'tv:710', 'anilist', '710') $$, '22023', 'Use a season-level match: TMDB series and AniList season counters must stay separate', 'unsafe series-to-season merge is rejected');
+select throws_ok($$ select public.confirm_media_match('anilist', '710', 'tmdb', 'tv:710') $$, '22023', 'Use a season-level match: TMDB series and AniList season counters must stay separate', 'reversed unsafe merge is rejected');
+select is((select count(distinct media_id) from public.watchlist_items where external_id in ('tv:710','710') and merged_into_id is null), 2::bigint, 'unsafe merge leaves both identities separate and active');
+select is((select count(*) from public.user_media_alias_links where external_id in ('tv:710','710')), 0::bigint, 'unsafe merge writes no alias links');
+select is((select count(*) from public.user_media_match_decisions where alias_a = 'anilist:710' and alias_b = 'tmdb:tv:710'), 0::bigint, 'unsafe merge writes no decision');
+select is((select count(*) from public.media_match_audit where alias_a = 'anilist:710' and alias_b = 'tmdb:tv:710'), 0::bigint, 'unsafe merge writes no audit decision');
+
 select is(
-  (public.reject_media_match('tmdb', 'tv:700', 'anilist', '700')->>'decision'),
+  (public.reject_media_match('tmdb', 'movie:700', 'anilist', '700')->>'decision'),
   'rejected',
   'reject RPC records an explicit rejection'
 );
 select is(
-  (select decision from public.user_media_match_decisions where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and alias_a = 'anilist:700' and alias_b = 'tmdb:tv:700'),
+  (select decision from public.user_media_match_decisions where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and alias_a = 'anilist:700' and alias_b = 'tmdb:movie:700'),
   'rejected',
   'reject decision stores the normalized alias pair'
 );
@@ -214,11 +222,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","role":"authenticated"}', true);
 select is(
-  (public.confirm_media_match('tmdb', 'tv:700', 'anilist', '700')->>'decision'),
+  (public.confirm_media_match('tmdb', 'movie:700', 'anilist', '700')->>'decision'),
   'confirmed',
   'confirm RPC records an explicit confirmation'
 );
-select is((select decision from public.user_media_match_decisions where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and alias_a = 'anilist:700' and alias_b = 'tmdb:tv:700'), 'confirmed', 'confirmation replaces the prior rejection');
+select is((select decision from public.user_media_match_decisions where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and alias_a = 'anilist:700' and alias_b = 'tmdb:movie:700'), 'confirmed', 'confirmation replaces the prior rejection');
 select is((select count(*) from public.watchlist_items where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and title = 'Shared Title' and merged_into_id is null), 1::bigint, 'confirmation leaves exactly one active item');
 select is((select max(current_episode) from public.watchlist_items where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and title = 'Shared Title' and merged_into_id is null), 8, 'confirmation preserves maximum progress');
 select ok((select is_favorite from public.watchlist_items where user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' and title = 'Shared Title' and merged_into_id is null), 'confirmation preserves favorites');
@@ -236,6 +244,29 @@ select ok(
   ),
   'event payloads never copy private note bodies'
 );
+
+-- Attempt cross-owner reversal while the pair is still merged, not just after undo.
+select set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', true);
+select throws_ok($$ select public.undo_media_merge('20000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001') $$, 'P0002', 'Merge pair not found', 'other owner cannot reverse an active merge');
+select is((select count(*) from public.media_match_audit), 0::bigint, 'other owner cannot inspect active merge audit');
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', true);
+
+-- The newer right-hand provider wins. Undo restores identities, not old tracking data.
+select is((public.undo_media_merge('20000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001')->>'decision'), 'undone', 'owner can reverse supported merge');
+select is((select count(distinct media_id) from public.watchlist_items where title = 'Shared Title' and merged_into_id is null), 2::bigint, 'undo restores both original identities');
+select ok((select current_episode = 8 and is_favorite and private_notes like '%TMDB note%' and private_notes like '%AniList note%' from public.watchlist_items where id = '20000000-0000-4000-8000-000000000002'), 'undo preserves combined winner tracking and notes');
+select is((select watchlist_item_id from public.custom_list_items where list_id = '40000000-0000-4000-8000-000000000001'), '20000000-0000-4000-8000-000000000002'::uuid, 'undo preserves moved list membership');
+select is((select count(*) from public.user_media_alias_links where external_id in ('movie:700','700')), 0::bigint, 'undo removes alias overrides');
+select is((select count(*) from public.media_match_audit where alias_a = 'anilist:700' and alias_b = 'tmdb:movie:700'), 3::bigint, 'reject confirm and undo each have an audit record');
+select is((select count(*) from public.media_match_audit where alias_a = 'anilist:700' and alias_b = 'tmdb:movie:700' and old_decision = 'confirmed' and new_decision = 'rejected'), 1::bigint, 'reversal audits confirmed-to-rejected transition');
+select throws_ok($$ select public.undo_media_merge('20000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001') $$, 'P0002', 'Merge pair not found', 'undo cannot be replayed');
+select set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', true);
+select is((select count(*) from public.media_match_audit), 0::bigint, 'other owner cannot read merge audit');
+select throws_ok($$ select public.undo_media_merge('20000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001') $$, 'P0002', 'Merge pair not found', 'other owner cannot undo this pair');
+reset role;
+set local role anon;
+select throws_ok($$ select * from public.media_match_audit $$, '42501', null, 'anon cannot read match audit');
+select throws_ok($$ select public.undo_media_merge('20000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001') $$, '42501', null, 'anon cannot undo merges');
 
 reset role;
 insert into public.api_tokens(id, user_id, name, token_hash, scopes)

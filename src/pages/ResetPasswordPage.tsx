@@ -68,11 +68,11 @@ export default function ResetPasswordPage() {
         {canReset ? <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label className="auth-field">
             <span>New password</span>
-            <input name="password" type="password" autoComplete="new-password" minLength={8} required disabled={isSubmitting} />
+            <input name="password" type="password" autoComplete="new-password" minLength={12} required disabled={isSubmitting} />
           </label>
           <label className="auth-field">
             <span>Confirm new password</span>
-            <input ref={confirmRef} name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required disabled={isSubmitting} aria-invalid={confirmInvalid} aria-describedby={confirmInvalid ? 'reset-password-notice' : undefined} onChange={() => setConfirmInvalid(false)} />
+            <input ref={confirmRef} name="confirmPassword" type="password" autoComplete="new-password" minLength={12} required disabled={isSubmitting} aria-invalid={confirmInvalid} aria-describedby={confirmInvalid ? 'reset-password-notice' : undefined} onChange={() => setConfirmInvalid(false)} />
           </label>
           <button className="auth-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Updating...' : 'Update password'}</button>
           {notice && <p id="reset-password-notice" ref={noticeRef} tabIndex={-1} className="auth-notice is-error" role="alert">{notice}</p>}

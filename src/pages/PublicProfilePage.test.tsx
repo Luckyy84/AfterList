@@ -1,14 +1,32 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchPublicProfile } from '../services/profiles'
+import { fetchPublicProfile, fetchPublicLibrary } from '../services/profiles'
 import PublicProfilePage from './PublicProfilePage'
 
 vi.mock('../services/profiles', () => ({ fetchPublicProfile: vi.fn(), fetchPublicLibrary: vi.fn(), fetchPublicList: vi.fn() }))
 vi.mock('motion/react', async () => import('../test/motionMock'))
+function SearchPath() { const location = useLocation(); return <output>{location.pathname}{location.search}</output> }
 function Path() { return <output>{useLocation().pathname}</output> }
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 describe('PublicProfilePage', () => {
+  it('loads the URL-selected public page with previous navigation', async () => {
+    vi.mocked(fetchPublicLibrary).mockResolvedValue({ username: 'lucky', displayName: 'Lucky', items: [] })
+    render(<MemoryRouter initialEntries={['/user/lucky/library?page=2']}><Routes><Route path="/user/:username/library" element={<PublicProfilePage mode="library" />} /></Routes></MemoryRouter>)
+    expect(await screen.findByRole('button', { name: 'Previous page' })).not.toBeNull()
+    expect(fetchPublicLibrary).toHaveBeenCalledWith('lucky', expect.any(AbortSignal), 50)
+  })
+  it('does not offer a phantom next page when the server says the full page is final', async () => {
+    const items = Array.from({ length: 50 }, (_, index) => ({ id: String(index), title: `Title ${index}`, type: 'Movie' as const, status: 'Planned' as const, poster: '', backdrop: '', progress: '', rating: '', description: '' }))
+    vi.mocked(fetchPublicLibrary).mockResolvedValue({ username: 'lucky', displayName: 'Lucky', items, ...{ hasMore: false, nextOffset: null } })
+    render(<MemoryRouter initialEntries={['/user/lucky/library']}><Routes><Route path="/user/:username/library" element={<PublicProfilePage mode="library" />} /></Routes></MemoryRouter>)
+    expect((await screen.findByRole('button', { name: 'Next page' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+  it('keeps pagination when redirecting an old username', async () => {
+    vi.mocked(fetchPublicLibrary).mockResolvedValue({ username: 'lucky', displayName: 'Lucky', redirectUsername: 'lucky', items: [] })
+    render(<MemoryRouter initialEntries={['/user/old/library?page=2']}><Routes><Route path="/user/:username/library" element={<PublicProfilePage mode="library" />} /></Routes><SearchPath /></MemoryRouter>)
+    expect(await screen.findByText('/user/lucky/library?page=2')).not.toBeNull()
+  })
   it('renders only the curated signed-out projection', async () => {
     vi.mocked(fetchPublicProfile).mockResolvedValue({ username: 'lucky', displayName: 'Lucky', bio: 'Hello', favorites: [], stats: { watched: 4 } })
     render(<MemoryRouter initialEntries={['/user/lucky']}><Routes><Route path="/user/:username" element={<PublicProfilePage mode="overview" />} /></Routes></MemoryRouter>)

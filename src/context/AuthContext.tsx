@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '../services/supabase'
+import { validateNewPassword } from '../services/passwordPolicy'
 
 type AuthContextValue = {
   isConfigured: boolean
@@ -35,6 +36,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!isMounted) return
       setSession(data.session)
       setIsLoading(false)
+    }).catch(() => {
+      if (!isMounted) return
+      setSession(null)
+      setIsLoading(false)
     })
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -64,6 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return data.session
       },
       async signUp(email, password, displayName) {
+        validateNewPassword(password)
         if (!supabase) throw new Error('Supabase is not configured yet.')
 
         const { data, error } = await supabase.auth.signUp({
@@ -101,6 +107,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (error) throw error
       },
       async updatePassword(password) {
+        validateNewPassword(password)
         if (!supabase) throw new Error('Supabase is not configured yet.')
 
         const { error } = await supabase.auth.updateUser({ password })

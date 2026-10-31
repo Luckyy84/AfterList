@@ -110,12 +110,23 @@ export async function GET(request: Request) {
   }
 
   const force = new URL(request.url).searchParams.get('force') === 'true'
-  if (!force && !isBerlinRefreshHour(new Date())) {
-    return json({ ok: true, skipped: true, reason: 'It is not 02:00 in Europe/Berlin.' })
-  }
 
+  const day = new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+  let lease: string | null = null
+  let client: ReturnType<typeof adminClient> | null = null
   try {
-    const client = adminClient()
+    client = adminClient()
+    if (new URL(request.url).searchParams.get('status') === 'true') {
+      const status = await client.from('refresh_jobs').select('job_day,status,attempts,started_at,finished_at,scanned,updated,failed').eq('job_day',day).maybeSingle()
+      if (status.error) return json({error:status.error.code === '42P01' || status.error.code === 'PGRST205' ? 'Systems reliability migration needed.' : 'Could not read job status.'},503)
+      return json({job:status.data})
+    }
+    const claim = await client.rpc('claim_refresh_job', {p_day:day,p_start:force || isBerlinRefreshHour(new Date())})
+    if (claim.error) return json({error: claim.error.code === 'PGRST202' || claim.error.code === '42883'
+      ? 'Systems reliability migration needed; no refresh was run.' : 'Could not claim durable refresh job.'},503)
+    lease = claim.data as string | null
+    if (!lease) return json({skipped:true,reason:'Daily job is running, complete, or retries exhausted.'})
+    const deadline = Date.now()+45_000
     const rows = await fetchWatchlistRows(client)
     const rowsByExternalId = new Map<string, RefreshableWatchlistRow[]>()
     for (const row of rows) {
@@ -134,13 +145,14 @@ export async function GET(request: Request) {
         cursor += 1
         if (!group) return
         const [externalId, matchingRows] = group
+        if (Date.now() > deadline) { failed += matchingRows.length; continue }
 
         let details: TmdbRefreshDetails
         try {
           details = await fetchTmdbDetails(externalId)
-        } catch (error) {
+        } catch {
           failed += matchingRows.length
-          console.error(`Daily metadata refresh failed for ${externalId}.`, error)
+          console.error('Daily metadata provider request failed.')
           continue
         }
 
@@ -148,21 +160,26 @@ export async function GET(request: Request) {
           try {
             const patch = buildMetadataPatch(row, details)
             if (!Object.keys(patch).length) continue
-            const { error } = await client.from('watchlist_items').update(patch).eq('id', row.id)
-            if (error) throw error
+            const { data, error } = await client!.from('watchlist_items').update(patch).eq('id', row.id).eq('current_episode',row.current_episode).select('id').maybeSingle()
+            if (error || !data) throw new Error('Row changed while refreshing')
             updated += 1
-          } catch (error) {
+          } catch {
             failed += 1
-            console.error(`Daily metadata refresh failed for row ${row.id}.`, error)
+            console.error('Daily metadata row refresh failed.')
           }
         }
       }
     }
 
     await Promise.all(Array.from({ length: Math.min(REFRESH_CONCURRENCY, groups.length) }, refreshNext))
-    return json({ ok: true, scanned: rows.length, titles: groups.length, updated, failed })
-  } catch (error) {
-    console.error('Daily watchlist metadata refresh failed.', error)
+    const finished = await client.rpc('finish_refresh_job', {p_day:day,p_lease:lease,p_ok:failed===0,p_scanned:rows.length,p_updated:updated,p_failed:failed})
+    if (finished.error || !finished.data) return json({error:'Could not persist refresh result; inspect durable job status.'},503)
+    const check = await client.from('refresh_jobs').select('job_day,status,attempts,scanned,updated,failed').eq('job_day',day).single()
+    if (check.error || check.data?.status !== (failed ? 'failed' : 'succeeded')) return json({error:'Refresh status verification failed.'},503)
+    return json({ ok: failed===0, job:check.data, scanned: rows.length, titles: groups.length, updated, failed },failed ? 502 : 200)
+  } catch {
+    if (client && lease) await client.rpc('finish_refresh_job', {p_day:day,p_lease:lease,p_ok:false,p_scanned:0,p_updated:0,p_failed:1}).then(() => undefined, () => undefined)
+    console.error('Daily watchlist metadata refresh failed.')
     return json({ error: 'Daily watchlist metadata refresh failed.' }, 500)
   }
 }

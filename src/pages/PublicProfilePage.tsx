@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import MediaCard from '../components/media/MediaCard'
 import { fetchPublicLibrary, fetchPublicList, fetchPublicProfile } from '../services/profiles'
 import type { PublicMediaPage, PublicProfileResponse } from '../types/profile'
@@ -7,8 +7,18 @@ import PageMetadata from '../components/seo/PageMetadata'
 import { SITE_ORIGIN } from '../components/seo/metadata'
 
 export default function PublicProfilePage({ mode }: { mode: 'overview' | 'library' | 'list' }) {
+  const { username, listSlug } = useParams()
+  const [params] = useSearchParams()
+  return <PublicProfileContent key={`${username}:${listSlug}:${mode}:${params.get('page') ?? 1}`} mode={mode} />
+}
+
+function PublicProfileContent({ mode }: { mode: 'overview' | 'library' | 'list' }) {
   const { username = '', listSlug = '' } = useParams()
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const requestedPage = Number(params.get('page') ?? 1)
+  const pageNumber = Number.isInteger(requestedPage) && requestedPage >= 1 && requestedPage <= 201 ? requestedPage : 1
+  const offset = (pageNumber - 1) * 50
   const [data, setData] = useState<PublicProfileResponse | PublicMediaPage | null>(null)
   const [error, setError] = useState('')
   const [errorStatus, setErrorStatus] = useState<number | null>(null)
@@ -16,10 +26,10 @@ export default function PublicProfilePage({ mode }: { mode: 'overview' | 'librar
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
   useEffect(() => {
     const controller = new AbortController()
-    const request = mode === 'overview' ? fetchPublicProfile(username, controller.signal) : mode === 'library' ? fetchPublicLibrary(username, controller.signal) : fetchPublicList(username, listSlug, controller.signal)
+    const request = mode === 'overview' ? fetchPublicProfile(username, controller.signal) : mode === 'library' ? fetchPublicLibrary(username, controller.signal, offset) : fetchPublicList(username, listSlug, controller.signal, offset)
     request.then((next) => {
       if (next.redirectUsername) {
-        navigate(`/user/${next.redirectUsername}${mode === 'library' ? '/library' : mode === 'list' ? `/lists/${listSlug}` : ''}`, { replace: true })
+        navigate(`/user/${next.redirectUsername}${mode === 'library' ? '/library' : mode === 'list' ? `/lists/${listSlug}` : ''}${mode !== 'overview' && pageNumber > 1 ? `?page=${pageNumber}` : ''}`, { replace: true })
         return
       }
       setData(next); setError(''); setErrorStatus(null)
@@ -30,7 +40,7 @@ export default function PublicProfilePage({ mode }: { mode: 'overview' | 'librar
       setError(status === 429 ? 'Too many requests. Please try again shortly.' : cause instanceof Error ? cause.message : 'Profile unavailable.')
     })
     return () => controller.abort()
-  }, [attempt, listSlug, mode, navigate, username])
+  }, [attempt, listSlug, mode, navigate, username, offset, pageNumber])
   if (!data && !error) return <><PageMetadata config={{ title: 'Loading profile | AfterList', description: 'AfterList is loading this public profile.', canonicalPath: window.location.pathname, index: false }} /><section className="public-profile-state" aria-busy="true" role="status"><h1>Loading profile…</h1></section></>
   if (error) return <><PageMetadata config={{ title: 'Page not found | AfterList', description: 'This public profile is private or unavailable.', canonicalPath: window.location.pathname, index: false }} /><section className="empty-state public-profile-state" role="alert"><h1>Profile unavailable</h1><p>{errorStatus === 404 ? 'This profile is private or does not exist.' : error}</p>{errorStatus === 404 ? <Link className="primary-action" to="/discover">Browse AfterList</Link> : <button className="primary-action" type="button" onClick={() => setAttempt((value) => value + 1)}>Try again</button>}</section></>
   const resolved = data!
@@ -50,5 +60,6 @@ export default function PublicProfilePage({ mode }: { mode: 'overview' | 'librar
     {overview?.externalLinks?.length ? <ul className="public-profile-links">{overview.externalLinks.map((link) => <li key={link.url}><a href={link.url} target="_blank" rel="noreferrer">{link.label}</a></li>)}</ul> : null}
     {overview?.lists?.length ? <nav className="public-list-links" aria-label="Public lists">{overview.lists.map((list) => <Link key={list.slug} to={`/user/${resolved.username}/lists/${list.slug}`}>{list.name}</Link>)}</nav> : null}
     <section><h2>{mode === 'overview' ? 'Favorites' : page?.name ?? 'Public library'}</h2>{items.length ? <div className="media-grid">{items.map((item) => <MediaCard key={item.id || `${item.source}:${item.externalId}`} item={item} />)}</div> : <div className="empty-state"><p>Nothing public here yet.</p></div>}</section>
+    {page && <nav aria-label="Public collection pages"><button type="button" disabled={pageNumber === 1} onClick={() => setParams({ page: String(pageNumber - 1) })}>Previous page</button><span aria-live="polite"> Page {pageNumber} </span><button type="button" disabled={!(page.hasMore ?? items.length === 50) || pageNumber >= 201} onClick={() => setParams({ page: String(pageNumber + 1) })}>Next page</button></nav>}
   </article></>
 }
