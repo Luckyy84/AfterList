@@ -19,6 +19,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/:__afterlist_route*", "destination": "/api/router?__afterlist_route=:__afterlist_route*" },
     { "source": "/discover", "destination": "/index.html" },
     { "source": "/library", "destination": "/index.html" },
     { "source": "/statistics", "destination": "/index.html" },

@@ -6,3 +6,4 @@ Jellyfin.Plugin.AfterList/
 *.md
 **/*.test.ts
 **/*.test.tsx
+test-results/
