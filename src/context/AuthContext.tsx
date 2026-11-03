@@ -14,7 +14,7 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
-  signOut: () => Promise<void>
+  signOut: (scope?: 'local') => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -117,10 +117,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (signOutError) throw signOutError
         setSession(null)
       },
-      async signOut() {
+      async signOut(scope) {
         if (!supabase) return
 
-        const { error } = await supabase.auth.signOut()
+        const { error } = await supabase.auth.signOut(scope ? { scope } : undefined)
         if (error) throw error
 
         setSession(null)

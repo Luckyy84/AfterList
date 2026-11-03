@@ -23,7 +23,7 @@ export default function Footer() {
           <h3>RESOURCES</h3>
           <ul>
             <li><a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a></li>
-            <li><a href="https://github.com/Luckyy84/AfterList/issues" target="_blank" rel="noreferrer">Contact on GitHub</a></li>
+            <li><Link to="/credits">About &amp; Credits</Link></li>
           </ul>
         </div>
 
@@ -32,6 +32,7 @@ export default function Footer() {
           <ul>
             <li><Link to="/privacy">Privacy &amp; Cookies</Link></li>
             <li><Link to="/terms">Terms of Use</Link></li>
+            <li><Link to="/imprint">Imprint / Operator &amp; Contact</Link></li>
           </ul>
         </div>
 
@@ -41,7 +42,7 @@ export default function Footer() {
           <div className="copyright">
             <span>&copy; 2026 AfterList</span>
             <span className="dot">/</span>
-            <span>For educational purposes only</span>
+            <span>Review version — release not cleared</span>
           </div>
           <div className="badge">Made by Luckyy</div>
         </div>

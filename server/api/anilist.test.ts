@@ -1,5 +1,5 @@
 import { resetProviderCache } from './_lib/provider'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './anilist'
 
 const media = {
@@ -25,12 +25,38 @@ const media = {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   resetProviderCache()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
 
 describe('AniList proxy', () => {
+  beforeEach(() => {
+    vi.stubEnv('ANILIST_ENABLED', 'true')
+    vi.stubEnv('ANILIST_PERMISSION_REFERENCE', 'test-only written permission')
+  })
+
+  it.each([undefined, '', 'false', 'TRUE', '1'])('fails closed for enabled=%s without fetching', async (enabled) => {
+    vi.stubEnv('ANILIST_ENABLED', enabled)
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    for (const operation of ['search&q=anime', 'discover', 'details&id=101']) {
+      const response = await GET(new Request(`http://localhost/api/anilist?operation=${operation}`))
+      expect(response.status).toBe(503)
+      expect(response.headers.get('cache-control')).toBe('no-store')
+      expect(await response.json()).toEqual({ error: 'AniList integration is disabled.' })
+    }
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('requires a documented permission reference even with the flag enabled', async () => {
+    vi.stubEnv('ANILIST_PERMISSION_REFERENCE', ' ')
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    expect((await GET(new Request('http://localhost/api/anilist?operation=discover'))).status).toBe(503)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
   it('searches with a fixed adult-filtered GraphQL document and normalizes results', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { Page: { pageInfo: { hasNextPage: false }, media: [media] } } }), { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)

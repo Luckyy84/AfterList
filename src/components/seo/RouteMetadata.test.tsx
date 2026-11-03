@@ -10,6 +10,10 @@ afterEach(() => {
 })
 
 describe('RouteMetadata', () => {
+  it.each([['/imprint', 'Imprint / Operator'], ['/credits', 'About & Credits']])('identifies the %s legal route', async (path, title) => {
+    render(<MemoryRouter initialEntries={[path]}><RouteMetadata /></MemoryRouter>)
+    await waitFor(() => expect(document.title).toBe(`${title} | AfterList`))
+  })
   it('indexes the public discovery route with a stable canonical URL', async () => {
     render(<MemoryRouter initialEntries={['/discover']}><RouteMetadata /></MemoryRouter>)
     await waitFor(() => expect(document.title).toBe('Discover Anime, Movies & TV | AfterList'))

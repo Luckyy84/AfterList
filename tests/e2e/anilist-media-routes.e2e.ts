@@ -25,7 +25,8 @@ const animeFixture = {
 }
 
 async function mockAniListDetails(page: Page) {
-  await page.route('**/api/anilist?**', async (route) => {
+  // Existing stored catalog snapshots remain readable without upstream opt-in.
+  await page.route('**/api/catalog?**', async (route) => {
     const requestUrl = new URL(route.request().url())
     const id = requestUrl.searchParams.get('id') ?? requestUrl.searchParams.get('externalId')
 
@@ -41,7 +42,7 @@ async function mockAniListDetails(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(animeFixture),
+      body: JSON.stringify({ ...animeFixture, catalog: { status: 'fresh' } }),
     })
   })
 }
@@ -50,7 +51,9 @@ test.beforeEach(async ({ page }) => {
   await mockAniListDetails(page)
 })
 
-test('opens, adds, and refreshes an AniList canonical deep link', async ({ page }) => {
+test('opens and saves an existing AniList catalog snapshot without upstream requests', async ({ page }) => {
+  const upstream: string[] = []
+  page.on('request', request => { if (request.url().includes('/api/anilist')) upstream.push(request.url()) })
   await page.goto('/anime/101280/that-time-i-got-reincarnated-as-a-slime')
 
   const unavailable = page.getByRole('heading', { name: 'Anime details are coming soon' })
@@ -71,6 +74,7 @@ test('opens, adds, and refreshes an AniList canonical deep link', async ({ page 
 
   await expect(heading).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Track this title' })).toBeVisible()
+  expect(upstream).toEqual([])
 })
 
 test('does not write a probable cross-provider duplicate before confirmation', async ({ page }) => {

@@ -5,6 +5,7 @@ import * as anilist from '../server/api/anilist.js'
 import * as catalog from '../server/api/catalog.js'
 import * as avatar from '../server/api/account/avatar.js'
 import * as accountDelete from '../server/api/account/delete.js'
+import * as accountExport from '../server/api/account/export.js'
 import * as refresh from '../server/api/cron/refresh-watchlist.js'
 import * as profile from '../server/api/public/profile.js'
 import * as library from '../server/api/public/library.js'
@@ -23,6 +24,7 @@ const routes: Record<string, Record<string, (request: Request) => Promise<Respon
   catalog: { GET: catalog.GET },
   'account/avatar': { POST: avatar.POST, DELETE: avatar.DELETE },
   'account/delete': { DELETE: accountDelete.DELETE },
+  'account/export': { GET: accountExport.GET },
   'cron/refresh-watchlist': { GET: refresh.GET },
   'public/profile': { GET: profile.GET },
   'public/library': { GET: library.GET },

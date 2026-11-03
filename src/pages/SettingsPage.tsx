@@ -3,6 +3,7 @@ import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-do
 import { motion } from 'motion/react'
 import { useAuth } from '../context/AuthContext'
 import AccountDeletion from './AccountDeletion'
+import AccountExport from './AccountExport'
 import AvatarUpload from './AvatarUpload'
 import { usePreferences, type Preferences } from '../context/PreferencesContext'
 import type { MediaItem } from '../types/media'
@@ -218,7 +219,8 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
             </div>
           ) : <Link className="settings-action" to="/login">Sign in for cloud sync</Link>}
         </div>
-        {session?.access_token && <AccountDeletion accessToken={session.access_token} onDeleted={async () => { await signOut(); navigate('/login') }} />}
+        {session?.access_token && user && <AccountExport key={user.id} accessToken={session.access_token} owner={user.id} />}
+        {session?.access_token && user && <AccountDeletion key={user.id} owner={user.id} accessToken={session.access_token} onDeleted={async () => { await signOut('local'); navigate('/login') }} />}
         <div className="settings-block settings-block-divided">
           <h3>Watchlist storage</h3>
           <dl className="settings-list">
@@ -243,7 +245,7 @@ export default function SettingsPage({ items = [], ownProfile = null, onProfileS
         </div>
         <div className="settings-block settings-block-divided">
           <h3>Export library</h3>
-          <p>Download a JSON backup including your tracking history and private notes.</p>
+          <p>Download the current library view and private notes. Signed-in users can export all cloud records and tracking history from Account settings.</p>
           <button className="settings-action" type="button" onClick={() => {
             const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), version: 1, items }, null, 2)], { type: 'application/json' })
             const url = URL.createObjectURL(blob)

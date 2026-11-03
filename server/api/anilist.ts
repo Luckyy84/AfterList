@@ -1,4 +1,4 @@
-import { providerFetch } from './_lib/provider.js'
+import { isAnilistEnabled, providerFetch } from './_lib/provider.js'
 const ANILIST_URL = 'https://graphql.anilist.co'
 const TIMEOUT_MS = 10_000
 const MAX_QUERY = 120
@@ -128,6 +128,7 @@ async function requestAniList(query: string, variables: Record<string, unknown>)
 }
 
 export async function GET(request: Request) {
+  if (!isAnilistEnabled()) return json({ error: 'AniList integration is disabled.' }, 503)
   try {
     const params = new URL(request.url).searchParams
     const operation = params.get('operation')

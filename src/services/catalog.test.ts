@@ -6,5 +6,6 @@ it('normalizes shared metadata into a media item and preserves refresh provenanc
   const result = await fetchCatalogMedia('anilist', '1')
   expect(result.item.id).toBe('anilist-1')
   expect(result.catalog?.refreshedAt).toBe('2026-10-30')
+  expect(fetch).toHaveBeenCalledWith(expect.stringContaining('&refresh=false'), expect.anything())
   vi.restoreAllMocks()
 })

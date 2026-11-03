@@ -25,7 +25,7 @@ const LegacyMediaDetailsRoute = lazy(() => import('./pages/LegacyMediaDetailsRou
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
-const Analytics = lazy(() => import('@vercel/analytics/react').then((module) => ({ default: module.Analytics })))
+
 const Footer = lazy(() => import('./components/layout/Footer'))
 
 function RouteLoadingState() {
@@ -37,14 +37,6 @@ function RouteLoadingState() {
   )
 }
 
-function DeferredAnalytics() {
-  const [isReady, setIsReady] = useState(false)
-  useEffect(() => {
-    const timer = window.setTimeout(() => setIsReady(true), 0)
-    return () => window.clearTimeout(timer)
-  }, [])
-  return isReady ? <Suspense fallback={null}><Analytics /></Suspense> : null
-}
 
 function DeferredFooter() {
   const [isReady, setIsReady] = useState(() => typeof window === 'undefined' || !('IntersectionObserver' in window))
@@ -153,6 +145,8 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/privacy" element={<LegalPage type="privacy" />} />
           <Route path="/terms" element={<LegalPage type="terms" />} />
+          <Route path="/imprint" element={<LegalPage type="imprint" />} />
+          <Route path="/credits" element={<LegalPage type="credits" />} />
           <Route path="/user/:username" element={<PublicProfilePage mode="overview" />} />
           <Route path="/user/:username/library" element={<PublicProfilePage mode="library" />} />
           <Route path="/user/:username/lists/:listSlug" element={<PublicProfilePage mode="list" />} />
@@ -178,7 +172,7 @@ function App() {
           </section>
         </div>
       )}
-      <DeferredAnalytics />
+
     </div>
     </MotionConfig>
   )

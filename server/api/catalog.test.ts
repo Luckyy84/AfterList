@@ -55,3 +55,14 @@ it('stores only matching provider snapshots and reports refresh provenance', asy
   expect((await GET(new Request('http://localhost/api/catalog?source=anilist&externalId=10'))).status).toBe(502)
   expect(query.upsert).not.toHaveBeenCalled()
 })
+
+it('preserves stale AniList records without refreshing when the client disables refresh', async () => {
+  const record = { payload: { item: { source: 'anilist', externalId: '10', title: 'Saved anime' }, details: {} }, refreshed_at: '2020-01-01T00:00:00Z' }
+  const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn(async () => ({ data: record, error: null })), upsert: vi.fn() }
+  query.select.mockReturnValue(query); query.eq.mockReturnValue(query); mocks.from.mockReturnValue(query)
+  const response = await GET(new Request('http://localhost/api/catalog?source=anilist&externalId=10&refresh=false'))
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ ...record.payload, catalog: { status: 'stale', refreshedAt: record.refreshed_at } })
+  expect(mocks.anilist).not.toHaveBeenCalled()
+  expect(query.upsert).not.toHaveBeenCalled()
+})

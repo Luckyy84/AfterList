@@ -1,6 +1,16 @@
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { providerFetch, resetProviderCache } from './provider.js'
 beforeEach(() => { resetProviderCache(); vi.restoreAllMocks() })
+afterEach(() => { vi.unstubAllEnvs() })
+it('blocks AniList before cached responses when permission is revoked', async () => {
+ vi.stubEnv('ANILIST_ENABLED', 'true')
+ vi.stubEnv('ANILIST_PERMISSION_REFERENCE', 'test permission')
+ const fetcher = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{"data":{"Page":{"media":[]}}}'))
+ expect((await providerFetch('https://graphql.anilist.co')).status).toBe(200)
+ vi.stubEnv('ANILIST_PERMISSION_REFERENCE', '')
+ expect((await providerFetch('https://graphql.anilist.co')).status).toBe(503)
+ expect(fetcher).toHaveBeenCalledTimes(1)
+})
 it('refuses authenticated AniList and cookie-bearing requests before touching shared cache', async () => {
  const fetcher=vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response('{}'))
  await expect(providerFetch('https://graphql.anilist.co',{headers:{authorization:'Bearer private'}})).rejects.toThrow(/public/i)

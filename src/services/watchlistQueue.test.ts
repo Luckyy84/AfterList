@@ -1,8 +1,16 @@
 import { beforeEach, expect, it } from 'vitest'
-import { readQueue, stageEdit, replayQueue, resetQueueRetries } from './watchlistQueue'
+import { clearOwnerQueue, readQueue, stageEdit, replayQueue, resetQueueRetries } from './watchlistQueue'
 import type { MediaItem } from '../types/media'
 const item = {id:'1',source:'tmdb',externalId:'movie:1',updatedAt:'2026-01-01T00:00:00Z'} as MediaItem
 beforeEach(() => localStorage.clear())
+it('clears only the deleted owner and prevents in-flight replay recreating its cache', async () => {
+ stageEdit('a', item, false); stageEdit('b', item, false)
+ localStorage.setItem('afterlist_items', 'guest')
+ await replayQueue('a', async () => { clearOwnerQueue('a') })
+ expect(localStorage.getItem('afterlist_queue:a')).toBeNull()
+ expect(readQueue('b')).toHaveLength(1)
+ expect(localStorage.getItem('afterlist_items')).toBe('guest')
+})
 it('reports corrupt storage rather than silently discarding unsynced edits', () => {
  localStorage.setItem('afterlist_queue:a','broken')
  expect(() => readQueue('a')).toThrow(/corrupt/i)

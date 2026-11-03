@@ -7,6 +7,7 @@ type RequestOptions = { signal?: AbortSignal }
 type MediaResponse = { item: MediaItem; details: MediaDetails }
 type SearchResponse = { results?: SearchResultItem[]; error?: string }
 type DetailsResponse = { item?: SearchResultItem; details?: MediaDetails; error?: string }
+const isAnilistEnabled = () => import.meta.env.VITE_ANILIST_ENABLED === 'true'
 
 async function fetchJson<T>(url: string, options: RequestOptions = {}) {
   const response = await fetch(url, { signal: options.signal, headers: { accept: 'application/json' } })
@@ -16,6 +17,7 @@ async function fetchJson<T>(url: string, options: RequestOptions = {}) {
 }
 
 export async function searchAnilist(query: string, options: RequestOptions = {}) {
+  if (!isAnilistEnabled()) return []
   const trimmed = query.trim()
   if (!trimmed) return []
   const data = await fetchJson<SearchResponse>(`/api/anilist?operation=search&q=${encodeURIComponent(trimmed)}`, options)
@@ -23,11 +25,13 @@ export async function searchAnilist(query: string, options: RequestOptions = {})
 }
 
 export async function discoverAnilist(page = 1, options: RequestOptions = {}) {
+  if (!isAnilistEnabled()) return []
   const data = await fetchJson<SearchResponse>(`/api/anilist?operation=discover&page=${page}`, options)
   return data.results ?? []
 }
 
 export async function fetchAnilistMedia(id: string, options: RequestOptions = {}): Promise<MediaResponse> {
+  if (!isAnilistEnabled()) throw new Error('AniList integration is disabled.')
   const data = await fetchJson<DetailsResponse>(`/api/anilist?operation=details&id=${encodeURIComponent(id)}`, options)
   if (!data.item || !data.details) throw new Error('AniList returned incomplete title details.')
   return { item: searchResultToMediaItem(data.item), details: data.details }
@@ -51,12 +55,12 @@ async function settledResults(requests: Array<Promise<SearchResultItem[]>>) {
 }
 
 export function searchMedia(query: string, options: RequestOptions = {}) {
-  return settledResults([searchTmdb(query, options), searchAnilist(query, options)])
+  return settledResults(isAnilistEnabled() ? [searchTmdb(query, options), searchAnilist(query, options)] : [searchTmdb(query, options)])
 }
 
 export function discoverMedia(options: RequestOptions & { feed?: DiscoverFeed; mediaType?: DiscoverMediaType; page?: number; externalId?: string } = {}) {
   const tmdb = discoverTmdb(options)
-  const includeAnime = !options.externalId && options.mediaType !== 'movie'
+  const includeAnime = isAnilistEnabled() && !options.externalId && options.mediaType !== 'movie'
   return settledResults(includeAnime ? [tmdb, discoverAnilist(options.page, options)] : [tmdb])
 }
 

@@ -1,9 +1,13 @@
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { GET as search } from './search'
 import { GET as details } from './details'
 import { GET as discover } from './discover'
 import { GET as anilist } from './anilist'
 import { resetProviderCache } from './_lib/provider'
+beforeEach(() => {
+ vi.stubEnv('ANILIST_ENABLED','true')
+ vi.stubEnv('ANILIST_PERMISSION_REFERENCE','test-only permission')
+})
 afterEach(() => {resetProviderCache();vi.unstubAllGlobals();vi.unstubAllEnvs();vi.restoreAllMocks()})
 it.each([[search,'search?query=error-test'],[details,'details?externalId=movie:1'],[discover,'discover?feed=trending'],[anilist,'anilist?operation=discover']])('does not log upstream error data: %s',async (handler,path) => {
  vi.stubEnv('TMDB_API_KEY','test')

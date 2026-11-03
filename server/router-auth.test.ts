@@ -6,7 +6,7 @@ import router from '../api/router'
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 
 it.each([
-  ['account/avatar', 'POST'], ['account/avatar', 'DELETE'], ['account/delete', 'DELETE'],
+  ['account/avatar', 'POST'], ['account/avatar', 'DELETE'], ['account/delete', 'DELETE'], ['account/export', 'GET'],
   ['v1/tokens', 'GET'], ['v1/tokens', 'POST'], ['v1/tokens', 'DELETE'],
   ['v1/watchlist', 'GET'], ['v1/watchlist', 'PUT'], ['v1/resolve', 'GET'],
   ['cron/refresh-watchlist', 'GET'],

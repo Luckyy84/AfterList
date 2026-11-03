@@ -3,12 +3,16 @@ const cache = new Map<string, { expires: number; response: Response }>()
 const pending = new Map<string, Promise<Response>>()
 const limits = new Map<string, {until:number; count:number}>()
 export function resetProviderCache() { cache.clear(); pending.clear(); limits.clear() }
+export function isAnilistEnabled() {
+ return process.env.ANILIST_ENABLED === 'true' && Boolean(process.env.ANILIST_PERMISSION_REFERENCE?.trim())
+}
 export async function providerFetch(url: string, init?: RequestInit): Promise<Response> {
  const parsed = new URL(url)
  const host = parsed.hostname
  const headers = new Headers(init?.headers)
  if (parsed.protocol !== 'https:' || parsed.port || parsed.username || parsed.password || headers.has('cookie') || (host === 'graphql.anilist.co' && headers.has('authorization'))) throw new Error('Only public catalogue requests are allowed')
  if (!['api.themoviedb.org', 'graphql.anilist.co'].includes(host)) throw new Error('Unsupported catalogue provider')
+ if (host === 'graphql.anilist.co' && !isAnilistEnabled()) return new Response(JSON.stringify({error:'AniList integration is disabled.'}), {status:503,headers:{'content-type':'application/json','cache-control':'no-store'}})
  const key = `${url}:${init?.body ?? ''}:${new Headers(init?.headers).get('authorization') ?? ''}`
  const hit = cache.get(key)
  if (hit && hit.expires > Date.now()) return hit.response.clone()

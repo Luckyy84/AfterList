@@ -26,6 +26,9 @@ export async function GET(request: Request) {
     if (stored.error) return publicJson({ error: 'Shared catalog needs the systems_tracking migration or is temporarily unavailable.', catalog: { status: 'migration-needed' } }, 503)
     const record = stored.data as { payload: Record<string, unknown>; refreshed_at: string } | null
     if (record && Date.now() - Date.parse(record.refreshed_at) < MAX_AGE_MS) return publicJson({ ...record.payload, catalog: { status: 'fresh', refreshedAt: record.refreshed_at } })
+    if (source === 'anilist' && params.get('refresh') === 'false') {
+      return record ? publicJson({ ...record.payload, catalog: { status: 'stale', refreshedAt: record.refreshed_at } }) : publicJson({ error: 'AniList integration is disabled.' }, 503)
+    }
     // Reuse validated provider handlers; clients cannot write metadata snapshots.
     const providerUrl = new URL(request.url)
     providerUrl.search = source === 'anilist' ? new URLSearchParams({ operation: 'details', id: externalId }).toString() : new URLSearchParams({ externalId }).toString()

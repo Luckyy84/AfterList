@@ -7,7 +7,8 @@ export type CatalogEntry = { provider: MediaSource; external_id: string; title: 
 export async function fetchCatalogMedia(source: MediaSource, externalId: string, options: { signal?: AbortSignal } = {}): Promise<{ item: MediaItem; details: MediaDetails; catalog: CatalogState }> {
   let catalog: CatalogState = { status: 'unavailable' }
   try {
-    const response = await fetch(`/api/catalog?source=${source}&externalId=${encodeURIComponent(externalId)}`, { signal: options.signal })
+    const refresh = source === 'anilist' && import.meta.env.VITE_ANILIST_ENABLED !== 'true' ? '&refresh=false' : ''
+    const response = await fetch(`/api/catalog?source=${source}&externalId=${encodeURIComponent(externalId)}${refresh}`, { signal: options.signal })
     const data = await response.json() as { item?: SearchResultItem; details?: MediaDetails; catalog?: CatalogState }
     catalog = data.catalog ?? catalog
     if (response.ok && data.item && data.details) return { item: searchResultToMediaItem(data.item), details: data.details, catalog }

@@ -1,4 +1,5 @@
 import { authenticateIntegration, json } from '../_lib/afterlistApi.js'
+import { isAnilistEnabled } from '../_lib/provider.js'
 
 const ANILIST_API_URL = 'https://graphql.anilist.co'
 const TMDB_API_URL = 'https://api.themoviedb.org/3'
@@ -107,6 +108,7 @@ async function searchTmdb(query: string, apiKey: string | undefined, accessToken
 export async function GET(request: Request) {
   const integration = await authenticateIntegration(request, 'watchlist:write')
   if (!integration) return json({ error: 'Unauthorized.' }, 401)
+  if (!isAnilistEnabled()) return json({ error: 'AniList integration is disabled.' }, 503)
 
   const url = new URL(request.url)
   if (url.searchParams.get('source') !== 'anilist') return json({ error: 'Only source=anilist is supported.' }, 400)

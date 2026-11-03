@@ -2,10 +2,37 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, expect, it, vi } from 'vitest'
 import AccountDeletion from './AccountDeletion'
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+it('cleans the deleted owner but does not sign out a subsequently active account', async () => {
+ let resolve!: (response: Response) => void
+ vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(done => { resolve = done })))
+ const onDeleted = vi.fn(async () => {})
+ localStorage.setItem('afterlist_queue:a', 'private')
+ const view = render(<AccountDeletion owner="a" accessToken="session" onDeleted={onDeleted} />)
+ fireEvent.change(screen.getByLabelText('Type DELETE to confirm'), { target: { value: 'DELETE' } })
+ fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'correct' } })
+ fireEvent.click(screen.getByRole('button', { name: 'Delete my account permanently' }))
+ view.unmount()
+ resolve(new Response(null, { status: 204 }))
+ await waitFor(() => expect(localStorage.getItem('afterlist_queue:a')).toBeNull())
+ expect(onDeleted).not.toHaveBeenCalled()
+})
+it('clears the confirmed deleted owner cache before local sign-out, preserving guest and other accounts', async () => {
+  localStorage.setItem('afterlist_queue:a', 'private')
+  localStorage.setItem('afterlist_queue:b', 'other')
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })))
+  const onDeleted = vi.fn(async () => { expect(localStorage.getItem('afterlist_queue:a')).toBeNull() })
+  render(<AccountDeletion owner="a" accessToken="session" onDeleted={onDeleted} />)
+  fireEvent.change(screen.getByLabelText('Type DELETE to confirm'), { target: { value: 'DELETE' } })
+  fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'correct' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Delete my account permanently' }))
+  await waitFor(() => expect(onDeleted).toHaveBeenCalled())
+  expect(localStorage.getItem('afterlist_queue:a')).toBeNull()
+  expect(localStorage.getItem('afterlist_queue:b')).toBe('other')
+})
 it('requires confirmation and password and surfaces migration errors without signing out', async () => {
   const signOut = vi.fn()
   vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'Apply systems_foundation migration.' }, { status: 503 })))
-  render(<AccountDeletion accessToken="session" onDeleted={signOut} />)
+  render(<AccountDeletion owner="a" accessToken="session" onDeleted={signOut} />)
   expect(screen.getByRole('button', { name: 'Delete my account permanently' }).hasAttribute('disabled')).toBe(true)
   fireEvent.change(screen.getByLabelText('Type DELETE to confirm'), { target: { value: 'DELETE' } })
   fireEvent.change(screen.getByLabelText('Current password'), { target: { value: 'correct' } })

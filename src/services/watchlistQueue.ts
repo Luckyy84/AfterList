@@ -2,6 +2,9 @@ import type { MediaItem } from '../types/media'
 import { getMediaKey } from '../utils/media'
 export type QueuedEdit = { item: MediaItem; removed: boolean; token: string; attempts: number }
 const key = (owner: string) => `afterlist_queue:${owner}`
+export function clearOwnerQueue(owner: string) {
+ localStorage.removeItem(key(owner))
+}
 export function readQueue(owner: string): QueuedEdit[] {
  let value: unknown
  try { value = JSON.parse(localStorage.getItem(key(owner)) ?? '[]') } catch { throw new Error('Offline edit storage is corrupt. Keep a backup before clearing it.') }
@@ -21,6 +24,7 @@ export function replayQueue(owner: string, send: (edit: QueuedEdit) => Promise<u
    const current = readQueue(owner)
    localStorage.setItem(key(owner), JSON.stringify(current.map((e) => e.token === edit.token ? {...e, attempts:e.attempts+1} : e)))
    await send(edit)
+   if (localStorage.getItem(key(owner)) === null) return
    localStorage.setItem(key(owner), JSON.stringify(readQueue(owner).filter((e) => e.token !== edit.token)))
   }
  })()

@@ -14,12 +14,13 @@ test('renders the in-app not-found recovery state with noindex metadata', async 
   await expect(page.getByRole('heading', { name: 'Find your next story.' })).toBeVisible()
 })
 
-test('publishes stable public metadata and a GitHub contact path', async ({ page }) => {
+test('publishes stable public metadata and honest private contact status', async ({ page }) => {
   await page.goto('/privacy')
   await expect(page).toHaveTitle('Privacy Policy | AfterList')
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://afterlist.luckako.uk/privacy')
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow')
-  await expect(page.getByRole('link', { name: 'contact the project on GitHub' })).toHaveAttribute('href', 'https://github.com/Luckyy84/AfterList/issues')
+  await expect(page.getByText('Private contact is not configured. Do not send personal data through public issues.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'contact the project on GitHub' })).toHaveCount(0)
 })
 
 test('serves launch metadata assets with the expected content', async ({ request }) => {
